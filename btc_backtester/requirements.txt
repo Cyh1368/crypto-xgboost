@@ -1,0 +1,12 @@
+xgboost>=2.0
+shap>=0.44
+pandas>=2.1
+numpy>=1.26
+pyarrow>=14.0
+scikit-learn>=1.4
+optuna>=3.5
+structlog>=24.0
+python-dotenv>=1.0
+requests>=2.31
+anthropic>=0.25
+pytest>=8.0
