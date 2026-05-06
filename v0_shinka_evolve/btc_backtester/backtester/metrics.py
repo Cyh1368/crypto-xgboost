@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 
 def calculate_sharpe(returns: pd.Series, risk_free_rate=0.0, periods_per_year=35040) -> float:
-    # 35040 = 365 * 24 * 4 (15-min bars)
     excess_returns = returns - risk_free_rate / periods_per_year
     if len(excess_returns) < 2 or excess_returns.std() == 0:
         return 0.0
@@ -10,31 +9,27 @@ def calculate_sharpe(returns: pd.Series, risk_free_rate=0.0, periods_per_year=35
 
 def calculate_max_drawdown(equity_curve: pd.Series) -> float:
     running_max = equity_curve.cummax()
-    drawdown = (equity_curve - running_max) / running_max
+    drawdown = (equity_curve - running_max) / (running_max + 1e-9)
     return float(drawdown.min())
 
-def calculate_calmar(sharpe: float, max_dd: float, periods_per_year=35040) -> float:
-    # Simplified Calmar: Annualized Return / Max DD
-    # We'll use Sharpe as a proxy if we don't have annualized return directly
-    # Better: calculate annualized return first
+def calculate_calmar(sharpe: float, max_dd: float) -> float:
     return abs(sharpe / max_dd) if max_dd != 0 else 0.0
 
-def calculate_metrics(df: pd.DataFrame) -> dict:
+def calculate_metrics(df: pd.DataFrame, periods_per_year=35040) -> dict:
     """
     df must have 'pnl' and 'equity' columns.
     """
     returns = df['pnl']
     equity = df['equity']
     
-    sharpe = calculate_sharpe(returns)
+    sharpe = calculate_sharpe(returns, periods_per_year=periods_per_year)
     max_dd = calculate_max_drawdown(equity)
     
     win_rate = (returns > 0).mean()
     avg_trade = returns[returns != 0].mean()
     trades_total = (df['signal'].diff() != 0).sum()
     
-    # §8.4 Regime awareness: Tag each bar with a volatility regime
-    # Use rolling 20-bar realized vol
+    # Regime awareness: Tag each bar with a volatility regime
     vol = returns.rolling(20).std()
     try:
         regime = pd.qcut(vol, 3, labels=False, duplicates='drop')
@@ -44,7 +39,7 @@ def calculate_metrics(df: pd.DataFrame) -> dict:
         for r_val, r_name in regime_names.items():
             mask = regime == r_val
             if mask.any():
-                regime_sharpe[f"sharpe_{r_name}_vol"] = calculate_sharpe(returns[mask])
+                regime_sharpe[f"sharpe_{r_name}_vol"] = calculate_sharpe(returns[mask], periods_per_year=periods_per_year)
     except:
         regime_sharpe = {}
 
@@ -53,7 +48,7 @@ def calculate_metrics(df: pd.DataFrame) -> dict:
         "max_drawdown_pct": max_dd * 100,
         "calmar_ratio": calculate_calmar(sharpe, max_dd),
         "win_rate": float(win_rate),
-        "avg_trade_pct": float(avg_trade * 100),
+        "avg_trade_pct": float(avg_trade * 100) if not np.isnan(avg_trade) else 0.0,
         "trades_total": int(trades_total),
     }
     metrics.update(regime_sharpe)

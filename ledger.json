@@ -1,0 +1,14 @@
+{
+  "champion": {
+    "sharpe_annual": -11.791736831926597,
+    "max_drawdown_pct": -0.005145654334439314,
+    "calmar_ratio": 229159.13245485153,
+    "win_rate": 0.010416666666666666,
+    "avg_trade_pct": -8.462308446771946e-05,
+    "trades_total": 55,
+    "sharpe_low_vol": -11.155694192537288,
+    "strategy_version": "v0",
+    "timestamp": "2026-05-06T01:42:52.859267Z"
+  },
+  "history": []
+}
