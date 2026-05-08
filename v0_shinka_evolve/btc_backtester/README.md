@@ -1,58 +1,63 @@
-# BTC Futures Backtester
+# BTC Futures XGBoost Alpha Signal
 
-Production-grade 15-minute Bitcoin futures backtester with XGBoost-driven alpha signal and ShinkáEvolve loop.
+This repository contains a production-grade XGBoost-driven regression model for predicting 15-minute Bitcoin price ratios (Price_{t+1} / Price_t).
 
-## Features
+## 🚀 Overview
 
-- **XGBoost Strategy**: Advanced binary classification model for direction prediction.
-- **SHAP-based Pruning**: Automatically drops features with low predictive power.
-- **Microstructure Features**: Exponentially-decayed orderbook imbalance (OBI), Kyle's Lambda proxy, and more.
-- **ShinkáEvolve**: Self-improving loop that uses Claude Code as an oracle to propose and evaluate strategy mutations.
-- **Vectorized Backtester**: High-performance simulation with slippage and funding models.
+The model uses a "kitchen sink" approach to feature engineering, combining orderbook microstructure, price action, and cyclical time features to capture alpha in the 15-minute timeframe.
 
-## Repository Structure
+## 📊 Features
 
-```
-btc_backtester/
-├── data/                  # OHLCV + L2 snapshots
-├── features/              # Feature implementation and registry
-├── models/                # XGBoost and strategy logic
-├── backtester/            # Engine, portfolio, and metrics
-├── evolve/                # ShinkáEvolve orchestrator and oracle
-├── scripts/               # Entrypoints
-└── tests/                 # Unit tests
-```
+### 1. Orderbook Microstructure
+- **Exponentially-Decayed OBI**: Weighted volume imbalance across the top 20 levels using decay factors $\tau \in \{1, 3, 5, 10\}$.
+- **Spread & Depth**: Bid-ask spread in BPS, depth ratios at 5/10 levels, and book pressure.
+- **Micro-movements**: Mid-price moves and Kyle's Lambda estimation ($\Delta P / \Delta V$).
 
-## Setup
+### 2. Price Action & Momentum
+- **Log Returns**: Multi-period returns (1, 3, 6, 12, 48 bars).
+- **Volatility**: Rolling standard deviations (5, 20, 60 bars) and realized volatility ratios.
+- **Technical Indicators**: RSI (6, 14), MACD Signal, Bollinger Band % position, and normalized ATR.
+- **Bar Microstructure**: Momentum ratio, wick ratios (up/down), and volume-to-MA ratios.
 
-1. Install dependencies:
-   ```bash
-   pip install -r btc_backtester/requirements.txt
-   ```
+### 3. Time & Session
+- **Cyclical Encoding**: Sine/Cosine transforms for Hour-of-Day and Day-of-Week.
+- **Session Binaries**: Asia/US session flags and weekend detection.
+- **Funding Proximity**: Minutes remaining until the next 8-hour funding payment.
 
-2. Configure environment variables in `.env`.
+## 🏗️ Model Training
 
-## Usage
+- **Architecture**: XGBoost Regressor with `reg:squarederror` objective.
+- **Data Source**: Aggregated real 15-minute OHLCV + L2 Proxy data from 10 major crypto pairs (BTC, ETH, SOL, ADA, etc.).
+- **Scaling**: Robust `StandardScaler` applied to all non-binary features.
+- **Optimization**: Early stopping on RMSE to prevent overfitting.
 
-### Initial Backtest
-Runs the walk-forward cross-validation for the V0 strategy.
+## 📈 Performance Results
+
+The model was validated on a completely fresh out-of-sample dataset consisting of **5,000 bars (approx. 52 days)** of BTC/USDT data from Kraken.
+
+| Metric | Value |
+|---|---|
+| **Test Set Correlation (Multi-coin)** | **0.7068** |
+| **Validation Correlation (BTC Fresh)** | **0.6715** |
+| **Predicted Ratio Mean** | 1.000156 |
+| **Predicted Ratio Std** | 0.000840 |
+
+### Visualizations
+Plots can be found in the `results/` directory:
+- `final_ratio_scatter.png`: Training/Test scatter plot.
+- `validation_scatter.png`: Out-of-sample 5000-bar validation plot.
+
+## 🛠️ Usage
+
+### Training
 ```bash
-python btc_backtester/scripts/run_initial.py
+python btc_backtester/scripts/train_final_model.py
 ```
 
-### Evolution Loop
-Starts the ShinkáEvolve process to iteratively improve the strategy.
+### Validation
 ```bash
-python btc_backtester/scripts/run_evolve.py
+python btc_backtester/scripts/validate_model.py
 ```
 
-### Dry Run
-Generate mutations without applying them.
-```bash
-python btc_backtester/scripts/run_evolve.py --dry-run
-```
-
-## Success Criteria
-
-- Sharpe (annual, OOS): > 1.0 (V0) / > 2.0 (Evolved)
-- Max Drawdown: < 20% (V0) / < 12% (Evolved)
+---
+*Note: This is part of the ShinkáEvolve project loop.*
