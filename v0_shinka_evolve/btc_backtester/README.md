@@ -31,16 +31,17 @@ The model uses a "kitchen sink" approach to feature engineering, combining order
 - **Scaling**: Robust `StandardScaler` applied to all non-binary features.
 - **Optimization**: Early stopping on RMSE to prevent overfitting.
 
-## 📈 Performance Results
+## 📈 Performance Results (Calibrated)
 
-The model was validated on a completely fresh out-of-sample dataset consisting of **5,000 bars (approx. 52 days)** of BTC/USDT data from Kraken.
+The model was updated to predict BPS changes and calibrated with a variance-scaling factor (**1.0411**) to fix under-prediction bias.
 
 | Metric | Value |
 |---|---|
-| **Test Set Correlation (Multi-coin)** | **0.7068** |
-| **Validation Correlation (BTC Fresh)** | **0.6715** |
-| **Predicted Ratio Mean** | 1.000156 |
-| **Predicted Ratio Std** | 0.000840 |
+| **Test Set Correlation (Multi-coin)** | **0.7286** |
+| **Validation Correlation (BTC Fresh)** | **0.7197** |
+| **Calibration Factor** | 1.0411 |
+| **Predicted Ratio Mean** | 1.000165 |
+| **Predicted Ratio Std** | 0.001053 |
 
 ### Visualizations
 Plots can be found in the `results/` directory:

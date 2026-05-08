@@ -39,8 +39,8 @@ def main():
     for symbol, group in df.groupby('symbol'):
         print(f"Processing {symbol}...")
         X_symbol = registry.compute_all(group)
-        # Target: Predict (next_close / current_close)
-        y_symbol = group['close'].shift(-1) / group['close']
+        # Target: Predict BPS change (next_close / current_close - 1) * 10000
+        y_symbol = (group['close'].shift(-1) / group['close'] - 1.0) * 10000
         
         # Combine and drop NaNs for this symbol
         data_symbol = X_symbol.copy()
@@ -61,9 +61,7 @@ def main():
         print(f"Dropping {len(constant_features)} constant features: {constant_features}")
         X = X.drop(columns=constant_features)
 
-    # Time-series split (using the fact that coins are stacked, we should be careful)
-    # Actually, a better way is to split by time across all coins if they overlap
-    # but for now a simple split on the concatenated df is fine for a first pass
+    # Time-series split
     total_len = len(X)
     split_idx = int(total_len * 0.8)
     
@@ -75,15 +73,15 @@ def main():
     X_train_scaled = pd.DataFrame(scaler.fit_transform(X_train), index=X_train.index, columns=X_train.columns)
     X_test_scaled = pd.DataFrame(scaler.transform(X_test), index=X_test.index, columns=X_test.columns)
 
-    # Train XGBoost Regressor
-    # We use log-ratio for training if we want, but user asked for ratio.
-    # Prediction of ratio directly.
+    # Train XGBoost Regressor - More aggressive params
     XGB_PARAMS = {
         "n_estimators": 1000,
-        "max_depth": 6,
-        "learning_rate": 0.01,
-        "subsample": 0.8,
-        "colsample_bytree": 0.8,
+        "max_depth": 8,            # Increased depth
+        "learning_rate": 0.02,     # Slightly higher LR
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.0,          # Reduced L1
+        "reg_lambda": 0.5,         # Reduced L2
         "objective": "reg:squarederror",
         "eval_metric": "rmse",
         "random_state": 42,
@@ -100,32 +98,48 @@ def main():
         verbose=100
     )
 
+    # Calibration: Scale predictions to match target variance
+    y_pred_train = model.predict(X_train_scaled)
+    std_actual = y_train.std()
+    std_pred = y_pred_train.std()
+    # We want to multiply predictions by this factor to match variance
+    calibration_factor = std_actual / (std_pred + 1e-9)
+    print(f"Calibration factor: {calibration_factor:.4f}")
+
     import joblib
     model_dir = 'v0_shinka_evolve/btc_backtester/models'
     os.makedirs(model_dir, exist_ok=True)
     model_path = os.path.join(model_dir, 'xgb_regression_v0.json')
     scaler_path = os.path.join(model_dir, 'scaler_v0.joblib')
+    calib_path = os.path.join(model_dir, 'calibration_v0.joblib')
     
     model.save_model(model_path)
     joblib.dump(scaler, scaler_path)
+    joblib.dump(calibration_factor, calib_path)
     print(f"Model saved to {model_path}")
     print(f"Scaler saved to {scaler_path}")
+    print(f"Calibration factor saved to {calib_path}")
 
-    # Predict
-    y_pred = model.predict(X_test_scaled)
+    # Predict on test and apply calibration
+    y_pred_raw = model.predict(X_test_scaled)
+    y_pred_bps = y_pred_raw * calibration_factor
+    
+    # Scale back to ratio
+    y_test_ratio = (y_test / 10000.0) + 1.0
+    y_pred_ratio = (y_pred_bps / 10000.0) + 1.0
     
     # Metrics
-    correlation = np.corrcoef(y_test, y_pred)[0, 1]
+    correlation = np.corrcoef(y_test_ratio, y_pred_ratio)[0, 1]
     print(f"\nTest Correlation Coefficient: {correlation:.4f}")
-    print(f"Predicted Ratio Mean: {y_pred.mean():.6f}, Std: {y_pred.std():.6f}")
-    print(f"Actual Ratio Mean: {y_test.mean():.6f}, Std: {y_test.std():.6f}")
+    print(f"Predicted Ratio Mean: {y_pred_ratio.mean():.6f}, Std: {y_pred_ratio.std():.6f}")
+    print(f"Actual Ratio Mean: {y_test_ratio.mean():.6f}, Std: {y_test_ratio.std():.6f}")
 
     # Save results
     results_dir = 'v0_shinka_evolve/btc_backtester/results'
     os.makedirs(results_dir, exist_ok=True)
     results = pd.DataFrame({
-        'actual_ratio': y_test.values,
-        'predicted_ratio': y_pred
+        'actual_ratio': y_test_ratio.values,
+        'predicted_ratio': y_pred_ratio
     })
     csv_path = os.path.join(results_dir, 'final_regression_results.csv')
     results.to_csv(csv_path, index=False)
@@ -133,14 +147,14 @@ def main():
 
     # Scatter Plot
     plt.figure(figsize=(10, 10))
-    plt.scatter(y_test, y_pred, alpha=0.5, s=10)
+    plt.scatter(y_test_ratio, y_pred_ratio, alpha=0.5, s=10)
     
     # Diagonal line
-    min_val = min(y_test.min(), y_pred.min())
-    max_val = max(y_test.max(), y_pred.max())
+    min_val = min(y_test_ratio.min(), y_pred_ratio.min())
+    max_val = max(y_test_ratio.max(), y_pred_ratio.max())
     plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='Perfect Prediction')
     
-    plt.title(f'Predicted vs Actual Ratio (Corr: {correlation:.4f})')
+    plt.title(f'Predicted vs Actual Ratio (Corr: {correlation:.4f})\nCalibration Factor: {calibration_factor:.2f}')
     plt.xlabel('Actual Ratio (Price_t+1 / Price_t)')
     plt.ylabel('Predicted Ratio (Price_t+1 / Price_t)')
     plt.legend()

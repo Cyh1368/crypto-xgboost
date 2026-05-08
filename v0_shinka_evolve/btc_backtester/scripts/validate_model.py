@@ -17,18 +17,21 @@ def main():
     # Paths
     model_path = 'v0_shinka_evolve/btc_backtester/models/xgb_regression_v0.json'
     scaler_path = 'v0_shinka_evolve/btc_backtester/models/scaler_v0.joblib'
+    calib_path = 'v0_shinka_evolve/btc_backtester/models/calibration_v0.joblib'
     data_path = 'v0_shinka_evolve/btc_backtester/data/raw/btc_5000_validation.parquet'
     results_dir = 'v0_shinka_evolve/btc_backtester/results'
     
-    if not all(os.path.exists(p) for p in [model_path, scaler_path, data_path]):
-        print("Error: Missing model, scaler, or validation data.")
+    if not all(os.path.exists(p) for p in [model_path, scaler_path, calib_path, data_path]):
+        print("Error: Missing model, scaler, calibration, or validation data.")
         return
 
-    # Load Model and Scaler
-    print("Loading model and scaler...")
+    # Load Model, Scaler, and Calibration
+    print("Loading model, scaler, and calibration factor...")
     model = xgb.XGBRegressor()
     model.load_model(model_path)
     scaler = joblib.load(scaler_path)
+    calibration_factor = joblib.load(calib_path)
+    print(f"Loaded calibration factor: {calibration_factor:.4f}")
 
     # Load Data
     print(f"Loading validation data from {data_path}...")
@@ -38,6 +41,7 @@ def main():
     # Compute Features
     print("Computing features...")
     X = registry.compute_all(df)
+    # Target in validation is still the ratio, but we predict BPS and convert
     y = df['close'].shift(-1) / df['close']
     
     # Target and Drop NaNs
@@ -48,19 +52,20 @@ def main():
     X = data.drop(columns=['target'])
     y = data['target']
     
-    # Align features with training (some might have been dropped as constants during training)
-    # We'll use the feature names from the scaler if possible, or just the model's feature names
-    # XGBoost json model doesn't always store feature names reliably in all versions, 
-    # but the scaler definitely has them if it was fitted on a DataFrame.
+    # Align features with training
     train_features = scaler.feature_names_in_
     X = X[train_features]
     
     # Scale
     X_scaled = pd.DataFrame(scaler.transform(X), index=X.index, columns=X.columns)
     
-    # Predict
+    # Predict and Calibrate
     print("Generating predictions...")
-    y_pred = model.predict(X_scaled)
+    y_pred_raw = model.predict(X_scaled)
+    y_pred_bps = y_pred_raw * calibration_factor
+    
+    # Convert BPS back to ratio
+    y_pred = (y_pred_bps / 10000.0) + 1.0
     
     # Correlation
     correlation = np.corrcoef(y, y_pred)[0, 1]
