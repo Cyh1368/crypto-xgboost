@@ -1,7 +1,6 @@
-# Crypto-XGBoost: 15-Minute Futures Trading Algorithm
+# `Crypto-XGBoost`: 15-Minute Perps Trading Algorithm
 
-## Project Purpose
-The goal of this project is to develop and backtest a high-performance trading algorithm for cryptocurrency futures using the **XGBoost** gradient boosting framework. The strategy operates on a **15-minute timeframe**, leveraging multi-asset data and advanced feature engineering to predict short-term price movements and execute trades with high precision.
+`Crypto-XGBoost` is a trading algorithm built upon the [XGBoost](https://arxiv.org/abs/1603.02754) framework. Trained on 10 cryptocurrencies, it predicts the price in 15 minutes, and places orders based on a trading logic developed through [ShinkaEvolve](https://github.com/SakanaAI/ShinkaEvolve). We are ready to implement this strategy in real time.
 
 ## Model Structure & Features
 The core of the strategy is an XGBoost regressor trained to predict the next-bar basis point (BPS) return.
@@ -38,19 +37,19 @@ The model was tested across 10 major crypto pairs. The results demonstrate signi
 
 | Symbol | Total Net PnL ($) | Win Rate (%) | Profit Factor | Sharpe Ratio | Max Drawdown (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **DOT_USDT** | **38,668.40** | **73.43%** | **6.545** | **57.839** | **-0.18%** |
-| ADA_USDT | 29,219.20 | 70.86% | 6.430 | 51.917 | -0.23% |
-| DOGE_USDT | 25,025.80 | 70.59% | 6.074 | 46.325 | -0.14% |
-| LINK_USDT | 22,680.90 | 70.78% | 5.362 | 42.181 | -0.22% |
-| ETH_USDT | 17,567.50 | 68.00% | 5.101 | 34.199 | -0.13% |
-| XRP_USDT | 8,765.70 | 68.58% | 3.722 | 24.300 | -0.18% |
-| SOL_USDT | 7,843.31 | 54.91% | 1.884 | 13.940 | -0.48% |
-| BTC_USDT | 5,058.07 | 64.80% | 3.070 | 16.163 | -0.15% |
-| LTC_USDT | 3,407.45 | 58.21% | 3.204 | 14.489 | -0.15% |
-| BNB_USDT | -29.47 | 47.93% | 0.984 | -3.793 | -0.94% |
+| **DOT_USDT** | **82,910.80** | **85.73%** | **22.418** | **60.648** | **-0.13%** |
+| ADA_USDT | 64,219.20 | 85.67% | 19.486 | 55.151 | -0.15% |
+| DOGE_USDT | 57,511.00 | 84.88% | 20.442 | 50.951 | -0.10% |
+| LINK_USDT | 51,535.10 | 84.79% | 18.433 | 47.161 | -0.18% |
+| BTC_USDT | 21,534.70 | 79.86% | 16.265 | 32.833 | -0.07% |
+| ETH_USDT | 22,768.60 | 83.94% | 16.930 | 28.629 | -0.14% |
+| LTC_USDT | 15,197.70 | 76.18% | 11.706 | 26.935 | -0.13% |
+| XRP_USDT | 11,305.80 | 85.15% | 24.231 | 25.344 | -0.07% |
+| SOL_USDT | 21,304.20 | 66.26% | 3.153 | 22.859 | -1.27% |
+| BNB_USDT | 2,332.14 | 65.82% | 4.296 | 7.079 | -0.16% |
 
 ### DOT-USDT Advanced Backtest Visualization
-Below is the advanced performance visualization for Polkadot (DOT), showcasing the PnL curve, trade execution timing, and predictive accuracy distribution.
+Below is the advanced performance visualization for Polkadot (DOT), showcasing the PnL curve, trade execution timing, strategy position, and predictive accuracy distribution.
 
 ![DOT_USDT Advanced Backtest](backtester_v1/results/advanced_backtest_DOT_USDT.png)
 

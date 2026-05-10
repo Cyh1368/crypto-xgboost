@@ -16,6 +16,10 @@ from backtester_v1.scripts.backtester import load_model, run_backtest, predict_r
 from backtester_v1.scripts.report import compute_metrics
 
 def plot_advanced_ticker_results(state, ohlcv_df, features_df, model, calibration_factor, symbol, out_dir):
+    # Calculate Sharpe for title
+    metrics = compute_metrics(state)
+    sharpe = metrics.get('Sharpe Ratio (annual)', 0)
+    
     # Calculate Predicted vs Actual Ratios for Scatter Plot
     dmatrix = xgb.DMatrix(features_df)
     bps_raw = model.predict(dmatrix)
@@ -42,14 +46,17 @@ def plot_advanced_ticker_results(state, ohlcv_df, features_df, model, calibratio
         scatter_df.loc[scatter_df['timestamp'] == trade.entry_ts, 'action'] = 'entry'
         scatter_df.loc[scatter_df['timestamp'] == trade.exit_ts, 'action'] = 'exit'
     
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(15, 20), sharex=False)
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(15, 24), sharex=False)
+    
+    # Set overall title
+    initial_equity = state.equity_curve[0]
+    fig.suptitle(f"{symbol}, initial portfolio = ${initial_equity:,.0f}, Sharpe = {sharpe:.2f}", fontsize=20, fontweight='bold')
     
     # Subplot 1: PnL
-    initial_equity = state.equity_curve[0]
     pnl = np.array(state.equity_curve) - initial_equity
     ax1.plot(state.timestamps, pnl, label='Cumulative Net PnL ($)', color='blue', linewidth=1.5)
     ax1.set_ylabel('PnL ($)')
-    ax1.set_title(f'{symbol} Strategy Cumulative PnL Over Time')
+    ax1.set_title(f'Strategy Cumulative PnL Over Time')
     ax1.grid(True, alpha=0.3)
     ax1.legend(loc='upper left')
 
@@ -62,24 +69,54 @@ def plot_advanced_ticker_results(state, ohlcv_df, features_df, model, calibratio
                  color=color, linestyle='--', linewidth=2, alpha=0.8)
         
         # Markers for entry and exit
-        ax2.scatter(trade.entry_ts, trade.entry_price, color=color, marker='^' if trade.direction == 1 else 'v', s=100, zorder=5)
-        ax2.scatter(trade.exit_ts, trade.exit_price, color='black', marker='o', s=30, alpha=0.5, zorder=5)
+        ax2.scatter(trade.entry_ts, trade.entry_price, color=color, marker='^' if trade.direction == 1 else 'v', s=10, zorder=5)
+        ax2.scatter(trade.exit_ts, trade.exit_price, color='black', marker='o', s=10, alpha=0.5, zorder=5)
 
     custom_lines = [Line2D([0], [0], color='gray', lw=1),
                     Line2D([0], [0], color='green', lw=2, linestyle='--'),
                     Line2D([0], [0], color='red', lw=2, linestyle='--')]
     ax2.legend(custom_lines, ['Spot Price', 'Long Trade', 'Short Trade'], loc='upper left')
     ax2.set_ylabel('Price (USD)')
-    ax2.set_title(f'{symbol} Trade Executions')
+    ax2.set_title(f'Trade Executions')
     ax2.grid(True, alpha=0.3)
 
-    # Subplot 3: Advanced Scatter Plot (Predicted vs Actual)
+    # Subplot 3: Position Sizing (Bar Chart)
+    # Re-calculate size as percentage of equity
+    sizes = []
+    current_trade_idx = 0
+    for ts, pos in zip(state.timestamps, state.positions):
+        if pos == 0:
+            sizes.append(0.0)
+        else:
+            # Find the active trade for this timestamp
+            # This is simplified; assumes timestamps in state match trades
+            active_trade = None
+            for t in state.trades:
+                if t.entry_ts <= ts < t.exit_ts:
+                    active_trade = t
+                    break
+            
+            if active_trade:
+                # size = (notional / equity) * direction
+                # but we can get it from qty_btc * entry_price / equity_at_entry
+                size_pct = (active_trade.qty_btc * active_trade.entry_price) / initial_equity # approximation or search equity curve
+                sizes.append(size_pct * pos)
+            else:
+                sizes.append(0.0)
+
+    ax3.bar(state.timestamps, sizes, width=0.01, color=['green' if s > 0 else 'red' for s in sizes], alpha=0.7)
+    ax3.set_ylabel('Position Size (%)')
+    ax3.set_title(f'Strategy Position Sizing Over Time')
+    ax3.axhline(0, color='black', linewidth=0.8, linestyle='--')
+    ax3.grid(True, alpha=0.3)
+
+    # Subplot 4: Advanced Scatter Plot (Predicted vs Actual)
     # Filter out NaNs for scatter
     clean_scatter = scatter_df.dropna()
     
     # Colors and Sizes (all dots equal size)
     colors = clean_scatter['action'].map({'none': 'black', 'entry': 'green', 'exit': 'red'})
-    dot_size = 20
+    dot_size = 2
     
     # Regression line with 95% Confidence Interval
     x = clean_scatter['actual'].values
@@ -99,21 +136,21 @@ def plot_advanced_ticker_results(state, ohlcv_df, features_df, model, calibratio
         stdev = np.sqrt(mse * (1.0/n + (x_range - x_mean)**2 / Sxx))
         ci = 1.96 * stdev
         
-        ax3.fill_between(x_range, y_range - ci, y_range + ci, color='yellow', alpha=0.3, edgecolor='orange', label='95% CI', zorder=1)
-        ax3.plot(x_range, y_range, color='blue', label='Regression Line', linewidth=2, zorder=2)
+        ax4.fill_between(x_range, y_range - ci, y_range + ci, color='yellow', alpha=0.3, edgecolor='orange', label='95% CI', zorder=1)
+        ax4.plot(x_range, y_range, color='blue', label='Regression Line', linewidth=2, zorder=2)
         print(f"  {symbol} Regression Slope: {slope:.4f}")
     
-    ax3.scatter(clean_scatter['actual'], clean_scatter['predicted'], c=colors, s=dot_size, alpha=0.5, zorder=3)
+    ax4.scatter(clean_scatter['actual'], clean_scatter['predicted'], c=colors, s=dot_size, alpha=0.5, zorder=3)
     
     # Diagonal line for reference
     min_val = min(clean_scatter['actual'].min(), clean_scatter['predicted'].min())
     max_val = max(clean_scatter['actual'].max(), clean_scatter['predicted'].max())
-    ax3.plot([min_val, max_val], [min_val, max_val], 'r--', alpha=0.5, label='y=x (Parity)', zorder=4)
+    ax4.plot([min_val, max_val], [min_val, max_val], 'r--', alpha=0.5, label='y=x (Parity)', zorder=4)
     
-    ax3.set_xlabel('Actual Price Ratio (Price_t+1 / Price_t)')
-    ax3.set_ylabel('Predicted Price Ratio')
-    ax3.set_title(f'{symbol} Predictive Accuracy & Trade Distribution')
-    ax3.grid(True, alpha=0.3)
+    ax4.set_xlabel('Actual Price Ratio (Price_t+1 / Price_t)')
+    ax4.set_ylabel('Predicted Price Ratio')
+    ax4.set_title(f'Predictive Accuracy & Trade Distribution')
+    ax4.grid(True, alpha=0.3)
     
     # Custom Legend for Scatter
     scatter_legend = [Line2D([0], [0], marker='o', color='w', markerfacecolor='black', markersize=6, label='No Action'),
@@ -121,12 +158,13 @@ def plot_advanced_ticker_results(state, ohlcv_df, features_df, model, calibratio
                       Line2D([0], [0], marker='o', color='w', markerfacecolor='red', markersize=6, label='Exit'),
                       Line2D([0], [0], color='blue', lw=2, label='Regression Line'),
                       Patch(facecolor='lightyellow', edgecolor='none', alpha=0.8, label='95% CI')]
-    ax3.legend(handles=scatter_legend, loc='best')
+    ax4.legend(handles=scatter_legend, loc='best')
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     safe_symbol = symbol.replace('/', '_').replace(':', '_')
     plt.savefig(os.path.join(out_dir, f'advanced_backtest_{safe_symbol}.png'))
     plt.close()
+
 
 def main():
     data_dir = 'backtester_v1/data/raw/multi'
@@ -173,7 +211,7 @@ def main():
             
         # Run Backtest
         # We need to manually set BPS_TO_RATIO etc if they changed, but they are constants in backtester.py
-        state = run_backtest(ohlcv, features, model)
+        state = run_backtest(ohlcv, features, model, calibration_factor=calibration_factor)
 
         metrics = compute_metrics(state)
         
@@ -183,6 +221,19 @@ def main():
             
         metrics['Symbol'] = symbol
         all_results.append(metrics)
+
+        # Save individual ticker results
+        safe_symbol = symbol.replace('/', '_').replace(':', '_')
+        if state.trades:
+            trades_df = pd.DataFrame([vars(t) for t in state.trades])
+            trades_df.to_csv(os.path.join(results_dir, f'trades_{safe_symbol}.csv'), index=False)
+        
+        equity_df = pd.DataFrame({
+            'timestamp': state.timestamps,
+            'equity': state.equity_curve,
+            'position': state.positions
+        })
+        equity_df.to_csv(os.path.join(results_dir, f'equity_{safe_symbol}.csv'), index=False)
         
         # Generate Advanced Plot
         plot_advanced_ticker_results(state, ohlcv, features, model, calibration_factor, symbol, results_dir)

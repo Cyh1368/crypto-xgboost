@@ -1,0 +1,20 @@
+2026-05-10 15:45:41,422 [INFO] --- PORTFOLIO UPDATE ---
+2026-05-10 15:45:41,422 [INFO] Total Equity: $1000.00 | Total PnL: $0.00
+2026-05-10 15:48:25,391 [ERROR] Error fetching data for BTC/USDT (BTC/USD:USD): NDFrame.fillna() got an unexpected keyword argument 'method'
+2026-05-10 15:54:43,583 [INFO] Starting Paper Trading Script (Kraken Futures Mode)...
+2026-05-10 15:54:43,584 [INFO] Waiting 326.4s until 2026-05-10 20:00:10 UTC...
+2026-05-10 15:56:38,303 [INFO] Starting Paper Trading Script (Kraken Futures Mode)...
+2026-05-10 15:56:38,304 [INFO] Waiting 211.7s until 2026-05-10 20:00:10 UTC...
+2026-05-10 16:00:10,000 [INFO] Step triggered at 2026-05-10 20:00:10.000643 UTC
+2026-05-10 16:00:22,727 [INFO] [SOL/USDT] ENTER SHORT at 96.5000. Size: $10.58
+2026-05-10 16:00:32,868 [ERROR] Error fetching data for BNB/USDT (BNB/USD:USD): krakenfutures GET https://futures.kraken.com/api/charts/v1/trade/PF_BNBUSD/15m?to=1778443222&from=1778263222
+2026-05-10 16:00:52,921 [INFO] [LINK/USDT] ENTER SHORT at 10.8450. Size: $10.73
+2026-05-10 16:00:54,801 [INFO] --- PORTFOLIO UPDATE ---
+2026-05-10 16:00:54,802 [INFO] Total Equity: $100.00 | Total PnL: $0.00
+2026-05-10 16:01:24,802 [INFO] Waiting 825.2s until 2026-05-10 20:15:10 UTC...
+2026-05-10 16:15:10,003 [INFO] Step triggered at 2026-05-10 20:15:10.003689 UTC
+2026-05-10 16:15:15,528 [INFO] [SOL/USDT] EXIT TP at 95.9300. Net PnL: $0.05
+2026-05-10 16:27:53,159 [ERROR] Error fetching data for DOT/USDT (DOT/USD:USD): krakenfutures GET https://futures.kraken.com/derivatives/api/v3/orderbook?symbol=PF_DOTUSD
+2026-05-10 16:28:13,181 [ERROR] Error fetching data for LINK/USDT (LINK/USD:USD): krakenfutures GET https://futures.kraken.com/api/charts/v1/trade/PF_LINKUSD/15m?to=1778444873&from=1778264873
+2026-05-10 16:28:20,016 [INFO] --- PORTFOLIO UPDATE ---
+2026-05-10 16:28:20,016 [INFO] Total Equity: $100.05 | Total PnL: $0.05
