@@ -88,7 +88,7 @@ class PaperTrader:
             safe_name = symbol.replace('/', '_')
             path = os.path.join(BASE_DIR, f'trades_{safe_name}.csv')
             if not os.path.exists(path):
-                df = pd.DataFrame(columns=['timestamp', 'price', 'prediction', 'action', 'position', 'pnl'])
+                df = pd.DataFrame(columns=['timestamp', 'price', 'prediction', 'action', 'position', 'fee', 'pnl'])
                 df.to_csv(path, index=False)
 
         path = os.path.join(BASE_DIR, 'total_pnl.csv')
@@ -126,7 +126,7 @@ class PaperTrader:
                 df.at[last_idx, 'asks'] = ob['asks']
                 df.at[last_idx, 'funding_rate'] = funding['fundingRate']
                 
-                # Fill backward to allow indicator calculation (minimal impact on MA/Trend)
+                # Fill backward to allow indicator calculation
                 df['bids'] = df['bids'].ffill().bfill()
                 df['asks'] = df['asks'].ffill().bfill()
                 df['funding_rate'] = df['funding_rate'].ffill().bfill()
@@ -170,12 +170,16 @@ class PaperTrader:
     def execute_logic(self, symbol, pred_ret, bar_context, ts):
         state = self.states[symbol]
         current_price = bar_context['close']
+        
+        # Apply ShinkaEvolve Logic
         out = generate_signal(pred_ret, bar_context)
         signal = out['signal']
         
         action = "HOLD"
         pnl_to_log = 0.0
+        fee_to_log = 0.0
         
+        # 1. Check Exits
         exit_reason = None
         if state['position'] != 0:
             state['bars_held'] += 1
@@ -193,19 +197,23 @@ class PaperTrader:
                 exit_reason = "SIGNAL"
         
         if exit_reason:
+            notional_exit = state['qty'] * current_price
+            exit_fee = notional_exit * FEE_RATE
             pnl = state['qty'] * (current_price - state['entry_price']) * state['position']
-            fees = (state['qty'] * state['entry_price'] + state['qty'] * current_price) * FEE_RATE
-            net_pnl = pnl - fees
-            state['equity'] += net_pnl
+            net_pnl = pnl - exit_fee # Round-trip entry fee was deducted at entry
+            
+            state['equity'] += pnl - exit_fee
             state['realized_pnl'] += net_pnl
             pnl_to_log = net_pnl
+            fee_to_log = exit_fee
             
-            logger.info(f"[{symbol}] EXIT {exit_reason} at {current_price:.4f}. Net PnL: ${net_pnl:.2f}")
+            logger.info(f"[{symbol}] EXIT {exit_reason} at {current_price:.4f}. PnL: ${pnl:.4f}, Fee: ${exit_fee:.4f}, Net PnL: ${net_pnl:.4f}")
             state['position'] = 0
             state['qty'] = 0.0
             state['bars_held'] = 0
             action = f"EXIT_{exit_reason}"
 
+        # 2. Open Position
         if signal != 0 and state['position'] == 0:
             state['position'] = signal
             state['entry_price'] = current_price
@@ -214,24 +222,31 @@ class PaperTrader:
             state['stop_loss'] = out['stop_loss']
             state['max_bars'] = out['max_bars']
             
-            notional = state['equity'] * out['position_size'] * 6.6 
+            # Sizing: Proportional to total equity allocation ($10 base)
+            notional = state['equity'] * out['position_size'] * 6.6
+            entry_fee = notional * FEE_RATE
             
+            state['equity'] -= entry_fee
             state['qty'] = notional / current_price
-            logger.info(f"[{symbol}] ENTER {'LONG' if signal == 1 else 'SHORT'} at {current_price:.4f}. Size: ${notional:.2f}")
+            fee_to_log = entry_fee
+            
+            logger.info(f"[{symbol}] ENTER {'LONG' if signal == 1 else 'SHORT'} at {current_price:.4f}. Size: ${notional:.2f}, Fee: ${entry_fee:.4f}")
             action = "ENTER_LONG" if signal == 1 else "ENTER_SHORT"
 
+        # Update Unrealized
         if state['position'] != 0:
             state['unrealized_pnl'] = state['qty'] * (current_price - state['entry_price']) * state['position']
         else:
             state['unrealized_pnl'] = 0.0
 
-        self._log_trade(symbol, ts, current_price, pred_ret, action, state['position'], pnl_to_log)
+        # Log to CSV
+        self._log_trade(symbol, ts, current_price, pred_ret, action, state['position'], fee_to_log, pnl_to_log)
 
-    def _log_trade(self, symbol, ts, price, prediction, action, position, pnl):
+    def _log_trade(self, symbol, ts, price, prediction, action, position, fee, pnl):
         safe_name = symbol.replace('/', '_')
         path = os.path.join(BASE_DIR, f'trades_{safe_name}.csv')
-        df = pd.DataFrame([[ts, price, prediction, action, position, pnl]], 
-                          columns=['timestamp', 'price', 'prediction', 'action', 'position', 'pnl'])
+        df = pd.DataFrame([[ts, price, prediction, action, position, fee, pnl]], 
+                          columns=['timestamp', 'price', 'prediction', 'action', 'position', 'fee', 'pnl'])
         df.to_csv(path, mode='a', header=False, index=False)
 
     def update_totals(self, ts):
