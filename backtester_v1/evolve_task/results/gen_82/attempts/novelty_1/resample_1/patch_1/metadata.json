@@ -1,0 +1,14 @@
+{
+  "generation": 82,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "microstructure_and_session_optimization",
+  "patch_description": "This update introduces session-specific entry thresholds, liquidity-aware filtering using Kyle's Lambda and book pressure, and confidence-weighted position sizing. \n\n1. **Dynamic Thresholds**: Incorporates session volatility (US vs. Asia) and adds a penalty for poor liquidity (Kyle's Lambda) to the entry criteria, similar to the high-performing 92.88 score program.\n2. **Microstructure Filters**: Uses `book_pressure_3` and `wick_ratios` to avoid entering trades at points of high counter-pressure or price exhaustion.\n3. **Advanced Sizing**: Replaces a fixed position size with one that scales with model confidence and dampens exposure during volatility surges.\n4. **Adaptive Risk/Hold**: Gently increases the Take Profit target while adjusting the max hold bars based on trend and autocorrelation to maximize alpha capture.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:15:37.535375",
+  "llm_cost": 0.006763999999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

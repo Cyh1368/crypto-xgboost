@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "robust_signal_logic",
+  "patch_description": "The previous program failed with an `AttributeError: 'NoneType' object has no attribute 'loader'` during the import process in the evaluator. This error typically indicates that the file being imported could not be found or was not recognized as a valid Python module. To fix this, I have:\n1. Ensured the `EVOLVE-BLOCK` markers are clean and correctly placed.\n2. Added robust handling for `None` and `NaN` values in both `predicted_return` and `bar_context` fields to prevent runtime errors that might interfere with the evaluation process.\n3. Simplified the logic to use only built-in functions and standard Python types, ensuring compatibility.\n4. Maintained the exact structure of the seed program, which is known to pass the import stage.\n5. Added a trend filter (ADX) and a momentum filter (RSI) to improve signal quality, while ensuring all calculations are safe from division-by-zero or invalid value errors.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:30:55.250453",
+  "llm_cost": 0.0030169999999999997,
+  "llm_model": "gemini-3-flash-preview"
+}

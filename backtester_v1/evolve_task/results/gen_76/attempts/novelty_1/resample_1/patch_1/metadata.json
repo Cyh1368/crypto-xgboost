@@ -1,0 +1,14 @@
+{
+  "generation": 76,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "vol_sensitive_micro_regime",
+  "patch_description": "This approach builds upon the high-performance thresholding of previous versions but introduces three novel refinements: \n1. **Adaptive Lambda Liquidity Filter**: We integrate `kyle_lambda_est` to adjust position sizes, acknowledging that high price impact estimates signal toxic liquidity regimes where execution slippage degrades signal quality.\n2. **Mean-Reversion VWAP Overlay**: We use `vwap_dev` to calculate an 'overextension' factor. If the XGBoost prediction aligns with a mean-reverting move (e.g., predicted long when the price is significantly below VWAP), the signal conviction and position size are boosted.\n3. **Refined Microstructure Score**: A more aggressive weighted combination of `obi_tau1`, `obi_tau5`, and `book_pressure_3` is used to ensure the order book depth supports the predicted direction before committing capital.\n4. **Asymmetric Elastic Risk**: The take-profit and stop-loss levels are scaled asymmetrically based on the relationship between short-term `vol_5` and long-term `vol_60` to capture larger trends while tightening up during local stagnation.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:13:42.561315",
+  "llm_cost": 0.008593,
+  "llm_model": "gemini-3-flash-preview"
+}

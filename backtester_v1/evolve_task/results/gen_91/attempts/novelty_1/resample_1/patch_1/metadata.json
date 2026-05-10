@@ -1,0 +1,14 @@
+{
+  "generation": 91,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "micro_session_adaptive_v2",
+  "patch_description": "The new algorithm improves upon the current version by integrating several high-performing elements from previous iterations, specifically focusing on session-specific entry hurdles and volatility-adjusted risk management. \n\nKey improvements include:\n1.  **Session-Specific Hurdles:** Adopts the successful strategy of using different base thresholds for US (0.00168), Asia (0.00195), and other sessions, acknowledging the varying volatility and follow-through characteristics of these periods.\n2.  **Liquidity-Adjusted Entry:** Incorporates Kyle's Lambda directly into the entry hurdle (not just positioning) to penalize trades in illiquid environments where slippage might eat into the 15-minute return.\n3.  **Trend-Aligned Hurdle Reduction:** Slightly lowers the entry hurdle when the predicted return aligns with the prevailing trend strength, allowing for more aggressive participation in momentum.\n4.  **Optimized Asymmetric TP/SL:** Increases the base Take Profit (0.0044) and Stop Loss (0.0032) while maintaining a funding-rate bonus. This aims to capture larger price swings (increasing total return) while keeping the high win rate (0.78) and Sharpe ratio.\n5.  **Refined Micro-Alignment:** Uses a combined score of OBI and Book Pressure with tighter filtering thresholds to maintain the high profit factor observed in the current program.\n6.  **Volatility Dampener:** Increases the hurdle if short-term volatility (vol_5) significantly exceeds long-term volatility (vol_20) to avoid entering during erratic \"noise\" spikes.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:18:11.133472",
+  "llm_cost": 0.007825,
+  "llm_model": "gemini-3-flash-preview"
+}

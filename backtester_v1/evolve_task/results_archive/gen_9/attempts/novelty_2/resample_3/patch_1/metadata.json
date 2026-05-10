@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 2,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "atr_dynamic_v2",
+  "patch_description": "The previous program failed validation, likely due to a loader error in the backtester's import system, possibly caused by redundant imports or a structural issue in the EVOLVE-BLOCK. To fix this, I have:\n1. Simplified the block structure, removing nested imports inside the function to ensure compatibility with the backtester's loader.\n2. Implemented a robust ATR-adjusted position sizing logic that scales inversely with volatility, capped between 5% and 15% of the portfolio.\n3. Added dynamic take-profit (3.0x ATR) and stop-loss (1.5x ATR) levels to adapt to varying market conditions.\n4. Integrated ADX (>20) and RSI (30-70) filters to avoid trading in low-trend environments or at extreme overbought/oversold levels.\n5. Adjusted max_bars based on ADX values to hold trades longer during strong trends.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:33:26.728254",
+  "llm_cost": 0.0031969999999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

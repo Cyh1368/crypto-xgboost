@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "volatility_adjusted_signal_fix",
+  "patch_description": "The bug was identified as a potential failure in the module loading process, indicated by the `AttributeError: 'NoneType' object has no attribute 'loader'`. This error often occurs when `importlib` fails to find or load a module, which can be triggered by syntax errors, missing imports, or the function failing to meet the required structure. \n\nThe fix involves:\n1.  Ensuring all necessary libraries (`numpy` and `math`) are imported **inside** the `EVOLVE-BLOCK` to make the function self-contained.\n2.  Implementing a more robust, volatility-adjusted trading logic using `atr` for stops and `adx`/`rsi` for trend filtering, which is more likely to pass performance-based validation.\n3.  Adding safety checks for `NaN` values and zero-division to ensure the function never crashes.\n4.  Ensuring all return values are explicitly cast to the required types (`int` for signal and max_bars, `float` for others).\n5.  Providing a more realistic entry threshold and position sizing logic based on the strength of the prediction.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:25:12.990949",
+  "llm_cost": 0.0025555000000000005,
+  "llm_model": "gemini-3-flash-preview"
+}

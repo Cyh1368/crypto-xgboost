@@ -1,0 +1,80 @@
+<NAME>
+filter_relaxation_and_asymmetric_risk
+</NAME>
+
+<DESCRIPTION>
+Optimizing the signal generator for a higher combined score by:
+1. Lowering the entry threshold (0.0018 -> 0.0017) and relaxing microstructure filters (OBI, spread, VWAP deviation) to increase trade frequency, aiming closer to the 530+ trades seen in high-performing seeds.
+2. Introducing a wick exhaustion filter (wick_ratio_up/down) to avoid entering trades at local price extremes where reversal likelihood is higher.
+3. Enhancements to the dynamic hold time (max_bars) by incorporating autocorrelation and lower trend thresholds.
+4. Stabilizing position sizing (moving away from 0.19 max size to a more centered 0.14-0.16) and slightly tightening the stop loss (0.0030 -> 0.0029) to improve the Sharpe ratio and reduce max drawdown.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Optimized Threshold Logic
+    spread = bar_context.get('spread_bps', 1.0)
+    base_thresh = 0.0018
+
+    # 3. Execution Signal logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Filter by OBI, spread, and avoid entering at VWAP extremes or high funding.
+        if obi > -0.65 and spread < 9.5 and vwap_dev < 0.022 and funding < 0.0012:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        if obi < 0.65 and spread < 9.5 and vwap_dev > -0.022 and funding > -0.0012:
+            signal = -1
+
+    # 4. Dynamic Hold Time
+    # 4 bars is base horizon; 5 bars for trending sessions to capture follow-through.
+    max_bars = 5 if (is_us and abs(trend) > 0.4) else 4
+
+    # 5. Risk Targets (TP/SL)
+    # Fixed targets have proven more robust than vol-scaling for 15-min model predictions.
+    if signal != 0:
+        take_profit = 0.0040
+        stop_loss = 0.0030
+
+        # 6. Position Sizing
+        # Increased base size with a confidence-weighted multiplier.
+        confidence = abs(predicted_return) / base_thresh
+        position_size = 0.135 * min(1.25, confidence)
+        position_size = max(0.10, min(0.19, position_size))
+=======
+    # 2. Optimized Threshold Logic
+    spread = bar_context.get('spread_bps', 1.0)
+    base_thresh = 0.0017
+    # Wick ratios to detect price exhaustion
+    wick_up = bar_context.get('wick_ratio_up', 0.0)
+    wick_dn = bar_context.get('wick_ratio_down', 0.0)
+
+    # 3. Execution Signal logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Relaxed filters to increase trade frequency and added wick filter
+        if obi > -0.72 and spread < 10.2 and vwap_dev < 0.026 and funding < 0.0016:
+            if wick_up < 0.75:
+                signal = 1
+    elif predicted_return < -base_thresh:
+        if obi < 0.72 and spread < 10.2 and vwap_dev > -0.026 and funding > -0.0016:
+            if wick_dn < 0.75:
+                signal = -1
+
+    # 4. Dynamic Hold Time
+    # 4 bars base; extension for US sessions, high momentum, or trending autocorrelation.
+    max_bars = 5 if (is_us or abs(trend) > 0.35 or autocorr > 0.12) else 4
+
+    # 5. Risk Targets (TP/SL)
+    # Maintaining fixed-ratio robustness while slightly tightening SL to protect max drawdown.
+    if signal != 0:
+        take_profit = 0.0041
+        stop_loss = 0.0029
+
+        # 6. Position Sizing
+        # More stable sizing to improve Sharpe ratio. Higher base but lower max cap.
+        confidence = abs(predicted_return) / base_thresh
+        position_size = 0.145 * min(1.15, confidence)
+        position_size = max(0.11, min(0.17, position_size))
+>>>>>>> REPLACE
+</DIFF>

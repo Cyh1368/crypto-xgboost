@@ -1,0 +1,69 @@
+import random
+import numpy as np
+import math
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Translates XGBoost 15-min return prediction into a trading decision.
+    Uses ATR for volatility-adjusted stops and ADX/RSI for trend filtering.
+    """
+    # 1. Parameter Extraction
+    close = float(bar_context.get('close', 0))
+    atr = float(bar_context.get('atr', 0))
+    adx = float(bar_context.get('adx', 0))
+    rsi = float(bar_context.get('rsi', 50))
+    
+    # 2. Dynamic Thresholds
+    # Lowered slightly from seed to ensure sufficient trade count
+    long_thresh = 0.0012
+    short_thresh = -0.0015
+    
+    # 3. Multi-Factor Filtering
+    # adx > 20 indicates trend; rsi prevents buying tops or selling bottoms
+    signal = 0
+    if predicted_return > long_thresh:
+        if adx > 20 and rsi < 75:
+            signal = 1
+    elif predicted_return < short_thresh:
+        if adx > 20 and rsi > 25:
+            signal = -1
+            
+    # 4. Volatility-Adjusted Position Sizing
+    # Target 10% base size, scaled inversely by volatility (ATR as % of price)
+    if signal != 0 and close > 0:
+        vol_ratio = atr / close
+        # Normalize around a 1% typical 15-min ATR
+        position_size = 0.10 * (0.01 / max(vol_ratio, 0.005))
+        position_size = max(0.05, min(position_size, 0.20))
+    else:
+        position_size = 0.0
+        
+    # 5. Volatility-Adjusted TP / SL
+    # Take profit at 3.0x ATR and Stop Loss at 1.5x ATR
+    if close > 0 and atr > 0:
+        atr_pct = atr / close
+        take_profit = atr_pct * 3.0
+        stop_loss = atr_pct * 1.5
+    else:
+        take_profit = 0.008
+        stop_loss = 0.004
+        
+    # Minimum boundaries for TP/SL to prevent immediate triggers in low-vol
+    take_profit = max(take_profit, 0.004)
+    stop_loss = max(stop_loss, 0.002)
+    
+    # 6. Max Bars - Hold longer in strong trends
+    max_bars = int(math.floor(5 if adx > 30 else 3))
+    
+    return {
+        "signal": int(signal),
+        "position_size": float(position_size),
+        "take_profit": float(take_profit),
+        "stop_loss": float(stop_loss),
+        "max_bars": int(max_bars),
+    }
+# EVOLVE-BLOCK-END

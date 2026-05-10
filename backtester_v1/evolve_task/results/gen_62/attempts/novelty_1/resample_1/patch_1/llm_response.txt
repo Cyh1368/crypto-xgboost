@@ -1,0 +1,131 @@
+<NAME>
+aggressive_microstructure_filters
+</NAME>
+
+<DESCRIPTION>
+This update significantly increases trade frequency and capital efficiency by adopting the aggressive thresholding and microstructure filtering logic that powered the highest-performing historical iteration (90.84 score). 
+
+Key changes:
+1.  **Lowered Entry Thresholds**: Reduced the base threshold from 0.0019 to 0.0016 and relaxed session-specific hurdles to capture more alpha-rich opportunities.
+2.  **Relaxed Microstructure Filters**: Expanded the OBI and VWAP deviation limits (e.g., OBI from 0.5 to 0.75, VWAP dev from 0.01 to 0.025) to prevent over-filtering in high-conviction regimes.
+3.  **Simplified Risk Targets**: Shifted from complex ATR-based TP/SL to robust, near-fixed targets (0.0042/0.003) which have shown superior stability in backtests.
+4.  **Aggressive Sizing**: Increased the base position size to 0.14 while maintaining inverse-volatility scaling to protect the Sharpe ratio during high-volatility periods.
+5.  **Liquidity Safety**: Added a spread-based filter (spread_bps < 10.0) to avoid entering trades during toxic liquidity conditions.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    
+    # 2. Dynamic Threshold Logic
+    # Balancing the high-performing Seed (0.002) with liquidity-based penalties
+    base_thresh = 0.0019
+    if is_us:
+        base_thresh = 0.00175  # Lower threshold for high-vol session
+    elif is_asia:
+        base_thresh = 0.0021   # Higher threshold for lower-vol mean-reverting session
+    
+    # Add a penalty for poor liquidity (estimated impact via Kyle's Lambda)
+    liquidity_impact = max(0.0, min(0.0003, kyle_lambda * 35.0))
+    entry_hurdle = base_thresh + liquidity_impact
+
+    # 3. Execution Signal Logic with Microstructure Filters
+    signal = 0
+    if predicted_return > entry_hurdle:
+        # Long filter: check OBI momentum, VWAP extension, and Funding costs
+        if obi > -0.5 and vwap_dev < 0.01 and funding < 0.0006:
+            signal = 1
+    elif predicted_return < -entry_hurdle:
+        # Short filter: check OBI momentum, VWAP extension, and Funding costs
+        if obi < 0.5 and vwap_dev > -0.01 and funding > -0.0006:
+            signal = -1
+=======
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+    spread_bps = bar_context.get('spread_bps', 1.0)
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    
+    # 2. Dynamic Threshold Logic
+    # Lowered thresholds to increase trade frequency, inspired by the 90.84 score iteration.
+    base_thresh = 0.0016
+    if is_us:
+        base_thresh = 0.0015
+    elif is_asia:
+        base_thresh = 0.0018
+    
+    # Penalty for poor liquidity (estimated impact via Kyle's Lambda)
+    liquidity_impact = max(0.0, min(0.0002, kyle_lambda * 25.0))
+    entry_hurdle = base_thresh + liquidity_impact
+
+    # 3. Execution Signal Logic with Microstructure Filters
+    signal = 0
+    # Relaxed filters to capture more momentum while maintaining floor protection.
+    if predicted_return > entry_hurdle:
+        if obi > -0.75 and vwap_dev < 0.025 and funding < 0.0012 and spread_bps < 10.0:
+            signal = 1
+    elif predicted_return < -entry_hurdle:
+        if obi < 0.75 and vwap_dev > -0.025 and funding > -0.0012 and spread_bps < 10.0:
+            signal = -1
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # 4. Adaptive Position Sizing
+    # Scaled by confidence (relative to thresh) and the current market volatility ratio
+    if signal != 0:
+        confidence_mult = abs(predicted_return) / entry_hurdle
+        # vol_ratio > 1 means recent vol is higher than long term
+        vol_adj = max(0.8, min(1.2, 1.0 / vol_ratio)) if vol_ratio > 0 else 1.0
+        
+        position_size = 0.125 * confidence_mult * vol_adj
+        position_size = max(0.07, min(0.19, position_size))
+    else:
+        position_size = 0.0
+=======
+    # 4. Adaptive Position Sizing
+    # Simplified sizing to maintain high trade frequency and capitalize on win rate.
+    if signal != 0:
+        # vol_ratio > 1 means recent vol is higher than long term; scale down size.
+        vol_adj = max(0.85, min(1.15, 1.0 / vol_ratio)) if vol_ratio > 0 else 1.0
+        position_size = 0.14 * vol_adj
+        position_size = max(0.10, min(0.18, position_size))
+    else:
+        position_size = 0.0
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # 5. Volatility-Adjusted Risk Targets (TP/SL)
+    # Anchored near the robust 0.004 / 0.003 seed parameters
+    if signal != 0:
+        atr_pct = (atr / close) if close > 0 else 0.003
+        
+        # Base multipliers
+        tp_mult = 1.42 
+        sl_mult = 1.05
+        
+        # Expand take-profit during trending markets
+        if (signal == 1 and trend > 0.3) or (signal == -1 and trend < -0.3):
+            tp_mult *= 1.15
+            sl_mult *= 0.95 # Slightly tighter stop in clear trend
+            
+        take_profit = max(0.0038, min(0.012, atr_pct * tp_mult))
+        stop_loss = max(0.0028, min(0.008, atr_pct * sl_mult))
+    else:
+        take_profit = 0.0
+        stop_loss = 0.0
+=======
+    # 5. Risk Targets (TP/SL)
+    # Anchored to the high-performing 0.004/0.003 ratio with slight trend expansion.
+    if signal != 0:
+        take_profit = 0.0042
+        stop_loss = 0.0031
+        
+        # Expand take-profit during trending markets
+        if (signal == 1 and trend > 0.4) or (signal == -1 and trend < -0.4):
+            take_profit *= 1.1
+    else:
+        take_profit = 0.0
+        stop_loss = 0.0
+>>>>>>> REPLACE
+</DIFF>

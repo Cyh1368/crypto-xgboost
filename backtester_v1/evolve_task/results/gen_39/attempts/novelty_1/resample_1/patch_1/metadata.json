@@ -1,0 +1,14 @@
+{
+  "generation": 39,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "simplify_and_stabilize",
+  "patch_description": "The current program's performance (48.01) is significantly lower than the seed program (80.50), primarily due to a lower trade count (291 vs 462) and higher volatility in risk management (Max DD 0.36 vs 0.25). \n\nThis edit proposes to:\n1.  **Simplify Entry Logic**: Revert to a threshold (0.0019) closer to the seed's robust 0.002, while removing restrictive RSI and funding filters that were suppressing trade frequency.\n2.  **Add Light Microstructure Filters**: Use `spread_bps` and `obi_tau5` as light filters to avoid high-slippage or heavily opposed order books without significantly reducing trade count.\n3.  **Stabilize Risk Management**: Replace the complex dynamic TP/SL with fixed values (0.0042/0.0030) that maintain a healthy 1.4 reward-to-risk ratio, similar to the seed's successful parameters.\n4.  **Refine Position Sizing**: Use a base size of 11%, scaled slightly by prediction confidence and reduced during extreme volatility (`vol_ratio > 1.3`) to protect capital and improve the Calmar ratio.\n5.  **Optimize Hold Time**: Standardize on a 4-bar hold, extending to 5 bars only in trending US sessions to capture momentum.",
+  "error_msg": "No changes applied",
+  "timestamp": "2026-05-09T23:57:08.367719",
+  "llm_cost": 0.004674,
+  "llm_model": "gemini-3-flash-preview"
+}

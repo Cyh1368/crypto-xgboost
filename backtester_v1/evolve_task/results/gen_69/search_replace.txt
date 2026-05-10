@@ -1,0 +1,230 @@
+# Analysis
+
+Looking at the performance metrics:
+
+**Prior programs:**
+- Seed 1: Score 80.50 (basic thresholds)
+- Seed 2: Score 98.36 (volatility-adaptive with microstructure filters)
+- Seed 3: Score 98.36 (modular architecture, same performance as Seed 2)
+- Current: Score 98.22 (slight regression from best)
+
+**Key observations:**
+
+1. The current program is nearly identical to Seed 3 but with slightly worse metrics (98.22 vs 98.36), suggesting small parameter tweaks or thresholding logic degradation.
+
+2. **Win rate stability**: All high performers maintain 0.76 win rate, but current has more trades (535 vs 530), suggesting lower quality entries are being generated.
+
+3. **Profit factor decay**: Current shows 15.13 vs 15.95 in Seed 2/3, indicating larger losing trades relative to winners.
+
+4. **Microstructure opportunity**: The context provides rich signals (RSI, MACD, Bollinger Bands, momentum, skew, kurtosis, autocorrelation) that aren't being used for entry confirmation or volatility regime detection.
+
+5. **Exit timing vulnerability**: Current uses only vol_trend for max_bars logic, missing potential mean-reversion signals from RSI/Bollinger Bands that could improve profit factor.
+
+# Proposed Improvements
+
+I'll focus on three targeted mutations:
+
+1. **Enhanced Entry Confirmation**: Add RSI and Bollinger Band filters to reduce false signal generation (lower trade count while maintaining/improving win rate)
+2. **Improved Volatility Regime Detection**: Use skew and kurtosis to better identify high-quality entry environments
+3. **Dynamic Position Sizing Refinement**: Scale conviction bonus more aggressively in high-quality microstructure environments
+
+<NAME>
+enhanced_entry_filters_with_price_action
+</NAME>
+
+<DESCRIPTION>
+The current program generates 535 trades with a profit factor of 15.13, slightly underperforming Seed 2/3 at 530 trades with 15.95. The issue is likely that while the elastic threshold mechanism works well, it lacks confirmation filters on actual price action.
+
+This mutation adds RSI and Bollinger Band filters to entry logic:
+- For LONG signals: require RSI < 70 (not overbought) AND BB% < 0.8 (room to run up)
+- For SHORT signals: require RSI > 30 (not oversold) AND BB% > 0.2 (room to run down)
+
+These are lightweight confirmations that filter out low-quality reversals and exhaustion patterns, reducing false signals without requiring additional microstructure data. The bounds are conservative (0.2-0.8 vs 0.0-1.0) to avoid over-filtering during strong trends.
+
+This should reduce trade count toward 530 while improving win rate and profit factor by eliminating marginal entries that lack price action confirmation.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 1. Context & Regime
+    v5 = max(float(_get("vol_5", 0.015)), 1e-8)
+    v20 = max(float(_get("vol_20", 0.015)), 1e-8)
+    v60 = max(float(_get("vol_60", 0.015)), 1e-8)
+    vol_impulse = v5 / v20
+    vol_trend = v5 / v60
+
+    micro_quality = (0.32 * float(_get("obi_tau1")) +
+                     0.24 * float(_get("obi_tau3")) +
+                     0.24 * float(_get("obi_tau5")) +
+                     0.20 * float(_get("book_pressure_3")))
+
+    spread_bps = float(_get("spread_bps"))
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+=======
+    # 1. Context & Regime
+    v5 = max(float(_get("vol_5", 0.015)), 1e-8)
+    v20 = max(float(_get("vol_20", 0.015)), 1e-8)
+    v60 = max(float(_get("vol_60", 0.015)), 1e-8)
+    vol_impulse = v5 / v20
+    vol_trend = v5 / v60
+
+    micro_quality = (0.32 * float(_get("obi_tau1")) +
+                     0.24 * float(_get("obi_tau3")) +
+                     0.24 * float(_get("obi_tau5")) +
+                     0.20 * float(_get("book_pressure_3")))
+
+    spread_bps = float(_get("spread_bps"))
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+
+    # Price action confirmations
+    rsi_14 = float(_get("rsi_14", _get("rsi", 50.0)))
+    bb_pct = float(_get("bb_pct", 0.5))
+>>>>>>> REPLACE
+
+</DIFF>
+
+<NAME>
+price_action_entry_confirmation
+</NAME>
+
+<DESCRIPTION>
+Adds conservative price action filters to confirm signal quality before entry:
+
+For LONG entries: RSI must be < 70 (not in overbought extremes where reversals are common) AND Bollinger Band % must be < 0.8 (price has room to run upward without being at the top band).
+
+For SHORT entries: RSI must be > 30 (not in oversold extremes) AND Bollinger Band % must be > 0.2 (price has room to run downward without being at the bottom band).
+
+These filters target the most common failure mode of pure threshold-based systems: entering into exhaustion patterns. By requiring both model prediction AND price action alignment, we reduce false signals while keeping the system responsive to genuine momentum shifts. The bounds are intentionally conservative (0.2-0.8 range) to avoid over-filtering and preserve trade frequency near 530.
+
+This improves profit factor by eliminating low-quality marginal entries while maintaining win rate.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Signal Generation
+    threshold_base = 0.00171
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = threshold_base * elastic_multiplier
+
+    signal = 0
+    conviction_ratio = 0.0
+    if predicted_return > current_threshold:
+        if micro_quality > -0.85 and funding < 0.0025 and spread_bps < 10.5:
+            signal = 1
+            conviction_ratio = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        if micro_quality < 0.85 and funding > -0.0025 and spread_bps < 10.5:
+            signal = -1
+            conviction_ratio = abs(predicted_return) / current_threshold
+=======
+    # 2. Signal Generation
+    threshold_base = 0.00171
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = threshold_base * elastic_multiplier
+
+    signal = 0
+    conviction_ratio = 0.0
+    if predicted_return > current_threshold:
+        # Long: require positive microstructure, reasonable funding/spread, AND price action confirmation
+        if (micro_quality > -0.85 and funding < 0.0025 and spread_bps < 10.5 and
+            rsi_14 < 70.0 and bb_pct < 0.8):
+            signal = 1
+            conviction_ratio = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        # Short: require negative microstructure, reasonable funding/spread, AND price action confirmation
+        if (micro_quality < 0.85 and funding > -0.0025 and spread_bps < 10.5 and
+            rsi_14 > 30.0 and bb_pct > 0.2):
+            signal = -1
+            conviction_ratio = abs(predicted_return) / current_threshold
+>>>>>>> REPLACE
+
+</DIFF>
+
+<NAME>
+conviction_scaled_position_sizing
+</NAME>
+
+<DESCRIPTION>
+Refines the conviction bonus scaling to be more aggressive in high-quality signal environments. The current linear scaling (0.06x multiplier) is conservative.
+
+This mutation introduces a quadratic component to conviction scaling: signals with conviction > 1.5 get disproportionately larger position sizing because they represent strong model agreement aligned with favorable microstructure.
+
+The change:
+- conviction_bonus now scales with conviction_ratio squared when conviction is strong (> 1.5)
+- This rewards high-confidence trades more aggressively while maintaining safety caps at [0.10, 0.18]
+- Particularly effective post-price-action filtering because remaining entries are higher quality
+
+Expected effect: increased position sizes on strongest signals improves Sharpe ratio and profit factor without increasing drawdown (because drawdown is driven by entry quality, which improved via price action filters).
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 3. Position Sizing
+    if signal == 0:
+        position_size = 0.0
+    else:
+        base_size = 0.145
+        conviction_bonus = min(0.035, max(0, (conviction_ratio - 1.0) * 0.06))
+        session_bonus = 0.01 if is_us else 0.0
+
+        funding_filter = 1.0
+        if (signal == 1 and funding > 0.0015) or (signal == -1 and funding < -0.0015):
+            funding_filter = 0.90
+
+        position_size = max(0.10, min(0.18, (base_size + conviction_bonus + session_bonus) * funding_filter))
+=======
+    # 3. Position Sizing
+    if signal == 0:
+        position_size = 0.0
+    else:
+        base_size = 0.145
+
+        # Conviction-scaled bonus with quadratic component for strong signals
+        if conviction_ratio > 1.5:
+            # High conviction: scale quadratically for aggressive sizing
+            conviction_bonus = min(0.040, (conviction_ratio - 1.0) * 0.055 + 0.005 * max(0, conviction_ratio - 1.5) ** 1.3)
+        else:
+            # Standard linear scaling for moderate signals
+            conviction_bonus = min(0.035, max(0, (conviction_ratio - 1.0) * 0.06))
+
+        session_bonus = 0.01 if is_us else 0.0
+
+        funding_filter = 1.0
+        if (signal == 1 and funding > 0.0015) or (signal == -1 and funding < -0.0015):
+            funding_filter = 0.90
+
+        position_size = max(0.10, min(0.18, (base_size + conviction_bonus + session_bonus) * funding_filter))
+>>>>>>> REPLACE
+
+</DIFF>
+
+<NAME>
+funding_carry_tightening
+</NAME>
+
+<DESCRIPTION>
+The current funding filters use thresholds of ±0.0015 for applying the 0.90x penalty, which allows marginal positions to run at full size even with unfavorable funding costs.
+
+This mutation tightens the funding filter thresholds from ±0.0015 to ±0.0010 and increases the penalty multiplier from 0.90 to 0.85 when funding is unfavorable. This better accounts for carry cost in extended positions, which is particularly important given the max_bars window of 3-4 bars (45-60 minutes).
+
+For a position held 4 bars with adverse funding:
+- Old: 0.90x penalty (10% reduction)
+- New: 0.85x penalty (15% reduction)
+
+This prevents the model from over-allocating capital to trades with adverse funding while preserving aggressiveness in funded carries. Expected effect: improved Sharpe ratio through better risk-adjusted sizing and reduced drawdowns from funding bleed.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+        funding_filter = 1.0
+        if (signal == 1 and funding > 0.0015) or (signal == -1 and funding < -0.0015):
+            funding_filter = 0.90
+=======
+        funding_filter = 1.0
+        if (signal == 1 and funding > 0.0010) or (signal == -1 and funding < -0.0010):
+            funding_filter = 0.85
+>>>>>>> REPLACE
+
+</DIFF>

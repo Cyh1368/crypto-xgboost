@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "micro_optimized_elastic_gating",
+  "patch_description": "This edit focuses on increasing trade frequency and Sharpe ratio by harmonizing the successful thresholds and microstructure filters from the top-performing program (~89 score) with the elastic regime-management of the current program. \n\nSpecific changes:\n1.  **Refined Microstructure Score**: Re-weighted OBI lags (1, 3, 5) and book pressure to match the proven high-precision configuration.\n2.  **Lowered Baseline Threshold**: Reduced the base threshold from 0.00175 to 0.0017 and adjusted the elastic multiplier to 0.88-1.24x, lowering the entry hurdle during moderate volatility.\n3.  **Loosened Microstructure Gaiting**: Shifted the flow sentiment filter from +/- 0.75 to +/- 0.85 and allowed for slightly wider spreads (10.0 bps) to capture more high-conviction opportunities.\n4.  **Stabilized Exits**: Reset TP/SL closer to the robust 0.004/0.003 anchors, while retaining a dampened volatility expansion to benefit from high-vol momentum.\n5.  **Enhanced Sizing**: Increased base size and removed the hard session penalty, replacing it with a small relative boost for US sessions to leverage liquidity without excluding others.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:03:21.417833",
+  "llm_cost": 0.009836000000000001,
+  "llm_model": "gemini-3-flash-preview"
+}

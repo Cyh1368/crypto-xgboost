@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "simplify_filters_increase_frequency",
+  "patch_description": "Optimizing for trade frequency and quality to maximize the combined score. The previous high score of 80.50 was primarily driven by a higher trade count (462 trades vs the current 234). I am decreasing the entry threshold (base_thresh) and removing restrictive filters (RSI, funding) while retaining Order Book Imbalance (OBI) as a light high-quality filter. I am also standardizing the take_profit, stop_loss, and max_bars closer to the seed's high-performing fixed values (0.004/0.003/4) but with a subtle volatility adjustment to handle noisy environments.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:51:39.797000",
+  "llm_cost": 0.006519499999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

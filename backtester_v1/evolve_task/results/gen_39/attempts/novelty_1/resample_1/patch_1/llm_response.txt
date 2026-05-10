@@ -1,0 +1,42 @@
+<NAME>
+simplify_and_stabilize
+</NAME>
+
+<DESCRIPTION>
+The current program's performance (48.01) is significantly lower than the seed program (80.50), primarily due to a lower trade count (291 vs 462) and higher volatility in risk management (Max DD 0.36 vs 0.25). 
+
+This edit proposes to:
+1.  **Simplify Entry Logic**: Revert to a threshold (0.0019) closer to the seed's robust 0.002, while removing restrictive RSI and funding filters that were suppressing trade frequency.
+2.  **Add Light Microstructure Filters**: Use `spread_bps` and `obi_tau5` as light filters to avoid high-slippage or heavily opposed order books without significantly reducing trade count.
+3.  **Stabilize Risk Management**: Replace the complex dynamic TP/SL with fixed values (0.0042/0.0030) that maintain a healthy 1.4 reward-to-risk ratio, similar to the seed's successful parameters.
+4.  **Refine Position Sizing**: Use a base size of 11%, scaled slightly by prediction confidence and reduced during extreme volatility (`vol_ratio > 1.3`) to protect capital and improve the Calmar ratio.
+5.  **Optimize Hold Time**: Standardize on a 4-bar hold, extending to 5 bars only in trending US sessions to capture momentum.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Dynamic Threshold Logic
+    # Lowered threshold to increase trade frequency, using OBI as a lead filter.
+    # Base threshold anchored near the high-performing seed value (0.002).
+    obi = bar_context.get('obi_tau5', 0.0)
+    base_thresh = 0.0018
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Loosened filters: only block if RSI is extremely high or book is heavily opposed.
+        if rsi < 82 and funding < 0.0007 and obi > -0.45:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        if rsi > 18 and funding > -0.0007 and obi < 0.45:
+            signal = -1
+=======
+    # 2. Dynamic Threshold Logic
+    # Base threshold slightly lower than seed (0.002) to increase trade frequency.
+    base_thresh = 0.0019
+    spread_bps = bar_context.get('spread_bps', 1.0)
+    obi = bar_context.get('obi_tau5', 0.0)
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted

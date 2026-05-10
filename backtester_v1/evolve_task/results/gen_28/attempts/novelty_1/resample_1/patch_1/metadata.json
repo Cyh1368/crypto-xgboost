@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "none",
+  "patch_description": "This edit introduces several refinements to the signal generation logic:\n1.  **Enhanced Microstructure Quality:** Incorporates `obi_tau10` and re-weights the `micro_quality` metric to give more importance to `book_pressure`, which is often a more stable indicator of liquidity flow.\n2.  **Price Exhaustion Filters:** Adds `vwap_dev` and `rsi_14` filters to the entry logic to prevent entering trades at local price extremes (e.g., buying the top of a move).\n3.  **Liquidity-Aware Sizing:** Uses `kyle_lambda_est` to apply a size penalty when market impact is expected to be high, protecting against slippage.\n4.  **Volatility-Adaptive Exits:** Scales `take_profit`, `stop_loss`, and `max_bars` based on the `vol_regime`. In high-volatility environments, targets and stops are widened to avoid noise, and the holding time is reduced. In low-volatility environments, targets are tightened and the holding time is extended to allow moves to develop.\n5.  **Tighter Entry Constraints:** Slightly tightens the `funding`, `spread_bps`, and `micro_quality` thresholds to improve the precision of entries.",
+  "error_msg": "No changes applied",
+  "timestamp": "2026-05-09T23:52:08.595040",
+  "llm_cost": 0.0049770000000000005,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,115 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Advanced signal generator using micro-alignment (OBI + Pressure),
+    range-relative hurdles, and liquidity-scaled sizing.
+    """
+    # 1. Feature Extraction
+    close = bar_context.get('close', 1.0)
+    obi_1 = bar_context.get('obi_tau1', 0.0)
+    obi_5 = bar_context.get('obi_tau5', 0.0)
+    obi_10 = bar_context.get('obi_tau10', 0.0)
+    obi_avg = (obi_1 + obi_5 + obi_10) / 3.0
+
+    pressure = bar_context.get('book_pressure_3', 0.0)
+    spread = bar_context.get('spread_bps', 1.0)
+    kyle_lambda = bar_context.get('kyle_lambda_est', 0.0)
+    atr = bar_context.get('atr_14', 0.001)
+
+    bb_pct = bar_context.get('bb_pct', 0.5)
+    close_rank = bar_context.get('close_rank_48', 0.5)
+    trend = bar_context.get('trend_strength', 0.0)
+    autocorr = bar_context.get('autocorr_5', 0.0)
+
+    funding = bar_context.get('funding_rate', 0.0)
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+
+    # 2. Dynamic Entry Hurdle
+    base_hurdle = 0.00182
+    if is_us:
+        base_hurdle = 0.00175
+    elif is_asia:
+        base_hurdle = 0.0020
+
+    # Adjust hurdle based on range positioning to avoid over-extended entries
+    long_hurdle = base_hurdle
+    short_hurdle = base_hurdle
+
+    if close_rank > 0.8 or bb_pct > 0.85:
+        long_hurdle += 0.0004  # Harder to go long at the top
+    if close_rank < 0.2 or bb_pct < 0.15:
+        short_hurdle += 0.0004 # Harder to go short at the bottom
+
+    # 3. Micro-Alignment Filter
+    micro_score = (obi_avg + (pressure / 100.0)) / 2.0 if 'book_pressure_3' in bar_context else obi_avg
+
+    signal = 0
+    if predicted_return > long_hurdle:
+        if micro_score > -0.45 and spread < 9.5:
+            if funding < 0.0015:
+                signal = 1
+
+    elif predicted_return < -short_hurdle:
+        if micro_score < 0.45 and spread < 9.5:
+            if funding > -0.0015:
+                signal = -1
+
+    # 4. Adaptive Position Sizing
+    if signal != 0:
+        liquidity_scaler = max(0.75, 1.0 - (kyle_lambda * 350.0))
+        position_size = 0.145 * liquidity_scaler
+        confidence = abs(predicted_return) / base_hurdle
+        position_size *= min(1.25, confidence)
+
+        # Volatility adjustment: reduce size in extreme volatility
+        atr_pct = (atr / close) if close > 0 else 0.0015
+        if atr_pct > 0.008:
+            position_size *= 0.9
+
+        position_size = max(0.10, min(0.185, position_size))
+    else:
+        position_size = 0.0
+
+    # 5. Risk Management (TP/SL)
+    tp = 0.0043
+    sl = 0.0032
+
+    if signal == 1:
+        if funding < 0:
+            tp += 0.0005
+            sl += 0.0001
+        if trend > 0.35:
+            tp += 0.0003
+    elif signal == -1:
+        if funding > 0:
+            tp += 0.0005
+            sl += 0.0001
+        if trend < -0.35:
+            tp += 0.0003
+
+    # 6. Dynamic Hold Time
+    if signal != 0:
+        if is_us or abs(trend) > 0.35 or abs(autocorr) > 0.15:
+            max_bars = 5
+        else:
+            max_bars = 4
+    else:
+        max_bars = 0
+        tp = 0.0
+        sl = 0.0
+
+    return {
+        "signal": int(signal),
+        "position_size": float(round(position_size, 4)),
+        "take_profit": float(round(tp, 5)),
+        "stop_loss": float(round(sl, 5)),
+        "max_bars": int(max_bars),
+    }
+# EVOLVE-BLOCK-END

@@ -1,0 +1,14 @@
+{
+  "generation": 71,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "asymmetric_regime_filtering",
+  "patch_description": "This edit upgrades the signal logic from a single-threshold liquidity filter into a regime-aware, asymmetric entry engine. It uses richer context already available in the bar data: short/medium order-book imbalance, volatility state, RSI extremes, Bollinger position, VWAP deviation, funding pressure, minutes-to-funding, and session flags.\n\nThe idea is to improve the combined score by:\n- being more selective in low-quality conditions,\n- allowing larger/earlier long entries when momentum and microstructure align,\n- requiring stronger confirmation for shorts during squeezes or bullish funding regimes,\n- sizing positions with confidence and volatility adjustment,\n- widening or tightening TP/SL dynamically based on regime strength,\n- extending hold time only when trend persistence supports it.\n\nThis keeps the implementation fully self-contained and avoids lookahead or external dependencies.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:11:34.722833",
+  "llm_cost": 0.016926,
+  "llm_model": "gpt-5.4-mini"
+}

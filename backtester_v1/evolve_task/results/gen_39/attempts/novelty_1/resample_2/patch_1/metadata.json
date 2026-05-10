@@ -1,0 +1,14 @@
+{
+  "generation": 39,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "microstructure_filtered_entries",
+  "patch_description": "The current program has a very high win rate (0.84) but low trade frequency (150 trades), which limits its total return and Sharpe ratio compared to the top-performing seed (462 trades, 32.89 Sharpe). \n\nThis edit proposes three main improvements:\n1.  **Lower Entry Thresholds**: Reduces the base threshold from 0.0019+penalty to a fixed 0.0018 to increase trade frequency, closer to the successful seed's 0.002.\n2.  **Microstructure Filtering**: Replaces the RSI-based filters with Order Book Imbalance (OBI) and VWAP deviation. OBI is a more reactive lead indicator for 15-minute returns, and VWAP deviation prevents entering at overextended prices.\n3.  **Volatility-Adaptive Risk**: Replaces the purely ATR-based TP/SL with a hybrid approach\u2014anchoring to the seed's successful 0.004/0.003 ratio but adjusting it with a dampened volatility factor (based on ATR) to handle different market regimes.\n4.  **Simplified Hold Time**: Standardizes the holding period to 4-5 bars, which proved most effective in the highest-scoring versions.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:57:49.227960",
+  "llm_cost": 0.0088585,
+  "llm_model": "gemini-3-flash-preview"
+}

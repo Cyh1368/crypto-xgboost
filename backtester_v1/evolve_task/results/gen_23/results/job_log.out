@@ -1,0 +1,62 @@
+==========Running program evaluation 1/3...==========
+==========Run 1/3 completed in 3.35 seconds==========
+==========Running program evaluation 2/3...==========
+==========Run 2/3 completed in 1.98 seconds==========
+==========Running program evaluation 3/3...==========
+==========Run 3/3 completed in 1.92 seconds==========
+Correctness and error status saved to /home/chengyou1368/crypto-xgboost/backtester_v1/evolve_task/results/gen_23/results/correct.json
+Metrics saved to /home/chengyou1368/crypto-xgboost/backtester_v1/evolve_task/results/gen_23/results/metrics.json
+{
+  "metrics": {
+    "combined_score": 44.35023,
+    "public": {
+      "sharpe": 23.8368,
+      "total_ret": 11.01,
+      "max_dd": 0.28,
+      "win_rate": 0.7813,
+      "num_trades": 256,
+      "profit_factor": 17.116
+    },
+    "private": {
+      "per_ticker": {
+        "BTC_USDT": {
+          "sharpe_ratio": 24.350577250487,
+          "total_return_pct": 8.345,
+          "max_drawdown_pct": 0.055,
+          "win_rate": 0.8377,
+          "num_trades": 191,
+          "calmar_ratio": 151.2848,
+          "profit_factor": 24.3716,
+          "avg_trade_pnl": 4.36925
+        },
+        "ETH_USDT": {
+          "sharpe_ratio": 29.58423767326585,
+          "total_return_pct": 16.305,
+          "max_drawdown_pct": 0.102,
+          "win_rate": 0.8444,
+          "num_trades": 302,
+          "calmar_ratio": 159.1535,
+          "profit_factor": 22.6694,
+          "avg_trade_pnl": 5.39897
+        },
+        "SOL_USDT": {
+          "sharpe_ratio": 17.575707361140502,
+          "total_return_pct": 8.385,
+          "max_drawdown_pct": 0.681,
+          "win_rate": 0.6618,
+          "num_trades": 275,
+          "calmar_ratio": 12.3172,
+          "profit_factor": 4.3077,
+          "avg_trade_pnl": 3.04906
+        }
+      }
+    },
+    "execution_time_mean": 2.4185427593329223,
+    "execution_time_std": 0.6583965218544987,
+    "num_valid_runs": 3,
+    "num_invalid_runs": 0,
+    "all_validation_errors": []
+  },
+  "correct": true,
+  "error": null
+}

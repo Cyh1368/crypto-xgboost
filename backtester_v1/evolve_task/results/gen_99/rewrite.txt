@@ -1,0 +1,127 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Advanced crossover model combining elastic volatility-adaptive thresholds,
+    weighted microstructure quality filters, and conviction-scaled position sizing.
+    """
+    import math
+    import numpy as np
+
+    # 1. PARAMETER RESOLUTION & DATA CLEANING
+    def _safe_get(key, default=0.0):
+        v = bar_context.get(key, default)
+        return default if v is None else float(v)
+
+    # Microstructure
+    obi1 = _safe_get("obi_tau1", 0.0)
+    obi3 = _safe_get("obi_tau3", 0.0)
+    obi5 = _safe_get("obi_tau5", 0.0)
+    book_pressure = _safe_get("book_pressure_3", 0.0)
+    spread_bps = _safe_get("spread_bps", 5.0)
+    
+    # Volatility and Trend
+    vol_5 = max(_safe_get("vol_5", 0.015), 1e-8)
+    vol_20 = max(_safe_get("vol_20", 0.015), 1e-8)
+    vol_60 = max(_safe_get("vol_60", 0.015), 1e-8)
+    trend_strength = _safe_get("trend_strength", 0.0)
+    
+    # Macro & Session
+    funding_rate = _safe_get("funding_rate", 0.0)
+    min_to_funding = _safe_get("minutes_to_funding", 999.0)
+    is_us_session = bar_context.get("is_us_session", False) or False
+    is_weekend = bar_context.get("is_weekend", False) or False
+
+    # 2. VOLATILITY REGIMES
+    # Impulse (5/20): Measures immediate expansion/shock
+    # Trend (5/60): Measures regime shift relative to long-term
+    vol_impulse = max(0.5, min(2.0, vol_5 / vol_20))
+    vol_trend = max(0.5, min(2.0, vol_5 / vol_60))
+
+    # 3. ELASTIC SIGNAL THRESHOLDING
+    # Use proven 0.00172 base from the 98.52 score script
+    THRESHOLD_BASE = 0.00172
+    # Threshold expands with volatility impulse to avoid noise, 
+    # but contracts with trend strength to capture momentum.
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    trend_adj = 1.0 - (0.04 * min(1.0, trend_strength))
+    current_threshold = THRESHOLD_BASE * elastic_multiplier * trend_adj
+
+    signal = 0
+    signal_conviction = 0.0
+
+    if predicted_return > current_threshold:
+        signal = 1
+        signal_conviction = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        signal = -1
+        signal_conviction = abs(predicted_return) / current_threshold
+
+    # 4. MICROSTRUCTURE QUALITY FILTERS (Asymmetric)
+    if signal != 0:
+        # Weighted aggregate of order book features
+        micro_quality = (0.32 * obi1 + 0.24 * obi3 + 0.24 * obi5 + 0.20 * book_pressure)
+        
+        # Inclusive filters to preserve trade frequency (proven by crossover performance)
+        filter_spread = spread_bps < 10.5
+        filter_funding_long = funding_rate < 0.0025
+        filter_funding_short = funding_rate > -0.0025
+        filter_micro_long = micro_quality > -0.85
+        filter_micro_short = micro_quality < 0.85
+
+        if signal == 1:
+            if not (filter_micro_long and filter_funding_long and filter_spread):
+                signal = 0
+        elif signal == -1:
+            if not (filter_micro_short and filter_funding_short and filter_spread):
+                signal = 0
+
+    # 5. ASYMMETRIC POSITION SIZING
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size 0.145 as per best performance balance
+        base_size = 0.145
+        # Conviction Scaling: adds up to 0.035 for strong model predictions
+        conviction_bonus = min(0.035, max(0.0, (signal_conviction - 1.0) * 0.06))
+        # Session boost: prioritize US session for higher liquidity moves
+        session_bonus = 0.01 if is_us_session else 0.0
+        # Carry logic: reduce size slightly if funding is unfavorable
+        funding_penalty = 1.0
+        if (signal == 1 and funding_rate > 0.0015) or (signal == -1 and funding_rate < -0.0015):
+            funding_penalty = 0.90
+        
+        position_size = (base_size + conviction_bonus + session_bonus) * funding_penalty
+        position_size = max(0.10, min(0.18, position_size))
+
+    # 6. DYNAMIC RISK MANAGEMENT (Exits)
+    # Volatility-elastic TP and SL: targets grow/shrink with the market regime
+    tp_elasticity = 0.94 + (0.06 * min(2.0, vol_trend))
+    sl_elasticity = 0.97 + (0.03 * min(2.0, vol_impulse))
+
+    take_profit = 0.0040 * tp_elasticity
+    stop_loss = 0.0030 * sl_elasticity
+
+    # Time-based Exit Logic: optimize hold time based on regime and session
+    MAX_BARS = 4
+    if vol_trend < 0.8:
+        # Low volatility regimes tend to mean-revert or stagnate faster
+        MAX_BARS = 3
+    
+    # Safety: tighter time limits for funding events or illiquid weekends
+    if (min_to_funding < 30.0 and min_to_funding > 0.0) or is_weekend:
+        MAX_BARS = min(MAX_BARS, 2)
+
+    return {
+        "signal":        int(signal),
+        "position_size": float(position_size),
+        "take_profit":   float(take_profit),
+        "stop_loss":     float(stop_loss),
+        "max_bars":      int(MAX_BARS),
+    }
+# EVOLVE-BLOCK-END

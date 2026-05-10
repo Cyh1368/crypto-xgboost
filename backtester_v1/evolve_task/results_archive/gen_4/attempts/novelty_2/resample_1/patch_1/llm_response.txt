@@ -1,0 +1,56 @@
+<NAME>
+volatility_adjusted_signal_fix
+</NAME>
+
+<DESCRIPTION>
+The bug was identified as a potential failure in the module loading process, indicated by the `AttributeError: 'NoneType' object has no attribute 'loader'`. This error often occurs when `importlib` fails to find or load a module, which can be triggered by syntax errors, missing imports, or the function failing to meet the required structure. 
+
+The fix involves:
+1.  Ensuring all necessary libraries (`numpy` and `math`) are imported **inside** the `EVOLVE-BLOCK` to make the function self-contained.
+2.  Implementing a more robust, volatility-adjusted trading logic using `atr` for stops and `adx`/`rsi` for trend filtering, which is more likely to pass performance-based validation.
+3.  Adding safety checks for `NaN` values and zero-division to ensure the function never crashes.
+4.  Ensuring all return values are explicitly cast to the required types (`int` for signal and max_bars, `float` for others).
+5.  Providing a more realistic entry threshold and position sizing logic based on the strength of the prediction.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Advanced trading signal generator with volatility-adjusted stops and trend filters.
+    """
+    import numpy as np
+    import math
+
+    # 1. Extract context safely
+    close = float(bar_context.get('close', 0.0))
+    atr = float(bar_context.get('atr', 0.0))
+    adx = float(bar_context.get('adx', 0.0))
+    rsi = float(bar_context.get('rsi', 50.0))
+
+    # Basic safety check
+    if close <= 0 or math.isnan(predicted_return):
+        return {
+            "signal": 0,
+            "position_size": 0.0,
+            "take_profit": 0.01,
+            "stop_loss": 0.01,
+            "max_bars": 5,
+        }
+
+    # 2. Dynamic Thresholding
+    # Use a minimum threshold of 0.15% or 10% of the ATR-to-price ratio
+    atr_pct = atr / close if close > 0 else 0.01
+    entry_threshold = max(0.0015, atr_pct * 0.15)
+
+    # 3. Signal Generation with Trend Filters
+    signal = 0
+    if predicted_return > entry_threshold:
+        # Long: Trend must be present (ADX > 20) and

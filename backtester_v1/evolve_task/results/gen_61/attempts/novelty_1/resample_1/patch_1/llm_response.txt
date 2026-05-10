@@ -1,0 +1,124 @@
+<NAME>
+trend_vwap_adaptive_logic
+</NAME>
+
+<DESCRIPTION>
+This update introduces several targeted improvements to the signal generation and risk management layers:
+1.  **Trend-Adaptive Thresholding**: Lowers the entry threshold during periods of high `trend_strength` to capture momentum more effectively, while increasing it when the price is significantly deviated from VWAP (`vwap_dev`) to avoid buying local tops or selling local bottoms.
+2.  **Liquidity-Aware Filtering**: Incorporates `kyle_lambda_est` into the microstructure filter to avoid entries in high-impact/low-liquidity environments, which typically suffer from higher slippage and lower win rates.
+3.  **Asymmetric Exit Strategy**: Implements directional asymmetry in TP/SL levels. Longs are given slightly wider targets and tighter stops, while shorts have tighter targets and wider stops to account for the typical "slow grind up, fast crash down" and short-squeeze dynamics of crypto markets.
+4.  **Volatility-Trend Sizing**: Scales the position size based on the `vol_trend` (v5/v60), increasing capital allocation when short-term volatility is expanding relative to the long-term average.
+5.  **Refined Microstructure Thresholds**: Slightly tightens the `micro_quality`, `funding_rate`, and `spread_bps` filters to prioritize trade quality and maintain the high win rate.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. SIGNAL SCORING LAYER
+    # Determine the "Elastic Threshold": Lowered base to increase trade frequency
+    threshold_base = 0.00172
+    # Scaling factor: range 0.88 to 1.24 depending on volatility impulse
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = threshold_base * elastic_multiplier
+
+    raw_signal = 0
+    signal_conviction = 0.0
+
+    if predicted_return > current_threshold:
+        # Microstructure filter: Loosened to capture more valid momentum moves
+        if micro_quality > -0.85 and funding < 0.0025 and spread < 10.5:
+            raw_signal = 1
+            signal_conviction = abs(predicted_return) / current_threshold
+    elif predicted_return < -current_threshold:
+        if micro_quality < 0.85 and funding > -0.0025 and spread < 10.5:
+            raw_signal = -1
+            signal_conviction = abs(predicted_return) / current_threshold
+=======
+    # 2. SIGNAL SCORING LAYER
+    # Determine the "Elastic Threshold": Lowered base to increase trade frequency
+    threshold_base = 0.00168
+    # Scaling factor: range 0.88 to 1.24 depending on volatility impulse
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    
+    # Adaptive thresholding based on trend strength and VWAP deviation
+    trend_strength = _fetch("trend_strength")
+    vwap_dev = _fetch("vwap_dev")
+    vwap_penalty = 1.0 + (0.2 * min(2.0, max(0, abs(vwap_dev) - 0.006) / 0.006))
+    current_threshold = threshold_base * elastic_multiplier * (1.0 - 0.12 * trend_strength) * vwap_penalty
+
+    raw_signal = 0
+    signal_conviction = 0.0
+    kyle = _fetch("kyle_lambda_est")
+
+    if predicted_return > current_threshold:
+        # Microstructure filter: Incorporating Kyle Lambda for liquidity/impact check
+        if micro_quality > -0.82 and funding < 0.0024 and spread < 10.2 and kyle < 0.0004:
+            raw_signal = 1
+            signal_conviction = abs(predicted_return) / current_threshold
+    elif predicted_return < -current_threshold:
+        if micro_quality < 0.82 and funding > -0.0024 and spread < 10.2 and kyle < 0.0004:
+            raw_signal = -1
+            signal_conviction = abs(predicted_return) / current_threshold
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # 3. EXECUTION LOGIC LAYER
+    # Position sizing: Rewarding win rate with slightly larger base size
+    if raw_signal == 0:
+        pos_size = 0.0
+    else:
+        # Scale sizing by conviction and session liquidity without harsh penalties
+        base_size = 0.145
+        conviction_bonus = min(0.035, max(0, (signal_conviction - 1.0) * 0.06))
+        session_bonus = 0.01 if is_us else 0.0
+
+        # Funding Adjustment: Mild reduction for negative carry trades
+        funding_filter = 1.0
+        if (raw_signal == 1 and funding > 0.0015) or (raw_signal == -1 and funding < -0.0015):
+            funding_filter = 0.90
+
+        pos_size = (base_size + conviction_bonus + session_bonus) * funding_filter
+        pos_size = max(0.10, min(0.18, pos_size))
+
+    # Exit parameters: Anchoring to the robust 0.004 TP / 0.003 SL
+    # Dampened elasticity to maintain win-rate stability
+    tp_elasticity = 0.94 + (0.06 * min(2.0, vol_trend))
+    sl_elasticity = 0.97 + (0.03 * min(2.0, vol_impulse))
+
+    take_profit = 0.0040 * tp_elasticity
+    stop_loss = 0.0030 * sl_elasticity
+=======
+    # 3. EXECUTION LOGIC LAYER
+    # Position sizing: Rewarding win rate with slightly larger base size
+    if raw_signal == 0:
+        pos_size = 0.0
+    else:
+        # Scale sizing by conviction and session liquidity without harsh penalties
+        base_size = 0.148
+        conviction_bonus = min(0.035, max(0, (signal_conviction - 1.0) * 0.06))
+        session_bonus = 0.012 if is_us else 0.0
+        
+        # Volatility trend adjustment: higher size when vol is expanding
+        vol_trend_factor = 0.96 + (0.08 * min(1.0, vol_trend))
+
+        # Funding Adjustment: Mild reduction for negative carry trades
+        funding_filter = 1.0
+        if (raw_signal == 1 and funding > 0.0015) or (raw_signal == -1 and funding < -0.0015):
+            funding_filter = 0.88
+
+        pos_size = (base_size + conviction_bonus + session_bonus) * funding_filter * vol_trend_factor
+        pos_size = max(0.10, min(0.18, pos_size))
+
+    # Exit parameters: Anchoring to the robust 0.004 TP / 0.003 SL
+    # Dampened elasticity to maintain win-rate stability
+    tp_elasticity = 0.94 + (0.06 * min(2.0, vol_trend))
+    sl_elasticity = 0.97 + (0.03 * min(2.0, vol_impulse))
+
+    # Asymmetric TP/SL based on signal direction
+    if raw_signal == 1:
+        take_profit = 0.0041 * tp_elasticity
+        stop_loss = 0.0029 * sl_elasticity
+    else:
+        take_profit = 0.0039 * tp_elasticity
+        stop_loss = 0.0031 * sl_elasticity
+>>>>>>> REPLACE
+</DIFF>

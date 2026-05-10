@@ -1,0 +1,14 @@
+{
+  "generation": 96,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "refine_threshold_and_filters",
+  "patch_description": "This edit improves the current signal generation strategy by:\n1. Refining the base threshold to 0.00172 and re-integrating a momentum-based adjustment ('trend_strength'), which was a key component of the historical best-performing iteration (Score 98.52). \n2. Introducing a VWAP deviation filter (vwap_dev) to prevent entries into overextended price positions, acting as a mean-reversion safety check.\n3. Tuning the 'max_bars' (maximum hold time) logic to account for liquidity-risk regimes like weekends and pending funding rate events, which typically experience increased noise and volatility.\n4. Correcting spread and funding rate extraction with safer defaults to ensure consistent filtering behavior.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:22:12.564454",
+  "llm_cost": 0.006723,
+  "llm_model": "gemini-3-flash-preview"
+}

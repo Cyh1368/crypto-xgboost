@@ -1,0 +1,363 @@
+--- a/original.py
++++ b/original.py
+@@ -1,85 +1,304 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+-    Combines high-precision thresholding with microstructure filters and
+-    volatility-adjusted exit logic.
++    Regime-aware signal pipeline:
++    1) Safe extraction and normalization of context
++    2) Multi-factor long/short conviction scoring
++    3) Execution-cost and carry-aware entry gating
++    4) Asymmetric position sizing and volatility-shaped exits
+     """
+     import math
+     import numpy as np
+ 
++    # ---------------------------------------------------------------------
++    # Safe access helpers
++    # ---------------------------------------------------------------------
+     def _get(key, default=0.0):
+         v = bar_context.get(key, default)
+         return default if v is None else v
+ 
+-    # 1. Extract Core Context
++    def _f(key, default=0.0):
++        try:
++            return float(_get(key, default))
++        except (TypeError, ValueError):
++            return float(default)
++
++    def _b(key, default=False):
++        v = _get(key, default)
++        return bool(v)
++
++    # ---------------------------------------------------------------------
++    # Feature extraction
++    # ---------------------------------------------------------------------
+     # Microstructure
+-    obi1 = float(_get("obi_tau1"))
+-    obi3 = float(_get("obi_tau3"))
+-    obi5 = float(_get("obi_tau5"))
+-    book_pressure = float(_get("book_pressure_3"))
+-    spread_bps = float(_get("spread_bps"))
+-
+-    # Price Action & Volatility
+-    vol5 = max(float(_get("vol_5")), 1e-8)
+-    vol20 = max(float(_get("vol_20")), 1e-8)
+-    atr = float(_get("atr_14", _get("atr", 0.001)))
+-    rsi14 = float(_get("rsi_14", 50.0))
+-    trend = float(_get("trend_strength"))
+-
+-    # Macro & Time
+-    funding = float(_get("funding_rate"))
+-    funding_ma = float(_get("funding_8h_ma"))
+-    is_us = bool(_get("is_us_session", False))
+-    is_weekend = bool(_get("is_weekend", False))
+-
+-    # 2. Regime & Quality Metrics
+-    # micro_quality: positive means book supports long, negative supports short
+-    micro_quality = 0.3 * obi1 + 0.25 * obi3 + 0.25 * obi5 + 0.2 * book_pressure
+-
+-    # vol_regime: > 1.0 means volatility is expanding
++    obi1 = _f("obi_tau1")
++    obi3 = _f("obi_tau3")
++    obi5 = _f("obi_tau5")
++    obi10 = _f("obi_tau10")
++    spread_bps = max(_f("spread_bps", 6.0), 0.0)
++    depth_ratio_5 = _f("depth_ratio_5", 1.0)
++    depth_ratio_10 = _f("depth_ratio_10", 1.0)
++    book_pressure = _f("book_pressure_3")
++    kyle_lambda = abs(_f("kyle_lambda_est"))
++
++    # Price action / volatility
++    ret1 = _f("ret_1")
++    ret3 = _f("ret_3")
++    ret6 = _f("ret_6")
++    ret12 = _f("ret_12")
++    ret48 = _f("ret_48")
++
++    vol5 = max(_f("vol_5", 0.015), 1e-8)
++    vol20 = max(_f("vol_20", 0.015), 1e-8)
++    vol60 = max(_f("vol_60", 0.015), 1e-8)
++    atr14 = max(_f("atr_14", _f("atr", 0.001)), 1e-8)
++
++    rsi6 = _f("rsi_6", 50.0)
++    rsi14 = _f("rsi_14", 50.0)
++    macd_signal = _f("macd_signal")
++    bb_pct = _f("bb_pct", 0.5)
++    momentum = _f("momentum")
++    wick_ratio = _f("wick_ratio", _f("upper_wick_ratio", 0.0))
++    wick_ratio2 = _f("lower_wick_ratio", 0.0)
++    volume_ratio = _f("volume_ratio", 1.0)
++    vwap_dev = _f("vwap_dev")
++    autocorr5 = _f("autocorr_5")
++    skew = _f("skew")
++    kurtosis = _f("kurtosis")
++    trend_strength = _f("trend_strength")
++
++    # Macro / session
++    funding_rate = _f("funding_rate")
++    funding_ma = _f("funding_8h_ma")
++    minutes_to_funding = _f("minutes_to_funding", 999.0)
++    is_us = _b("is_us_session", False)
++    is_asia = _b("is_asia_session", False)
++    is_weekend = _b("is_weekend", False)
++
++    # ---------------------------------------------------------------------
++    # Regime construction
++    # ---------------------------------------------------------------------
+     vol_regime = max(0.5, min(2.0, vol5 / vol20))
+-
+-    # 3. Signal Generation
+-    # Threshold scales with volatility regime to capture more trades in low-vol and filter noise in high-vol
+-    LONG_THRESH = 0.0018 * (0.9 + 0.2 * vol_regime)
+-    SHORT_THRESH = -0.0018 * (0.9 + 0.2 * vol_regime)
+-
++    vol_pulse = max(0.7, min(1.6, vol60 / vol20))
++    spread_cost = spread_bps / 10.0
++
++    # Microstructure score: supports asymmetry without over-filtering
++    micro_flow = (
++        0.26 * obi1 +
++        0.22 * obi3 +
++        0.22 * obi5 +
++        0.10 * obi10 +
++        0.12 * book_pressure +
++        0.08 * (depth_ratio_5 - 1.0) +
++        0.05 * (depth_ratio_10 - 1.0) -
++        0.08 * kyle_lambda -
++        0.06 * spread_cost
++    )
++
++    # Momentum / continuation score
++    trend_score = (
++        0.16 * ret1 +
++        0.18 * ret3 +
++        0.20 * ret6 +
++        0.18 * ret12 +
++        0.10 * ret48 +
++        0.12 * momentum +
++        0.06 * macd_signal +
++        0.08 * trend_strength
++    )
++
++    # Mean-reversion / exhaustion pressure
++    # Negative when stretched too far in one direction or when wick rejection is high
++    exhaustion = (
++        0.12 * (abs(bb_pct - 0.5) - 0.15) +
++        0.10 * abs(vwap_dev) +
++        0.08 * max(0.0, (rsi14 - 70.0) / 30.0) +
++        0.08 * max(0.0, (30.0 - rsi14) / 30.0) +
++        0.06 * abs(rsi6 - 50.0) / 50.0 +
++        0.05 * wick_ratio +
++        0.05 * wick_ratio2 +
++        0.04 * abs(skew) +
++        0.03 * max(0.0, kurtosis - 3.0) / 10.0
++    )
++
++    # Macro carry pressure: discourage trades near extreme funding or adverse divergence
++    funding_pressure = (
++        0.6 * funding_rate +
++        0.4 * (funding_rate - funding_ma)
++    )
++
++    # Session modulation: keep it light and directional
++    session_bias = 0.0
++    if is_us:
++        session_bias += 0.05
++    if is_asia:
++        session_bias -= 0.01
++    if is_weekend:
++        session_bias -= 0.04
++
++    # ---------------------------------------------------------------------
++    # Prediction thresholds: volatility-adjusted and symmetric
++    # ---------------------------------------------------------------------
++    base_thresh = 0.00175
++    thresh_scale = 0.90 + 0.18 * vol_regime + 0.05 * (vol_pulse - 1.0)
++    long_thresh = base_thresh * thresh_scale
++    short_thresh = -base_thresh * thresh_scale
++
++    # ---------------------------------------------------------------------
++    # Directional conviction scores
++    # ---------------------------------------------------------------------
++    # Long prefers positive flow, supportive momentum, and low carry friction
++    long_score = (
++        0.65 * predicted_return +
++        0.55 * micro_flow +
++        0.45 * trend_score +
++        0.12 * session_bias -
++        0.35 * exhaustion -
++        0.25 * max(0.0, funding_pressure) -
++        0.10 * spread_cost
++    )
++
++    # Short prefers negative flow, weak trend, and elevated downside pressure
++    short_score = (
++        -0.65 * predicted_return -
++        0.55 * micro_flow -
++        0.42 * trend_score +
++        0.10 * session_bias -
++        0.30 * exhaustion +
++        0.25 * min(0.0, funding_pressure) -
++        0.10 * spread_cost
++    )
++
++    # ---------------------------------------------------------------------
++    # Entry gating
++    # ---------------------------------------------------------------------
+     signal = 0
+-    # Lenient filters to increase trade frequency while avoiding extreme toxic flow or high costs
+-    if predicted_return > LONG_THRESH:
+-        if micro_quality > -0.8 and funding < 0.002 and spread_bps < 10.0:
+-            signal = 1
+-    elif predicted_return < SHORT_THRESH:
+-        if micro_quality < 0.8 and funding > -0.002 and spread_bps < 10.0:
+-            signal = -1
+-
+-    # 4. Position Sizing
+-    # Base size 0.12, with a boost for high-conviction signals
++
++    long_ok = (
++        predicted_return > long_thresh and
++        long_score > 0.10 and
++        spread_bps < 11.0 and
++        funding_pressure < 0.0025 and
++        micro_flow > -0.55
++    )
++
++    short_ok = (
++        predicted_return < short_thresh and
++        short_score > 0.10 and
++        spread_bps < 11.0 and
++        funding_pressure > -0.0025 and
++        micro_flow < 0.55
++    )
++
++    # Slightly stricter in very noisy / expensive regimes
++    if spread_bps > 14.0 or vol_regime > 1.8:
++        long_ok = long_ok and abs(predicted_return) > (long_thresh * 1.05)
++        short_ok = short_ok and abs(predicted_return) > (abs(short_thresh) * 1.05)
++
++    if long_ok and not short_ok:
++        signal = 1
++    elif short_ok and not long_ok:
++        signal = -1
++    elif long_ok and short_ok:
++        # Tie-break by larger absolute conviction
++        signal = 1 if long_score >= short_score else -1
++
++    # ---------------------------------------------------------------------
++    # Position sizing
++    # ---------------------------------------------------------------------
+     if signal == 0:
+         position_size = 0.0
+     else:
+-        position_size = 0.12
+-        if abs(predicted_return) > 0.0035:
+-            position_size = 0.14
+-
+-    # 5. Fixed Exits from high-performing seed
+-    take_profit = 0.004
+-    stop_loss = 0.003
+-
+-    # 6. Time-based Exit
++        conviction = abs(predicted_return) / max(long_thresh, 1e-8)
++        conviction = max(0.0, min(2.0, conviction))
++
++        # Base size with mild asymmetry: shorts slightly smaller in adverse carry regimes
++        base_size = 0.11 + 0.03 * min(1.0, conviction)
++        if signal == 1:
++            base_size += 0.01 * max(0.0, micro_flow)
++        else:
++            base_size += 0.01 * max(0.0, -micro_flow)
++
++        # Reward cleaner execution conditions
++        liquidity_scalar = 1.0
++        if spread_bps < 7.0:
++            liquidity_scalar += 0.06
++        elif spread_bps > 12.0:
++            liquidity_scalar -= 0.06
++
++        if volume_ratio > 1.15:
++            liquidity_scalar += 0.04
++        elif volume_ratio < 0.85:
++            liquidity_scalar -= 0.03
++
++        # Volatility scaling: smaller in high vol, slightly larger in quiet regimes
++        vol_scalar = 1.0 + (1.0 - max(0.7, min(1.5, vol_regime))) * 0.10
++        vol_scalar = max(0.88, min(1.10, vol_scalar))
++
++        # Carry-aware reduction near funding time or extreme funding divergence
++        funding_scalar = 1.0
++        if minutes_to_funding < 45.0:
++            funding_scalar -= 0.05
++        if abs(funding_rate - funding_ma) > 0.001:
++            funding_scalar -= 0.03
++        if abs(funding_rate) > 0.002:
++            funding_scalar -= 0.04
++
++        if is_weekend:
++            funding_scalar -= 0.03
++
++        position_size = base_size * liquidity_scalar * vol_scalar * max(0.82, funding_scalar)
++        position_size = max(0.06, min(0.18, position_size))
++
++    # ---------------------------------------------------------------------
++    # Exits: volatility-adjusted but still anchored to robust base levels
++    # ---------------------------------------------------------------------
++    tp_base = 0.0040
++    sl_base = 0.0030
++
++    # Higher volatility => slightly wider stops/targets; low volatility => tighter
++    tp_mult = 1.0 + 0.10 * (vol_regime - 1.0)
++    sl_mult = 1.0 + 0.08 * (vol_regime - 1.0)
++
++    # Clamp to avoid overreaction
++    tp_mult = max(0.90, min(1.15, tp_mult))
++    sl_mult = max(0.92, min(1.12, sl_mult))
++
++    # Trend support allows modestly wider take profit; exhaustion tightens it
++    if trend_strength > 0.20:
++        tp_mult += 0.03
++    if exhaustion > 0.20:
++        tp_mult -= 0.04
++        sl_mult -= 0.02
++
++    # Microstructure toxicity: reduce ambition when execution is poor
++    if spread_bps > 10.0 or kyle_lambda > 0.002:
++        tp_mult -= 0.03
++        sl_mult -= 0.03
++
++    take_profit = tp_base * max(0.85, min(1.20, tp_mult))
++    stop_loss = sl_base * max(0.88, min(1.15, sl_mult))
++
++    # Time stop
+     max_bars = 4
++    if minutes_to_funding < 30.0:
++        max_bars = 3
++    if is_weekend:
++        max_bars = min(max_bars, 3)
++    if vol_regime > 1.6:
++        max_bars = min(max_bars, 3)
+ 
+     return {
+-        "signal":        int(signal),
++        "signal": int(signal),
+         "position_size": float(position_size),
+-        "take_profit":   float(take_profit),
+-        "stop_loss":     float(stop_loss),
+-        "max_bars":      int(max_bars),
++        "take_profit": float(take_profit),
++        "stop_loss": float(stop_loss),
++        "max_bars": int(max_bars),
+     }
+ # EVOLVE-BLOCK-END

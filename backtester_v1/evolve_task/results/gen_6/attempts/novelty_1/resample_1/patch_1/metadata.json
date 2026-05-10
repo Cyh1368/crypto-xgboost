@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "volatility_adjusted_sizing_and_stops",
+  "patch_description": "Scale position size and stop loss based on realized volatility (vol_20). Higher volatility should reduce position size and increase stop loss distance to account for larger price swings. This improves risk-adjusted returns by preventing over-leverage in volatile conditions and reducing whipsaws.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:42:34.683286",
+  "llm_cost": 0.014938000000000002,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

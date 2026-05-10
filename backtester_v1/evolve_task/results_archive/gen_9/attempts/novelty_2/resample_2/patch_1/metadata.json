@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 2,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "robust_signal_v2",
+  "patch_description": "The previous program failed with an `AttributeError: 'NoneType' object has no attribute 'loader'`, which often indicates the backtester failed to load the module, possibly due to environment issues with external libraries or a syntax error. I have fixed this by:\n1.  Replacing all `numpy` dependencies with the built-in `math` library and standard Python logic (e.g., `math.isfinite` and manual clipping) to ensure maximum compatibility.\n2.  Importing `math` inside the `EVOLVE-BLOCK` to ensure it is available if the block is evaluated in isolation.\n3.  Implementing a more robust `get_val` helper to safely extract and convert context features.\n4.  Ensuring all return values are explicitly cast to the required types (`int` for signal and max_bars, `float` for others).\n5.  Refining the entry thresholds and position sizing logic to be more stable and responsive to volatility (ATR) and trend strength (ADX/RSI).",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:32:12.427832",
+  "llm_cost": 0.0034185,
+  "llm_model": "gemini-3-flash-preview"
+}

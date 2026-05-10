@@ -1,0 +1,14 @@
+{
+  "generation": 69,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "enhanced_entry_filters_with_price_action",
+  "patch_description": "The current program generates 535 trades with a profit factor of 15.13, slightly underperforming Seed 2/3 at 530 trades with 15.95. The issue is likely that while the elastic threshold mechanism works well, it lacks confirmation filters on actual price action.\n\nThis mutation adds RSI and Bollinger Band filters to entry logic:\n- For LONG signals: require RSI < 70 (not overbought) AND BB% < 0.8 (room to run up)\n- For SHORT signals: require RSI > 30 (not oversold) AND BB% > 0.2 (room to run down)\n\nThese are lightweight confirmations that filter out low-quality reversals and exhaustion patterns, reducing false signals without requiring additional microstructure data. The bounds are conservative (0.2-0.8 vs 0.0-1.0) to avoid over-filtering during strong trends.\n\nThis should reduce trade count toward 530 while improving win rate and profit factor by eliminating marginal entries that lack price action confirmation.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:11:13.524322",
+  "llm_cost": 0.022125,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 87,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "trend_adaptive_threshold_and_mean_reversion_guard",
+  "patch_description": "This update enhances the signal generation logic by incorporating trend-adaptive thresholding and a mean-reversion filter. \n1. Trend-Adaptive Thresholding: We introduce `trend_strength` to adjust the entry threshold, allowing the model to be more sensitive during strong trends (a technique that historically improved profit by increasing trade count in momentum phases).\n2. OBI Expansion: Incorporates `obi_tau10` into the `micro_quality` metric for a more holistic view of the order book.\n3. Mean-Reversion Guard: Utilizes `vwap_dev` to filter out entries when the price is significantly far from its VWAP, reducing the risk of buying local tops or selling local bottoms.\n4. Threshold & Filter Refinement: Base thresholds and microstructure filters are slightly tightened to prioritize signal quality.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:17:19.705162",
+  "llm_cost": 0.008738,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_micro_filter",
+  "patch_description": "The structural redesign moves away from static thresholds to a modular, context-aware architecture. \n1. **Microstructure Validation**: It uses Order Book Imbalance (OBI) and spread analysis to filter model predictions, ensuring the liquidity environment supports the trade direction.\n2. **Volatility-Adjusted Risk**: Instead of fixed percentages, Take Profit and Stop Loss are dynamically scaled using the Average True Range (ATR) and current realized volatility, allowing the strategy to breathe during high-volatility regimes and tighten up during compression.\n3. **Regime-Based Filtering**: It incorporates Trend Strength and VWAP deviation to avoid 'buying the top' or 'selling the bottom' in overextended mean-reversion scenarios.\n4. **Asymmetric Exit Logic**: The `max_bars` and TP/SL ratios are adjusted based on the trading session (US vs. Asia) and the strength of the model's conviction, optimizing for the higher momentum typically found in US sessions.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:42:04.669245",
+  "llm_cost": 0.004682,
+  "llm_model": "gemini-3-flash-preview"
+}

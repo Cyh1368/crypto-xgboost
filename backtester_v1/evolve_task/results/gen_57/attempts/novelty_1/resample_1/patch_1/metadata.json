@@ -1,0 +1,14 @@
+{
+  "generation": 57,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_asymmetric_filters",
+  "patch_description": "This edit upgrades the signal logic from a fixed-threshold seed into a regime-aware, asymmetric entry system that uses the richer bar context already available.\n\nKey improvements:\n- Entry thresholds are dynamically widened or tightened using spread, Kyle lambda, volatility, funding pressure, and session regime.\n- Long/short entries are no longer symmetric: longs favor positive order-book imbalance, positive trend, supportive VWAP/RSI; shorts favor the inverse.\n- Price rejection filters use wick ratios, Bollinger position, and VWAP deviation to avoid chasing extended moves.\n- Position size is scaled by confidence and discounted in toxic-liquidity or high-volatility conditions.\n- Take-profit and stop-loss are volatility-adjusted using ATR, with tighter exits in mean-reverting or funding-stressed regimes and wider targets in trending regimes.\n- Hold time adapts to trend persistence, autocorrelation, and session type, improving the tradeoff between win rate and expectancy.\n\nThis should improve combined score by preserving the current decent trade frequency while reducing low-quality entries and making risk placement more regime-sensitive.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:06:59.420032",
+  "llm_cost": 0.0157605,
+  "llm_model": "gpt-5.4-mini"
+}

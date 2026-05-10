@@ -1,0 +1,116 @@
+<NAME>
+standardize_and_stabilize
+</NAME>
+
+<DESCRIPTION>
+The previous iteration attempted to be overly dynamic, which led to a reduced trade count and higher drawdown compared to the high-performing seed. This edit:
+1. Standardizes the base threshold to 0.0017 (slightly more aggressive than the seed's 0.002) while maintaining light microstructure and RSI filters to ensure trade quality.
+2. Reverts TP/SL logic toward the proven 0.004/0.003 ratio (approx. 1.33 R/R), using ATR only as a floor/ceiling to handle volatility without over-extending targets.
+3. Stabilizes position sizing around 0.11 (down from a max of 0.18) to significantly reduce Max Drawdown and improve the Calmar ratio.
+4. Simplifies the max_bars hold time to 4 bars (1 hour), matching the seed's successful duration, with a minor extension only for high-conviction trending regimes.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Dynamic Threshold Logic
+    # Lowered threshold to increase trade frequency, using OBI as a lead filter.
+    # Base threshold anchored near the high-performing seed value (0.002).
+    obi = bar_context.get('obi_tau5', 0.0)
+    base_thresh = 0.0018
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Loosened filters: only block if RSI is extremely high or book is heavily opposed.
+        if rsi < 82 and funding < 0.0007 and obi > -0.45:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        if rsi > 18 and funding > -0.0007 and obi < 0.45:
+            signal = -1
+=======
+    # 2. Dynamic Threshold Logic
+    # Using a slightly lower threshold than the seed to capture more opportunities,
+    # while using spread and OBI as light quality filters.
+    spread_bps = bar_context.get('spread_bps', 1.0)
+    obi = bar_context.get('obi_tau5', 0.0)
+    base_thresh = 0.0017
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh and spread_bps < 6.0:
+        # Loosened filters to increase trade frequency while avoiding extremes
+        if rsi < 85 and funding < 0.0008 and obi > -0.5:
+            signal = 1
+    elif predicted_return < -base_thresh and spread_bps < 6.0:
+        if rsi > 15 and funding > -0.0008 and obi < 0.5:
+            signal = -1
+>>>>>>> REPLACE
+
+<DIFF>
+<<<<<<< SEARCH
+    # 4. Adaptive Hold Time (Max Bars)
+    # Autocorrelation gauges if we are in a trending or mean-reverting regime.
+    if is_us:
+        # US Session generally trends more
+        max_bars = 5 if autocorr > 0.0 else 4
+    elif is_asia:
+        # Asia Session often mean-reverts
+        max_bars = 4 if autocorr > 0.1 else 3
+    else:
+        max_bars = 4
+
+    # Increase hold if trend strength is significant
+    if abs(trend) > 0.5:
+        max_bars += 1
+=======
+    # 4. Adaptive Hold Time (Max Bars)
+    # Standardizing on the seed's 4-bar hold (1 hour), with a slight extension for strong trends.
+    max_bars = 4
+    if abs(trend) > 0.6 or (is_us and autocorr > 0.1):
+        max_bars = 5
+>>>>>>> REPLACE
+
+<DIFF>
+<<<<<<< SEARCH
+    # 5. Dynamic Risk Targets (TP/SL)
+    # Anchored to the successful 0.004/0.003 ratio (1.33 R/R)
+    # Adjusted slightly by ATR and trend alignment.
+    if signal != 0:
+        # Base TP/SL relative to ATR or fixed baseline
+        atr_pct = (atr / close) if close > 0 else 0.003
+
+        # Asymmetry: Expand TP and hold slightly tighter SL in trending markets
+        if (signal == 1 and trend > 0.4) or (signal == -1 and trend < -0.4):
+            tp_mult, sl_mult = 1.6, 1.0
+        else:
+            tp_mult, sl_mult = 1.4, 1.0
+
+        # Target TP/SL floor near 0.004 / 0.003 while allowing expansion for volatility
+        take_profit = max(0.0040, min(0.016, atr_pct * tp_mult * 1.1))
+        stop_loss = max(0.0030, min(0.012, atr_pct * sl_mult * 1.1))
+
+        # 6. Position Sizing
+        # Increased base size, scaled by prediction confidence and volatility expansion (vol_ratio)
+        confidence = abs(predicted_return) / 0.0018
+        vol_scale = max(0.9, min(1.2, vol_ratio))
+
+        position_size = 0.12 * confidence * vol_scale
+        position_size = max(0.06, min(0.18, position_size))
+=======
+    # 5. Dynamic Risk Targets (TP/SL)
+    # Reverting toward the seed's high-performing fixed TP/SL (0.004/0.003)
+    # with minimal ATR-based scaling to handle volatility spikes.
+    if signal != 0:
+        atr_pct = (atr / close) if close > 0 else 0.003
+        
+        # Keep TP/SL tight and close to the 1.33 ratio to maximize Sharpe/Calmar
+        take_profit = max(0.0042, min(0.008, atr_pct * 1.4))
+        stop_loss = max(0.0032, min(0.006, atr_pct * 1.0))
+
+        # 6. Position Sizing
+        # Stable sizing near 0.11, with minor adjustments for conviction.
+        # Capping size at 0.13 to reduce Max Drawdown.
+        confidence = min(1.3, abs(predicted_return) / 0.0017)
+        position_size = 0.11 * confidence
+        position_size = max(0.07, min(0.13, position_size))
+>>>>>>> REPLACE

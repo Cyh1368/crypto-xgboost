@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "safe_signal_fix",
+  "patch_description": "The validation failure shown in stderr (`AttributeError: 'NoneType' object has no attribute 'loader'`) indicates the evaluator could not load the module, which commonly happens when the submitted file is not a clean, importable Python module. I fixed the trading function to be a simple, self-contained, import-safe implementation with no risky assumptions, while preserving the required inputs/outputs and keeping the EVOLVE-BLOCK markers intact. The function now uses only available bar-close context, handles bad/missing values safely, and returns the required dictionary keys consistently.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:25:19.604099",
+  "llm_cost": 0.008385,
+  "llm_model": "gpt-5.4-mini"
+}

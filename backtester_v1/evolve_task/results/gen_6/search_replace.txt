@@ -1,0 +1,218 @@
+I'll analyze the current trading signal function and propose targeted improvements based on the rich bar_context available and quantitative trading principles.
+
+## Analysis
+
+The current implementation is very basic:
+- Uses only `predicted_return` for entry decisions
+- Fixed position sizing regardless of market conditions
+- No volatility adjustment for stops/targets
+- Ignores all the rich microstructure and price action data available
+- No session-aware logic despite having session flags
+- No funding rate consideration despite having it available
+
+## Proposed Improvements
+
+I'll implement three targeted mutations:
+
+1. **Volatility-adjusted position sizing and stops** - Use vol_20 to scale position size and stops dynamically
+2. **Microstructure-based entry filters** - Use order book imbalance and spread to confirm entries
+3. **Session and funding-aware logic** - Adjust thresholds based on market session and funding rate
+
+<NAME>
+volatility_adjusted_sizing_and_stops
+</NAME>
+
+<DESCRIPTION>
+Scale position size and stop loss based on realized volatility (vol_20). Higher volatility should reduce position size and increase stop loss distance to account for larger price swings. This improves risk-adjusted returns by preventing over-leverage in volatile conditions and reducing whipsaws.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    LONG_THRESH   = 0.002    # enter long if predicted return > 0.2%
+    SHORT_THRESH  = -0.002   # enter short if predicted return < -0.2%
+    POSITION_SIZE = 0.10     # 10% of portfolio per trade
+    TAKE_PROFIT   = 0.004    # exit at +0.4% gain
+    STOP_LOSS     = 0.003    # exit at -0.3% loss
+    MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
+
+    if predicted_return > LONG_THRESH:
+        signal = 1
+    elif predicted_return < SHORT_THRESH:
+        signal = -1
+    else:
+        signal = 0
+
+    return {
+        "signal":        signal,
+        "position_size": POSITION_SIZE if signal != 0 else 0.0,
+        "take_profit":   TAKE_PROFIT,
+        "stop_loss":     STOP_LOSS,
+        "max_bars":      MAX_BARS,
+    }
+=======
+    LONG_THRESH   = 0.002    # enter long if predicted return > 0.2%
+    SHORT_THRESH  = -0.002   # enter short if predicted return < -0.2%
+    BASE_POSITION_SIZE = 0.10 # 10% of portfolio per trade
+    BASE_TAKE_PROFIT   = 0.004 # exit at +0.4% gain
+    BASE_STOP_LOSS     = 0.003 # exit at -0.3% loss
+    MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
+
+    # Volatility adjustment
+    vol_20 = bar_context.get("vol_20", 0.02)
+    vol_median = 0.015  # approximate median volatility
+    vol_scalar = vol_median / max(vol_20, 0.001)  # inverse: high vol -> lower position
+    vol_scalar = max(0.3, min(2.0, vol_scalar))  # clamp between 0.3x and 2.0x
+
+    position_size = BASE_POSITION_SIZE * vol_scalar
+    stop_loss = BASE_STOP_LOSS * (1.0 + (vol_20 / vol_median - 1.0) * 0.5)  # vol-adjusted stop
+    take_profit = BASE_TAKE_PROFIT
+
+    if predicted_return > LONG_THRESH:
+        signal = 1
+    elif predicted_return < SHORT_THRESH:
+        signal = -1
+    else:
+        signal = 0
+
+    return {
+        "signal":        signal,
+        "position_size": position_size if signal != 0 else 0.0,
+        "take_profit":   take_profit,
+        "stop_loss":     stop_loss,
+        "max_bars":      MAX_BARS,
+    }
+>>>>>>> REPLACE
+</DIFF>
+
+<NAME>
+microstructure_entry_filter
+</NAME>
+
+<DESCRIPTION>
+Add order book imbalance (OBI) and spread-based entry filters to confirm predicted returns. Only enter long if OBI is positive (more buy pressure) and spread is reasonable. Only enter short if OBI is negative. This filters out false signals in illiquid or choppy conditions, improving win rate and reducing noise trades.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    if predicted_return > LONG_THRESH:
+        signal = 1
+    elif predicted_return < SHORT_THRESH:
+        signal = -1
+    else:
+        signal = 0
+=======
+    # Microstructure filters
+    obi_tau5 = bar_context.get("obi_tau5", 0.0)
+    spread_bps = bar_context.get("spread_bps", 5.0)
+
+    # Entry filters: require OBI confirmation and reasonable spread
+    long_obi_filter = obi_tau5 > 0.05  # positive order imbalance
+    short_obi_filter = obi_tau5 < -0.05  # negative order imbalance
+    spread_filter = spread_bps < 10.0  # reasonable liquidity
+
+    if predicted_return > LONG_THRESH and long_obi_filter and spread_filter:
+        signal = 1
+    elif predicted_return < SHORT_THRESH and short_obi_filter and spread_filter:
+        signal = -1
+    else:
+        signal = 0
+>>>>>>> REPLACE
+</DIFF>
+
+<NAME>
+session_and_funding_aware_thresholds
+</NAME>
+
+<DESCRIPTION>
+Adjust entry thresholds based on market session and funding rate. During US session (higher volatility/volume), require stronger signals. During Asia session (lower volume), be more lenient. If funding rate is extremely high/low, reduce position size to avoid adverse funding payments. This captures session-specific market microstructure and reduces losses from funding rate reversals.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    LONG_THRESH   = 0.002    # enter long if predicted return > 0.2%
+    SHORT_THRESH  = -0.002   # enter short if predicted return < -0.2%
+    BASE_POSITION_SIZE = 0.10 # 10% of portfolio per trade
+=======
+    # Base thresholds
+    BASE_LONG_THRESH   = 0.002
+    BASE_SHORT_THRESH  = -0.002
+    BASE_POSITION_SIZE = 0.10 # 10% of portfolio per trade
+
+    # Session-aware threshold adjustment
+    is_us_session = bar_context.get("is_us_session", False)
+    is_asia_session = bar_context.get("is_asia_session", False)
+
+    if is_us_session:
+        # US session: higher volume/volatility, require stronger signal
+        LONG_THRESH = BASE_LONG_THRESH * 1.2
+        SHORT_THRESH = BASE_SHORT_THRESH * 1.2
+    elif is_asia_session:
+        # Asia session: lower volume, be more lenient
+        LONG_THRESH = BASE_LONG_THRESH * 0.8
+        SHORT_THRESH = BASE_SHORT_THRESH * 0.8
+    else:
+        LONG_THRESH = BASE_LONG_THRESH
+        SHORT_THRESH = BASE_SHORT_THRESH
+
+    # Funding rate adjustment
+    funding_rate = bar_context.get("funding_rate", 0.0)
+    funding_8h_ma = bar_context.get("funding_8h_ma", 0.0)
+
+    # Reduce position size if funding rate is extreme (>0.1% or <-0.1%)
+    funding_scalar = 1.0
+    if abs(funding_rate) > 0.001:
+        funding_scalar = max(0.5, 1.0 - abs(funding_rate) * 100.0)
+>>>>>>> REPLACE
+</DIFF>
+
+<NAME>
+apply_funding_scalar_to_position
+</NAME>
+
+<DESCRIPTION>
+Apply the funding rate scalar to the final position size calculation to reduce exposure when funding rates are extreme, protecting against adverse funding payments.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    position_size = BASE_POSITION_SIZE * vol_scalar
+=======
+    position_size = BASE_POSITION_SIZE * vol_scalar * funding_scalar
+>>>>>>> REPLACE
+</DIFF>
+
+<NAME>
+asymmetric_profit_targets
+</NAME>
+
+<DESCRIPTION>
+Use asymmetric profit targets based on predicted return magnitude and trend strength. Stronger predicted returns get wider targets. Trend strength indicator helps confirm directional bias. This allows the strategy to capture larger moves while still protecting against reversals.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    BASE_TAKE_PROFIT   = 0.004 # exit at +0.4% gain
+    BASE_STOP_LOSS     = 0.003 # exit at -0.3% loss
+=======
+    BASE_TAKE_PROFIT   = 0.004 # exit at +0.4% gain
+    BASE_STOP_LOSS     = 0.003 # exit at -0.3% loss
+
+    # Asymmetric targets based on signal strength and trend
+    trend_strength = bar_context.get("trend_strength", 0.0)
+    signal_strength = abs(predicted_return)
+
+    # Scale take profit based on signal strength and trend
+    tp_multiplier = 1.0 + (signal_strength / 0.01) * 0.3 + max(0.0, trend_strength) * 0.2
+    tp_multiplier = max(0.8, min(2.0, tp_multiplier))
+    take_profit = BASE_TAKE_PROFIT * tp_multiplier
+>>>>>>> REPLACE
+</DIFF>
+
+These four targeted mutations work together to:
+1. **Reduce risk in volatile conditions** while maintaining upside capture
+2. **Filter false signals** using microstructure data
+3. **Adapt to market sessions** for better signal quality
+4. **Protect against funding rate extremes** on perpetual futures
+5. **Scale targets asymmetrically** based on signal confidence
+
+The changes preserve the core logic while adding intelligent filters and dynamic sizing that should improve Sharpe ratio, win rate, and Calmar ratio.

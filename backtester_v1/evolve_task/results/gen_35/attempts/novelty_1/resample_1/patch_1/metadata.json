@@ -1,0 +1,14 @@
+{
+  "generation": 35,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "liquidity_adaptive_microtrend_crossover",
+  "patch_description": "This implementation merges the session-specific liquidity thresholds from the \"Current Program\" with the volatility-normalized risk scaling and Kyle-Lambda liquidity penalties from the \"Crossover Inspiration.\" \n\nKey improvements:\n1.  **Dynamic Entry Hurdle**: Combines a session-aware base threshold (refined for US/Asia sessions) with a Kyle-Lambda liquidity penalty to ensure the model's confidence outstrips the estimated market impact.\n2.  **ATR-Anchored Risk Strategy**: Synthesizes the seed's high-performing fixed TP/SL (0.004/0.003) with a dynamic ATR multiplier to adapt to local volatility regimes while preventing stop-outs during noise.\n3.  **Refined Microstructure Filters**: Uses OBI and VWAP deviation \"safety switches\" to filter signals that conflict with immediate order book pressure or over-extended mean reversion.\n4.  **Autocorrelation-Based Hold Times**: Adapts the trade duration based on price-action persistence (Autocorr) and trend strength, optimizing the 4-5 bar sweet spot identified in the historical performance metrics.\n5.  **Multi-Factor Sizing**: Adjusts position size by both model confidence and the realized volatility ratio to normalize risk-adjusted exposure.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:54:46.607390",
+  "llm_cost": 0.007906,
+  "llm_model": "gemini-3-flash-preview"
+}

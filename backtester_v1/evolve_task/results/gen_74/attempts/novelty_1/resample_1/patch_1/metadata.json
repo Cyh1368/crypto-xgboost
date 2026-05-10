@@ -1,0 +1,14 @@
+{
+  "generation": 74,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_weighted_liquidity",
+  "patch_description": "The proposed algorithm, 'regime_weighted_liquidity', moves away from the previous implementation's heavily variable volatility-based stops, which likely introduced excessive noise and premature exits. Instead, it anchors on the high-performing fixed-target framework seen in successful early iterations but enhances it with 'Regime Awareness' and 'Microstructure Confirmation'. \n\nKey Improvements:\n1. **Multi-Horizon OBI Filtering**: Instead of a single OBI value, it averages across multiple time horizons (tau1, 3, 5) to ensure order-book pressure is persistent, not transitory.\n2. **Persistence-Based Max Bars**: Uses the 5-period autocorrelation of returns to decide hold time; if price shows momentum persistence, the trade is allowed more time to breathe.\n3. **Liquidity-Calibrated Sizing**: Uses Kyle's Lambda (price impact) to marginally scale down position sizes when depth is thin, protecting against slippage while maintaining a high baseline size (0.14) to capture alpha.\n4. **Asymmetric Crowding Filter**: Incorporates Funding Rate and VWAP deviation to avoid entering over-extended 'crowded' trades that are prone to sharp reversals.\n5. **Fixed-Ratio Target Core**: Re-adopts a tight, high-win-rate TP/SL ratio (approx. 1.35x), which history shows produces significantly higher Sharpe ratios in 15-minute prediction windows compared to ATR-dynamic targets.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:12:57.225005",
+  "llm_cost": 0.0072675,
+  "llm_model": "gemini-3-flash-preview"
+}

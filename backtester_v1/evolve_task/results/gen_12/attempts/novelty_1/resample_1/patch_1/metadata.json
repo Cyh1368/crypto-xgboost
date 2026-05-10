@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "simplify_and_increase_frequency",
+  "patch_description": "The performance metrics of the previous programs indicate that simplicity and trade frequency are currently the primary drivers of the combined score. The highest-performing seed (80.50) used a simple threshold of 0.002 with no microstructure filters and fixed exits. \n\nThe current program (54.16) has a higher profit factor (20.08 vs 16.55) but significantly fewer trades (252 vs 462) due to restrictive microstructure and funding filters. This edit aims to maximize the combined score by:\n1. Lowering the entry thresholds slightly (0.0019) and relaxing the microstructure/funding filters to increase trade frequency.\n2. Standardizing the position size to 0.11 (slightly higher than the 0.10 seed) to boost total return.\n3. Adopting the fixed 0.004/0.003 take-profit and stop-loss targets from the high-performing seed, as they appear more robust in this timeframe.\n4. Fixing the max_bars to 4 for consistency.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:44:28.536852",
+  "llm_cost": 0.006957,
+  "llm_model": "gemini-3-flash-preview"
+}

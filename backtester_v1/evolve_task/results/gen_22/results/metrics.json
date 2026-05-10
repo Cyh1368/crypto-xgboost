@@ -1,0 +1,50 @@
+{
+    "combined_score": 36.410787,
+    "public": {
+        "sharpe": 21.5855,
+        "total_ret": 7.42,
+        "max_dd": 0.19,
+        "win_rate": 0.7846,
+        "num_trades": 254,
+        "profit_factor": 18.057
+    },
+    "private": {
+        "per_ticker": {
+            "BTC_USDT": {
+                "sharpe_ratio": 23.939629465664318,
+                "total_return_pct": 3.628,
+                "max_drawdown_pct": 0.035,
+                "win_rate": 0.7941,
+                "num_trades": 204,
+                "calmar_ratio": 102.6419,
+                "profit_factor": 16.7759,
+                "avg_trade_pnl": 1.77835
+            },
+            "ETH_USDT": {
+                "sharpe_ratio": 19.900633235294862,
+                "total_return_pct": 8.965,
+                "max_drawdown_pct": 0.068,
+                "win_rate": 0.859,
+                "num_trades": 305,
+                "calmar_ratio": 130.9508,
+                "profit_factor": 31.413,
+                "avg_trade_pnl": 2.93919
+            },
+            "SOL_USDT": {
+                "sharpe_ratio": 20.91630190145257,
+                "total_return_pct": 9.663,
+                "max_drawdown_pct": 0.46,
+                "win_rate": 0.7008,
+                "num_trades": 254,
+                "calmar_ratio": 21.0183,
+                "profit_factor": 5.9814,
+                "avg_trade_pnl": 3.80448
+            }
+        }
+    },
+    "execution_time_mean": 2.3572586683336945,
+    "execution_time_std": 0.5889541692499847,
+    "num_valid_runs": 3,
+    "num_invalid_runs": 0,
+    "all_validation_errors": []
+}

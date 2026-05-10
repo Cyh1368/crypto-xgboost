@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_ensemble_gate",
+  "patch_description": "This design borrows the broad ideas from the earlier programs \u2014 threshold-based entry, microstructure confirmation, and volatility-aware exits \u2014 but changes the internal logic from a simple filter stack into a compact regime ensemble.\n\nInstead of using one or two hard gates, the new algorithm builds a directional \u201cedge score\u201d from several orthogonal components:\n- model prediction strength,\n- order-book pressure and depth alignment,\n- trend and momentum quality,\n- mean-reversion risk via RSI, Bollinger position, wick rejection, and VWAP distance,\n- market quality via spread, Kyle lambda, and funding timing.\n\nThe key novelty is that these factors are fused into a signed confidence score that determines not just whether to trade, but how asymmetric the risk should be. Strong trend-confirmation regimes receive wider take-profit than stop-loss, while stretched or unstable regimes get tighter stops and smaller size. Position sizing is also conditioned on a separate liquidity-friction penalty, so the strategy scales down in noisy or expensive-to-trade environments rather than just rejecting them.\n\nOverall, this is a regime-scored, asymmetry-driven decision engine rather than a fixed-rule signal filter, which should better adapt to the rich context without looking ahead.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:44:50.159994",
+  "llm_cost": 0.018504,
+  "llm_model": "gpt-5.4-mini"
+}

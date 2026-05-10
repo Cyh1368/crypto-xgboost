@@ -1,0 +1,90 @@
+<NAME>
+simplify_and_increase_frequency
+</NAME>
+
+<DESCRIPTION>
+The current program's performance (46.27) is significantly lower than the seed program (80.50), primarily due to a lower trade frequency (277 vs 462) and a lower win rate (0.75 vs 0.78). This suggests that the added microstructure filters (VWAP deviation, funding, and tight OBI) are overly restrictive and potentially filtering out high-quality trades.
+
+This edit proposes:
+1. Lowering the entry threshold to 0.0017 to increase trade frequency.
+2. Relaxing the OBI filter and widening the VWAP deviation filter to allow more momentum-driven trades.
+3. Adding a light RSI filter to avoid entering at extreme exhaustion levels.
+4. Simplifying the TP/SL logic to use seed-inspired base values (0.0042/0.0030) with a dampened volatility adjustment.
+5. Using a stable, fixed position size (0.12) to improve the Sharpe ratio.
+6. Simplifying the max_bars logic to favor the seed's robust 4-bar exit, with a slight extension for US sessions.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Microstructure-Enhanced Thresholds
+    # Lower base threshold to increase trade frequency, filtered by order book imbalance.
+    obi3 = bar_context.get('obi_tau3', 0.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    base_thresh = 0.0018
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Long Filter: OBI should not be heavily against us, and avoid extreme VWAP deviation
+        if obi3 > -0.45 and vwap_dev < 0.01 and funding < 0.0008:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        # Short Filter: OBI should not be heavily against us, and avoid extreme VWAP deviation
+        if obi3 < 0.45 and vwap_dev > -0.01 and funding > -0.0008:
+            signal = -1
+=======
+    # 2. Microstructure-Enhanced Thresholds
+    # Lower base threshold to increase trade frequency, with relaxed filters.
+    obi3 = bar_context.get('obi_tau3', 0.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    base_thresh = 0.0017
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Relaxed filters to capture more momentum while avoiding extreme exhaustion
+        if obi3 > -0.5 and vwap_dev < 0.02 and rsi < 80:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        if obi3 < 0.5 and vwap_dev > -0.02 and rsi > 20:
+            signal = -1
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # 4. Adaptive Hold Time (Max Bars)
+    # Standard exit is 4 bars. Extend if trending or US session momentum is detected.
+    max_bars = 4
+    if abs(trend) > 0.5 or (is_us and autocorr > 0.0):
+        max_bars = 5
+
+    # 5. Risk Targets (TP/SL)
+    # Using a robust base ratio with a dampened volatility adjustment.
+    if signal != 0:
+        atr_pct = (atr / close) if close > 0 else 0.0025
+        vol_mod = max(0.75, min(1.35, (atr_pct / 0.0025) ** 0.6))
+        take_profit = 0.0041 * vol_mod
+        stop_loss = 0.0031 * vol_mod
+
+        # 6. Position Sizing
+        # Base size 0.12, scaled by prediction confidence.
+        confidence = abs(predicted_return) / 0.002
+        position_size = 0.12 * confidence
+        position_size = max(0.08, min(0.18, position_size))
+=======
+    # 4. Adaptive Hold Time (Max Bars)
+    # US sessions often show more continuation; otherwise stick to seed's robust 4-bar exit.
+    max_bars = 5 if is_us else 4
+
+    # 5. Risk Targets (TP/SL)
+    # Using a robust base ratio with a dampened volatility adjustment.
+    if signal != 0:
+        # Normalize volatility around a 0.2% 15-min standard deviation
+        vol_mod = max(0.8, min(1.25, vol_long / 0.002))
+        take_profit = 0.0042 * vol_mod
+        stop_loss = 0.0030 * vol_mod
+
+        # 6. Position Sizing
+        # Stable position sizing to maximize Sharpe and Total Return
+        position_size = 0.12
+>>>>>>> REPLACE
+</DIFF>

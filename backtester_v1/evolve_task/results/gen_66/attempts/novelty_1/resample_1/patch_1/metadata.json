@@ -1,0 +1,14 @@
+{
+  "generation": 66,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "adaptive_microstructure_rsi_atr_stops",
+  "patch_description": "This evolution introduces three complementary improvements:\n\n1. **Asymmetric Microstructure Filtering**: Enhanced signal entry filters that check for depth imbalance (depth_ratio) and directional book pressure alignment. When the order book shows structural weakness (low depth ratio or reversed pressure), we reduce or reject signals despite favorable price prediction. This catches false breakouts in thin markets.\n\n2. **ATR-Anchored Dynamic Stops**: Rather than using only vol_impulse (ratio of volatilities), we incorporate actual bar volatility (ATR) into stop-loss calculation. ATR captures realized volatility of recent bars and provides a more immediate risk adjustment than volatility ratios. This should tighten drawdowns while maintaining entry quality.\n\n3. **RSI Extremes Conviction Dampening**: When predicted_return is positive but RSI_14 is already extremely elevated (>75), or predicted_return is negative but RSI_14 is already extremely depressed (<25), we reduce signal conviction by 20%. This filters mean-reversion traps that occur when price momentum reverses from extremes, improving win rate in ranging markets.\n\nThese three changes work synergistically:\n- Microstructure filtering improves entry quality (higher % of true breakouts)\n- ATR stops adapt to realized bar volatility (tighter risk management)\n- RSI dampening reduces false signals in mean-reversion prone conditions (better Calmar/win-rate)\n\nCombined effect: Fewer but higher-quality trades with better risk-reward, improved profit factor and Calmar ratio.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:10:36.255789",
+  "llm_cost": 0.016502,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

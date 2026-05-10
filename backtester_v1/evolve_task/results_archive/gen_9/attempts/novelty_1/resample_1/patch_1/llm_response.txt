@@ -1,0 +1,62 @@
+```python
+<NAME>
+volatility_rsi_adx_signal
+</NAME>
+
+<DESCRIPTION>
+The bug identified was a potential failure in the module loading process, possibly due to the simplicity of the seed or environment-specific issues during the import of the generated signal function. The fix involves implementing a more robust and sophisticated signal generator that uses bar_context fields (ATR, RSI, ADX) to filter entries and adjust exit levels. Specifically:
+1. Added RSI and ADX filters to avoid trading in overextended or non-trending markets.
+2. Implemented volatility-adjusted take-profit and stop-loss levels using the ATR (Average True Range).
+3. Introduced dynamic position sizing based on the strength of the predicted return.
+4. Ensured all return values are explicitly cast to the correct types (int, float) and bounded within reasonable trading limits.
+5. Included necessary imports (math, numpy) inside the EVOLVE-BLOCK to ensure they are available regardless of how the block is extracted and loaded.
+</DESCRIPTION>
+
+<CODE>
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Sophisticated signal generator using volatility-adjusted thresholds,
+    RSI/ADX filters, and ATR-based exit levels.
+    """
+    import math
+    import numpy as np
+
+    # 1. Extract context with safe defaults
+    close = bar_context.get('close', 1.0)
+    atr = bar_context.get('atr', 0.0)
+    rsi = bar_context.get('rsi', 50.0)
+    adx = bar_context.get('adx', 0.0)
+
+    # 2. Thresholds
+    # Adjust threshold based on ADX (higher threshold when trend is weak)
+    base_threshold = 0.0020
+    if adx < 20:
+        base_threshold = 0.0030
+
+    # 3. Signal Logic
+    signal = 0
+    if predicted_return > base_threshold:
+        # Long: Filter out overbought conditions
+        if rsi < 65:
+            signal = 1
+    elif predicted_return < -base_threshold:
+        # Short: Filter out oversold conditions
+        if rsi > 35:
+            signal = -1
+
+    # 4. Position Sizing
+    # Scale position size by prediction strength, max 20% of portfolio
+    position_size = 0.0
+    if signal != 0:
+        position_size = min(0.20, abs(predicted_return) * 40.0)
+
+    # 5. Volatility-Adjusted Stops and Profit Targets
+    # Use ATR relative to price (percentage)
+    atr

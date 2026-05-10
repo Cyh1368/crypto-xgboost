@@ -1,0 +1,53 @@
+<NAME>
+volatility_adjusted_atr_signal
+</NAME>
+
+<DESCRIPTION>
+The previous program failed with an `AttributeError: 'NoneType' object has no attribute 'loader'`, which typically indicates that the backtester's module loader could not find or load the generated Python file. This can happen if the code structure is not robust or if the `EVOLVE-BLOCK` markers are not handled correctly. 
+
+I have fixed the program by:
+1.  Ensuring the `EVOLVE-BLOCK` markers are clearly placed.
+2.  Adding `import math` and `import numpy as np` inside the block to ensure all dependencies are available if the block is isolated.
+3.  Implementing a more robust signal generator that uses ATR for volatility-adjusted stops and position sizing, ADX for trend filtering, and RSI for momentum filtering.
+4.  Using `.get()` for `bar_context` access to prevent `KeyError`.
+5.  Ensuring all return values are explicitly cast to the expected types (`int`, `float`).
+6.  Adding asymmetric thresholds for long and short entries to better suit crypto market dynamics.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Evolved trading signal generator.
+    Uses ATR-based volatility adjustment, ADX trend filtering, and RSI momentum.
+    """
+    import math
+    import numpy as np
+
+    # 1. Extract context with safe defaults
+    close = bar_context.get('close', 1.0)
+    atr = bar_context.get('atr', 0.0)
+    rsi = bar_context.get('rsi', 50.0)
+    adx = bar_context.get('adx', 20.0)
+    
+    # 2. Dynamic Thresholds - Asymmetric and Volatility-Adjusted
+    # In higher volatility (high ATR), we require a larger predicted return to enter.
+    vol_ratio = (atr / close) if close > 0 and atr > 0 else 0.002
+    base_threshold = max(0.0015, vol_ratio * 0.4)
+    
+    long_thresh = base_threshold
+    short_thresh = -base_threshold * 1.2  # Asymmetric: slightly higher bar for shorts
+    
+    # 3. Signal Logic with Trend (ADX) and Momentum (RSI) Filters
+    signal = 0
+    if predicted_return > long_thresh:
+        # Long: Trend is present (ADX > 20) and not overbought (RSI < 70)
+        if rsi < 70 and adx > 20:
+            signal

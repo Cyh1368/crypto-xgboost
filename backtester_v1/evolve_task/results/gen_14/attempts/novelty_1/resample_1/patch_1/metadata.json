@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "liquidity_aware_micro_filters",
+  "patch_description": "The current approach (Expert program) suffered from over-aggressive volatility scaling which drastically reduced trade profitability in standard crypto regimes. In contrast, the top-performing Seed program (score 80.50) utilized static parameters but lacked risk guardrails. \n\nMy new algorithm bridges this gap by:\n1. Re-anchoring the entry thresholds (0.00192) and TP/SL (0.0042/0.0030) to values close to the high-performing seed, maintaining a robust 1.4:1 reward-to-risk ratio.\n2. Implementing \"light-touch\" microstructure filters (OBI, Spread, VWAP Deviation, and Wick Rejection) to eliminate high-drawdown trades without significantly reducing the trade frequency needed for a high Sharpe ratio.\n3. Introducing a liquidity-adjusted position sizer that scales based on model confidence and Kyle's Lambda (market impact), ensuring larger bets are placed when the environment is liquid and certain.\n4. Using session-based time exits, extending hold time to 5 bars (75 mins) during high-momentum US sessions and keeping it at 4 bars in other sessions to capture optimal decay.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:45:34.912699",
+  "llm_cost": 0.0073435,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,113 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Microstructure-confirmed signal generator with volatility-adaptive 
+    thresholds and execution cost filters.
+    """
+    import math
+    import numpy as np
+
+    def _get(key, default=0.0):
+        v = bar_context.get(key, default)
+        return default if v is None else v
+
+    # 1. Data Extraction
+    obi1 = float(_get("obi_tau1"))
+    obi3 = float(_get("obi_tau3"))
+    obi5 = float(_get("obi_tau5"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+    kyle_lambda = abs(float(_get("kyle_lambda_est")))
+    
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    rsi14 = float(_get("rsi_14", 50.0))
+    vwap_dev = float(_get("vwap_dev"))
+    
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+    is_weekend = bool(_get("is_weekend", False))
+
+    # 2. Regime and Quality Metrics
+    # vol_regime: maps the relationship between short-term and medium-term vol
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+    
+    # micro_bias: composite score of book imbalance and pressure
+    # Positive favors long, negative favors short
+    micro_bias = 0.3 * obi1 + 0.25 * obi3 + 0.2 * obi5 + 0.25 * book_pressure
+    
+    # 3. Dynamic Thresholding
+    # Base threshold slightly lower than previous winners to increase trade frequency
+    BASE_THRESH = 0.00175
+    threshold = BASE_THRESH * (0.85 + 0.25 * vol_regime)
+    
+    signal = 0
+    
+    # 4. Entry Logic with Microstructure and Cost Filters
+    # Filter: Spread must be reasonable
+    # Filter: Microstructure shouldn't be heavily opposing
+    # Filter: Avoid extreme RSI levels for trend-following entries
+    # Filter: Avoid buying/selling at extreme VWAP deviations
+    
+    if predicted_return > threshold:
+        if (micro_bias > -0.5 and 
+            spread_bps < 9.0 and 
+            funding < 0.0015 and 
+            vwap_dev < 0.0045 and 
+            rsi14 < 72):
+            signal = 1
+            
+    elif predicted_return < -threshold:
+        if (micro_bias < 0.5 and 
+            spread_bps < 9.0 and 
+            funding > -0.0015 and 
+            vwap_dev > -0.0045 and 
+            rsi14 > 28):
+            signal = -1
+
+    # 5. Position Sizing
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size slightly aggressive to leverage model precision
+        base_size = 0.14
+        
+        # Conviction boost for strong model predictions
+        conviction_boost = 0.015 if abs(predicted_return) > 0.0032 else 0.0
+        
+        # Session and liquidity adjustments
+        session_boost = 0.01 if is_us else 0.0
+        weekend_penalty = -0.02 if is_weekend else 0.0
+        
+        # Cost/Impact penalty: reduce size if market impact (Kyle's Lambda) is high
+        impact_penalty = -0.02 if kyle_lambda > 0.0005 else 0.0
+        
+        position_size = base_size + conviction_boost + session_boost + weekend_penalty + impact_penalty
+        position_size = float(max(0.08, min(0.19, position_size)))
+
+    # 6. Risk Management (TP/SL/Time)
+    # Using the proven 4:3 ratio with a slight buffer for spread
+    take_profit = 0.0041
+    stop_loss = 0.0031
+    
+    # Time-based exit: 1 hour (4 bars of 15m)
+    max_bars = 4
+    
+    # Reduce max_bars in high-vol or weekend regimes to minimize tail risk
+    if vol_regime > 1.6 or is_weekend:
+        max_bars = 3
+
+    return {
+        "signal":        int(signal),
+        "position_size": float(position_size),
+        "take_profit":   float(take_profit),
+        "stop_loss":     float(stop_loss),
+        "max_bars":      int(max_bars),
+    }
+# EVOLVE-BLOCK-END

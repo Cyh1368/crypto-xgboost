@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "vol_micro_adaptive_precision_v3",
+  "patch_description": "This crossover combines the high-performing dynamic volatility thresholding and microstructure filters from the 87.56-score program with enhanced position sizing and slight refinement of trade entry quality metrics. \n\nKey improvements:\n1.  **Dynamic Thresholding:** Uses the successful volatility-regime-based thresholding logic (`0.0018 * (0.9 + 0.2 * vol_regime)`), which adapts to expanding or contracting volatility to manage trade frequency.\n2.  **Proven Microstructure Quality:** Inherits the weighted Microstructure Quality index (OBI 1, 3, 5 + Book Pressure) that resulted in a win rate of 0.78.\n3.  **Enhanced Position Sizing:** Increases the base position size slightly (from 0.12 to 0.13) and incorporates conviction-based scaling (boosting size to 0.15 for high predicted returns) and session session-based boosts (favoring the volatility of the US session).\n4.  **Preserved Exit Logic:** Maintains the extremely robust 0.004/0.003 Take-Profit/Stop-Loss ratio which has repeatedly produced high Calmar and Sharpe ratios in previous iterations.\n5.  **Strict Cost & Funding Filters:** Filters out trades during high spread or extreme funding regimes to prevent slippage and carry-cost erosion.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:47:55.050677",
+  "llm_cost": 0.007646,
+  "llm_model": "gemini-3-flash-preview"
+}

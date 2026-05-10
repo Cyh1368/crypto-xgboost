@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_microstructure_volatility_signal",
+  "patch_description": "The current program uses static thresholds (0.2% for entry, 0.4% TP, 0.3% SL) regardless of market conditions, which limits adaptability. Key improvements:\n\n1. **Adaptive Entry Thresholds**: Instead of fixed 0.2% threshold, scale entry requirements based on realized volatility (vol_20) and order book imbalance (obi_tau5). High volatility requires stronger signals; strong OBI confirms conviction.\n\n2. **Volatility-Adjusted Risk Management**: TP and SL are now functions of ATR and current volatility regime, not fixed percentages. This prevents over-aggressive exits in calm markets and under-aggressive exits in volatile ones.\n\n3. **Microstructure Confirmation Filters**: Add order book pressure (book_pressure_3, kyle_lambda_est, depth_ratio_5) and spread conditions to filter false signals. Only trade when microstructure supports the predicted direction.\n\n4. **Session and Funding Rate Awareness**: Reduce position size during low-liquidity sessions (Asia) and near funding events. Increase size during high-conviction US session with favorable funding.\n\n5. **Asymmetric Position Sizing**: Long trades get larger positions when trend_strength is high and price is above VWAP; shorts get larger positions when momentum is negative and price is below VWAP.\n\n6. **Dynamic Max Bars**: Extend holding period in strong trends (trend_strength > 0.6) to capture larger moves; reduce in choppy markets (autocorr_5 < 0.2).\n\nThese changes leverage the rich bar_context to adapt to market microstructure, volatility regimes, and session dynamics, improving Sharpe ratio through better risk-adjusted returns and win rate through better entry confirmation.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:41:36.964980",
+  "llm_cost": 0.01803,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

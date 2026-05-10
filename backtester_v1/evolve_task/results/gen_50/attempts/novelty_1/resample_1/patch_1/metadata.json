@@ -1,0 +1,14 @@
+{
+  "generation": 50,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "revert_to_seed_anchors",
+  "patch_description": "The current program's performance (score 57.66) is significantly lower than the seed program's (score 80.50). Analysis suggests that the lower entry thresholds (0.00165-0.0018) and wider exit parameters (0.0045/0.0033) in the current program are likely causing a lower Sharpe ratio and higher drawdown. \n\nThis edit reverts the core logic to the highly successful seed parameters:\n1. Entry Threshold: Standardized to 0.002 across all sessions.\n2. Exits: Reverted to the 0.004 Take Profit and 0.003 Stop Loss.\n3. Holding Period: Fixed at 4 bars, which was the optimal \"sweet spot\" for this 15-minute model.\n4. Position Sizing: Simplified to a stable 0.12, slightly higher than the seed's 0.10 to capitalize on the high win rate while maintaining a high Sharpe.\n5. Filters: Relaxed the microstructure filters (spread and vwap deviation) to be less restrictive, ensuring the model's high-quality signals are not accidentally filtered out.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:04:13.274406",
+  "llm_cost": 0.0077009999999999995,
+  "llm_model": "gemini-3-flash-preview"
+}

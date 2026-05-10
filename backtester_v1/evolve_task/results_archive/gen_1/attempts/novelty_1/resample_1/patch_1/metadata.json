@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "robust_signal_validation_and_context_handling",
+  "patch_description": "The program had multiple issues preventing validation:\n\n1. **Missing input validation**: The function didn't validate that `bar_context` contains required fields (atr, rsi, adx) before using them, and didn't handle None or invalid predicted_return values.\n\n2. **Lack of volatility adjustment**: Per requirements, position sizing should be volatility-adjusted using ATR from bar_context. The original code used a fixed position size.\n\n3. **Missing edge case handling**: No handling for divide-by-zero, missing dict keys, or extreme values.\n\n4. **Stop-loss not volatility-adjusted**: The fixed stop_loss should scale with ATR, not be a constant.\n\nThe fix adds:\n- Robust input validation for bar_context fields\n- Volatility-adjusted position sizing (inverse of ATR normalized)\n- Volatility-adjusted stop-loss levels\n- Safe defaults when bar_context fields are missing\n- Proper handling of edge cases",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:20:12.306714",
+  "llm_cost": 0.008617,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

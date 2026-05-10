@@ -1,0 +1,14 @@
+{
+  "generation": 75,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_aware_asymmetry",
+  "patch_description": "This edit adds a richer regime-aware layer on top of the current thresholding logic without changing the model input contract. The main idea is to keep the proven elastic threshold and microstructure gate, but refine entries with:\n\n- trend confirmation using RSI, MACD signal, trend strength, and short-horizon returns;\n- mean-reversion guardrails using BB % and VWAP deviation;\n- execution-quality filters using spread, depth ratio, Kyle lambda, and order-book imbalance consistency;\n- macro timing awareness via funding rate relative to its 8h MA and minutes-to-funding;\n- asymmetric long/short behavior, since longs and shorts often behave differently around funding and session liquidity;\n- volatility-adjusted exits that widen slightly in strong trends and tighten when the market is noisy but not directional.\n\nThe goal is to reduce low-quality trades while preserving the profitable edge in strong regime-aligned signals, which should help Sharpe and win rate more than raw trade count.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:13:18.477838",
+  "llm_cost": 0.018018,
+  "llm_model": "gpt-5.4-mini"
+}

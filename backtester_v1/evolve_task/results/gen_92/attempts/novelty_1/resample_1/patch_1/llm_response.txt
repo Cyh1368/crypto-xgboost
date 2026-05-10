@@ -1,0 +1,98 @@
+<NAME>
+trend_adaptive_thresholds_and_micro_refinement
+</NAME>
+
+<DESCRIPTION>
+This update introduces several refinements to improve signal quality and capture more profitable momentum trades:
+1.  **Trend-Adaptive Thresholds**: Lowers the entry threshold during strong trends (using `trend_strength`) to capture momentum earlier, similar to the high-performing 98.52 version but with a more aggressive 5% adjustment.
+2.  **Enhanced Microstructure Quality**: Incorporates `obi_tau10` into the `micro_quality` metric to provide a more stable view of order book imbalance across multiple time horizons.
+3.  **Exhaustion & Mean-Reversion Filters**: Adds loose filters using `rsi_14` and `vwap_dev` to avoid entering long at extreme overbought levels or entering short at extreme oversold levels.
+4.  **Dynamic Time Exits**: Extends the `max_bars` limit when volatility is trending up or when the price is significantly deviated from VWAP, allowing more time for the predicted move or mean reversion to materialize.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Microstructure parameters
+    obi_tau1 = _safe_get("obi_tau1", 0.0)
+    obi_tau3 = _safe_get("obi_tau3", 0.0)
+    obi_tau5 = _safe_get("obi_tau5", 0.0)
+    spread_bps = _safe_get("spread_bps", 5.0)
+    book_pressure = _safe_get("book_pressure_3", 0.0)
+    kyle_lambda = abs(_safe_get("kyle_lambda_est", 0.0))
+    depth_ratio_5 = _safe_get("depth_ratio_5", 1.0)
+=======
+    # Microstructure parameters
+    obi_tau1 = _safe_get("obi_tau1", 0.0)
+    obi_tau3 = _safe_get("obi_tau3", 0.0)
+    obi_tau5 = _safe_get("obi_tau5", 0.0)
+    obi_tau10 = _safe_get("obi_tau10", 0.0)
+    spread_bps = _safe_get("spread_bps", 5.0)
+    book_pressure = _safe_get("book_pressure_3", 0.0)
+    vwap_dev = _safe_get("vwap_dev", 0.0)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Elastic threshold mechanism: base threshold scaled by volatility regime
+    THRESHOLD_BASE = 0.00172
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = THRESHOLD_BASE * elastic_multiplier
+=======
+    # Elastic threshold mechanism: base threshold scaled by volatility regime and trend
+    THRESHOLD_BASE = 0.00172
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    trend_adj = 1.0 - (0.05 * min(1.0, abs(trend_strength)))
+    current_threshold = THRESHOLD_BASE * elastic_multiplier * trend_adj
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    if APPLY_QUALITY_FILTERS and signal != 0:
+        # Compute microstructure quality (same weighting as Seed 3)
+        micro_quality = (0.32 * obi_tau1 +
+                        0.24 * obi_tau3 +
+                        0.24 * obi_tau5 +
+                        0.20 * book_pressure)
+
+        # Light filters: allow wider bounds to preserve trade count
+        if signal == 1:
+            # Long: want positive order flow, reasonable spread, not excessive funding
+            if not (micro_quality > -0.85 and funding_rate < 0.0025 and spread_bps < 10.5):
+                signal = 0
+        elif signal == -1:
+            # Short: want negative order flow, reasonable spread, not negative funding
+            if not (micro_quality < 0.85 and funding_rate > -0.0025 and spread_bps < 10.5):
+                signal = 0
+=======
+    if APPLY_QUALITY_FILTERS and signal != 0:
+        # Compute microstructure quality with multi-horizon OBI
+        micro_quality = (0.30 * obi_tau1 +
+                        0.20 * obi_tau3 +
+                        0.20 * obi_tau5 +
+                        0.15 * obi_tau10 +
+                        0.15 * book_pressure)
+
+        # Light filters: validate flow and check for extreme exhaustion/mean-reversion
+        if signal == 1:
+            # Long: want positive flow, reasonable spread, not excessive funding or overbought
+            if not (micro_quality > -0.85 and funding_rate < 0.0025 and spread_bps < 10.5 and vwap_dev < 0.008 and rsi_14 < 82):
+                signal = 0
+        elif signal == -1:
+            # Short: want negative flow, reasonable spread, not negative funding or oversold
+            if not (micro_quality < 0.85 and funding_rate > -0.0025 and spread_bps < 10.5 and vwap_dev > -0.008 and rsi_14 > 18):
+                signal = 0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Time-based exit: Dynamic based on volatility trend
+    MAX_BARS = 4
+    if vol_trend < 0.8:
+        MAX_BARS = 3  # Exit faster if volatility trending down
+=======
+    # Time-based exit: Dynamic based on volatility trend and mean-reversion
+    MAX_BARS = 4
+    if vol_trend < 0.8:
+        MAX_BARS = 3  # Exit faster if volatility trending down
+    elif vol_trend > 1.25 or abs(vwap_dev) > 0.006:
+        MAX_BARS = 5  # Allow more time for high-vol or mean-reversion moves
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "volatility_adjusted_risk_and_momentum_filter",
+  "patch_description": "The current implementation uses fixed stops and position sizes regardless of market conditions. This mutation introduces:\n1. Volatility-adjusted stop losses (using vol_20 and atr_14)\n2. Position size scaling based on volatility and order book imbalance confidence\n3. Momentum confirmation filters (RSI and MACD signal) to reduce false signals\n4. Entry thresholds that vary by session (US sessions tend to be more volatile)\n5. Asymmetric profit targets (larger TP for lower-confidence signals)\n\nThe intuition: In high-volatility regimes, we should take smaller positions and wider stops. During momentum reversals (RSI extreme), we should avoid counter-trend trades. Order book imbalance provides entry confidence multiplier.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:41:37.449836",
+  "llm_cost": 0.019313,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

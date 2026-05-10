@@ -1,0 +1,49 @@
+<NAME>
+fix_none_handling_and_robustness
+</NAME>
+
+<DESCRIPTION>
+The bug was likely caused by a combination of factors:
+1. Potential `TypeError` at runtime: The code did not handle cases where `adx` or `rsi` might be `None` in the `bar_context` dictionary (e.g., `{'adx': None}`). While `bar_context.get('adx', 20.0)` handles missing keys, it returns `None` if the key exists but its value is `None`. This would cause a crash during the `adx / 25.0` calculation.
+2. The `AttributeError: 'NoneType' object has no attribute 'loader'` in the evaluator suggests the module failed to load. This can sometimes happen if the script has a syntax error or if the evaluator's parser is sensitive to the structure of the code (like blank lines or complex docstrings).
+
+The fix involves:
+- Implementing robust `None` and zero-value checks for all `bar_context` variables.
+- Simplifying the code structure by removing unnecessary blank lines and ensuring all types are explicitly cast to `float` or `int` where appropriate.
+- Ensuring the return dictionary keys and structure exactly match the expected format.
+- Adding `import math` inside the block to ensure mathematical functions are available, as per the instructions.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Translates XGBoost 15-min return prediction into a trading decision.
+    """
+    import math
+    # 1. Robust Input Validation
+    if predicted_return is None:
+        predicted_return = 0.0
+    if bar_context is None:
+        bar_context = {}
+    # 2. Safe extraction of bar_context fields with defaults
+    close = bar_context.get('close')
+    if close is None or close <= 0: close = 1.0
+    atr = bar_context.get('atr')
+    if atr is None or atr <= 0: atr = 0.001
+    adx = bar_context.get('adx')
+    if adx is None: adx = 20.0
+    rsi = bar_context.get('rsi')
+    if rsi is None: rsi = 50.0
+    # 3. Dynamic thresholds based on trend strength (ADX)
+    # Higher ADX = stronger trend, lower threshold needed to enter
+    adx_factor = max(0.5, min(1.5, float(adx) / 25.0))
+    long_thresh = 0.0018 / adx_factor
+    short_thresh =

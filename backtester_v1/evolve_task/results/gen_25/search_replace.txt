@@ -1,0 +1,47 @@
+<NAME>
+refine_micro_and_sizing
+</NAME>
+
+<DESCRIPTION>
+This edit proposes several refinements to the current high-performing strategy:
+1.  **Microstructure Refinement**: Incorporates `obi_tau10` into the `micro_quality` metric for better stability and adds `kyle_lambda_est` to the entry filters to avoid high-impact/slippage environments.
+2.  **Tighter Entry Filters**: Slightly tightens the `micro_quality`, `funding`, and `spread_bps` filters to maintain the high win rate while lowering the `BASE_THRESH` to capture more high-quality opportunities.
+3.  **Enhanced Position Sizing**: Increases the conviction boost and the maximum position size limit to leverage the model's high win rate on its most confident predictions.
+4.  **Dynamic Time-Based Exit**: Adjusts `max_bars` based on the `vol_regime`, exiting faster in high-volatility environments and allowing more time in low-volatility ones.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    obi10 = float(_get("obi_tau10"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+=======
+    obi10 = float(_get("obi_tau10"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+    kyle_lambda = abs(float(_get("kyle_lambda_est")))
+
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # 2. Regime Quality Metrics
+    # micro_quality: Positive means book supports long, negative supports short.
+    # Weights optimized from high-performing crossover iterations.
+    micro_quality = 0.3 * obi1 + 0.25 * obi3 + 0.25 * obi5 + 0.2 * book_pressure
+
+    # 3. Dynamic Signal Thresholding
+    # Scaling thresholds with volatility prevents over-trading in noise and captures meaningful moves.
+    BASE_THRESH = 0.0018
+    long_thresh = BASE_THRESH * (0.9 + 0.2 * vol_regime)
+    short_thresh = -BASE_THRESH * (0.9 + 0.2 * vol_regime)
+
+    signal = 0
+    # Core signal logic: Model prediction must exceed threshold, confirmed by microstructure flow
+    # and filtered by execution cost (spread) and carry cost (funding).
+    if predicted_return > long_thresh:
+        if micro_quality > -0.8 and funding < 0.00

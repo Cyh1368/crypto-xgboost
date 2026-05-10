@@ -1,0 +1,14 @@
+{
+  "generation": 43,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_pipeline_signal",
+  "patch_description": "This version restructures the signal logic into a small decision pipeline: context extraction, regime scoring, entry gating, and risk shaping. Instead of a single monolithic threshold block, it builds reusable feature buckets for microstructure, momentum, volatility, and macro pressure, then combines them into asymmetric long/short conviction scores. This improves maintainability by separating concerns, and can improve performance by letting the model prediction interact with richer regime-aware filters and volatility-adjusted sizing/exits without introducing lookahead.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:59:58.608460",
+  "llm_cost": 0.01761675,
+  "llm_model": "gpt-5.4-mini"
+}

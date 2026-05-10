@@ -1,0 +1,14 @@
+{
+  "generation": 62,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "aggressive_microstructure_filters",
+  "patch_description": "This update significantly increases trade frequency and capital efficiency by adopting the aggressive thresholding and microstructure filtering logic that powered the highest-performing historical iteration (90.84 score). \n\nKey changes:\n1.  **Lowered Entry Thresholds**: Reduced the base threshold from 0.0019 to 0.0016 and relaxed session-specific hurdles to capture more alpha-rich opportunities.\n2.  **Relaxed Microstructure Filters**: Expanded the OBI and VWAP deviation limits (e.g., OBI from 0.5 to 0.75, VWAP dev from 0.01 to 0.025) to prevent over-filtering in high-conviction regimes.\n3.  **Simplified Risk Targets**: Shifted from complex ATR-based TP/SL to robust, near-fixed targets (0.0042/0.003) which have shown superior stability in backtests.\n4.  **Aggressive Sizing**: Increased the base position size to 0.14 while maintaining inverse-volatility scaling to protect the Sharpe ratio during high-volatility periods.\n5.  **Liquidity Safety**: Added a spread-based filter (spread_bps < 10.0) to avoid entering trades during toxic liquidity conditions.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:09:18.858152",
+  "llm_cost": 0.0084055,
+  "llm_model": "gemini-3-flash-preview"
+}

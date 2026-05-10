@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "robust_volatility_adjusted_signal",
+  "patch_description": "The previous program failed with an AttributeError during the import phase, which often indicates a syntax error or an issue with the file structure that prevents the spec loader from correctly identifying the module. \n\nThis fix provides a robust and clean implementation of the `generate_signal` function. Key improvements include:\n1. **Safe Input Handling**: Explicitly handles `None` and `NaN` values for `predicted_return` and all `bar_context` fields using a helper function and `try-except` blocks to prevent runtime errors.\n2. **Dynamic Entry Thresholds**: Adjusts the entry threshold based on the ADX (Average Directional Index). In non-trending markets (low ADX), it requires a higher predicted return to enter a trade, reducing noise.\n3. **RSI Filtering**: Implements RSI-based filters to prevent entering long positions when overbought or short positions when oversold.\n4. **Volatility-Adjusted Sizing**: Calculates position size based on ATR (Average True Range) to maintain a consistent risk profile (targeting 0.5% risk per trade).\n5. **ATR-Based Exits**: Uses ATR-multipliers for take-profit (3.5x ATR) and stop-loss (1.75x ATR), ensuring exits are adaptive to current market volatility.\n6. **Time-Based Exit**: Includes a `max_bars` limit of 6 (1.5 hours) to prevent holding stagnant positions.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:24:01.509848",
+  "llm_cost": 0.003863,
+  "llm_model": "gemini-3-flash-preview"
+}

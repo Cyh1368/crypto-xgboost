@@ -1,0 +1,86 @@
+# Analysis
+
+The error `AttributeError: 'NoneType' object has no attribute 'loader'` in the importlib code suggests that the module specification is `None`, which typically means the file cannot be found or has syntax errors that prevent it from being parsed.
+
+Looking at the provided code, I can identify the issue: **the function `generate_signal` is defined but never called or tested within the module**. The validator likely expects the module to be importable and functional, possibly with a test or demonstration that the function works correctly.
+
+Additionally, the code structure suggests it should be self-contained and demonstrate that the function works. The validator may be trying to import and execute the module, but without any actual execution or test code at the module level, it might be failing during the import process.
+
+The fix is to:
+1. Ensure the code is syntactically correct (it appears to be)
+2. Add a simple test/demonstration at module level that shows the function works
+3. Ensure the module can be imported and executed successfully
+
+<NAME>
+add_module_test_validation
+</NAME>
+
+<DESCRIPTION>
+The module failed to load during validation due to missing executable test code. The validator's importlib module encountered a NoneType when trying to load the module, suggesting either a syntax error or missing critical module-level code. The fix adds a simple test case at module level that validates the function works correctly with sample inputs, ensuring the module can be imported and executed successfully during validation.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Seed trading signal generator.
+    Translates XGBoost 15-min return prediction into a trading decision.
+    Args:
+        predicted_return: float, model's predicted 15-min return (e.g. 0.003 = +0.3%)
+        bar_context: dict with keys: close, high, low, volume, atr, rsi, adx
+    Returns:
+        dict with signal, position_size, take_profit, stop_loss, max_bars
+    """
+    LONG_THRESH   = 0.002    # enter long if predicted return > 0.2%
+    SHORT_THRESH  = -0.002   # enter short if predicted return < -0.2%
+    POSITION_SIZE = 0.10     # 10% of portfolio per trade
+    TAKE_PROFIT   = 0.004    # exit at +0.4% gain
+    STOP_LOSS     = 0.003    # exit at -0.3% loss
+    MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
+
+    if predicted_return > LONG_THRESH:
+        signal = 1
+    elif predicted_return < SHORT_THRESH:
+        signal = -1
+    else:
+        signal = 0
+
+    return {
+        "signal":        signal,
+        "position_size": POSITION_SIZE if signal != 0 else 0.0,
+        "take_profit":   TAKE_PROFIT,
+        "stop_loss":     STOP_LOSS,
+        "max_bars":      MAX_BARS,
+    }
+# EVOLVE-BLOCK-END
+
+# Module validation: test that the function works correctly
+if __name__ == "__main__":
+    # Test case 1: Strong long signal
+    result = generate_signal(0.003, {"close": 100, "high": 101, "low": 99, "volume": 1000, "atr": 0.5, "rsi": 60, "adx": 25})
+    assert result["signal"] == 1, f"Expected signal=1 for positive return, got {result['signal']}"
+    assert result["position_size"] == 0.10, f"Expected position_size=0.10, got {result['position_size']}"
+    assert isinstance(result["take_profit"], float), "take_profit should be float"
+    assert isinstance(result["stop_loss"], float), "stop_loss should be float"
+    assert isinstance(result["max_bars"], int), "max_bars should be int"
+    
+    # Test case 2: Strong short signal
+    result = generate_signal(-0.003, {"close": 100, "high": 101, "low": 99, "volume": 1000, "atr": 0.5, "rsi": 40, "adx": 25})
+    assert result["signal"] == -1, f"Expected signal=-1 for negative return, got {result['signal']}"
+    assert result["position_size"] == 0.10, f"Expected position_size=0.10, got {result['position_size']}"
+    
+    # Test case 3: No signal (neutral)
+    result = generate_signal(0.0, {"close": 100, "high": 101, "low": 99, "volume": 1000, "atr": 0.5, "rsi": 50, "adx": 20})
+    assert result["signal"] == 0, f"Expected signal=0 for neutral return, got {result['signal']}"
+    assert result["position_size"] == 0.0, f"Expected position_size=0.0 for neutral signal, got {result['position_size']}"
+    
+    print("All validation tests passed!")
+```
+</CODE>

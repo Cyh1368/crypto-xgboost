@@ -1,0 +1,14 @@
+{
+  "generation": 96,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "microstructure_session_adaptive_v3",
+  "patch_description": "This signal generator performs a crossover between the highest-performing prior programs, specifically focusing on the 95.18-score logic. It combines session-specific dynamic thresholding with a refined micro-alignment score (averaging OBI and Book Pressure). \n\nKey improvements include:\n1.  **Session-Specific Hurdles**: Maintains the optimized US and Asia session thresholds.\n2.  **Volatility-Adjusted Thresholds**: Increases the entry hurdle when short-term volatility (vol_5) spikes relative to long-term volatility (vol_20).\n3.  **Microstructure Filtering**: Uses the 'micro_score' from the best-performing program to ensure order book alignment before entry.\n4.  **Asymmetric Funding Bonus**: Enhances the take-profit target when the trade direction aligns with receiving funding payments.\n5.  **Risk-Managed Sizing**: Incorporates an ATR-based penalty to reduce position size during extreme volatility regimes, preventing outsized drawdowns.\n6.  **Liquidity Safety**: Includes a penalty for poor liquidity (Kyle's Lambda) and a filter for high spread.\n7.  **Funding Avoidance**: Adds logic to avoid entering trades immediately before a funding payment if the trader would be on the paying side.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-10T00:21:35.167103",
+  "llm_cost": 0.0052855,
+  "llm_model": "gemini-3-flash-preview"
+}

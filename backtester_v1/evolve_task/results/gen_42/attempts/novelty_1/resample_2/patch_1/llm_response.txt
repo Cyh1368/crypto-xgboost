@@ -1,0 +1,118 @@
+<NAME>
+layered_scoring_architecture
+</NAME>
+
+<DESCRIPTION>
+The structural redesign moves away from a monolithic if-else block to a 'Layered Scoring' architecture. It decouples market context extraction, signal scoring, and execution logic into separate functional layers. 
+
+1. **Context Normalization Layer:** Standardizes features like volatility and microstructure into normalized factors (e.g., regime, flow_sentiment).
+2. **Signal Quality Scoring:** Instead of binary filters, we compute a continuous Signal Quality score using weighted contributions from Microstructure Flow (OBI, Pressure) and Model Conviction.
+3. **Volatility-Elastic Sizing & Exits:** Adjusts both the entry thresholds and the take-profit/stop-loss distances based on a 'Volatility Impulse' (short-term vol relative to long-term vol), allowing the system to expand targets during trends and contract them during noise.
+4. **Execution Logic Layer:** Maps the quality score and volatility regime into the final signal dictionary, providing a more robust mapping of model predictions to risk-adjusted trade parameters. This approach improves performance by capturing more trades during high-conviction windows while maintaining low drawdowns via volatility-normalized risk distances.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    A layered architectural approach that separates context normalization,
+    quality scoring, and volatility-elastic execution.
+    """
+    import math
+    import numpy as np
+
+    # 1. CONTEXT NORMALIZATION LAYER
+    def _fetch(key, default=0.0):
+        v = bar_context.get(key, default)
+        return default if v is None else float(v)
+
+    # Volatility Regimes
+    v5 = max(_fetch("vol_5", 0.015), 1e-8)
+    v20 = max(_fetch("vol_20", 0.015), 1e-8)
+    v60 = max(_fetch("vol_60", 0.015), 1e-8)
+    vol_impulse = v5 / v20 # Current vs recent volatility
+    vol_trend = v5 / v60    # Current vs long-term volatility
+    
+    # Microstructure Factors
+    obi = (_fetch("obi_tau1") * 0.4 + _fetch("obi_tau3") * 0.3 + _fetch("obi_tau5") * 0.3)
+    pressure = _fetch("book_pressure_3")
+    spread = _fetch("spread_bps")
+    
+    # Session Context
+    is_us = bar_context.get("is_us_session", False)
+    funding = _fetch("funding_rate")
+    
+    # 2. SIGNAL SCORING LAYER
+    # Determine the "Elastic Threshold"
+    # Logic: High vol impulse requires higher return conviction to filter noise.
+    threshold_base = 0.00175
+    elastic_multiplier = 0.85 + (0.30 * min(2.0, vol_impulse))
+    current_threshold = threshold_base * elastic_multiplier
+
+    # Quality Score: Combines model conviction and microstructure support
+    flow_sentiment = 0.7 * obi + 0.3 * pressure
+    
+    raw_signal = 0
+    signal_conviction = 0.0
+    
+    if predicted_return > current_threshold:
+        # Microstructure filter: Ensure we aren't buying into heavy sell pressure
+        if flow_sentiment > -0.75 and spread < 9.5:
+            raw_signal = 1
+            signal_conviction = abs(predicted_return) / current_threshold
+    elif predicted_return < -current_threshold:
+        # Microstructure filter: Ensure we aren't selling into heavy buy pressure
+        if flow_sentiment < 0.75 and spread < 9.5:
+            raw_signal = -1
+            signal_conviction = abs(predicted_return) / current_threshold
+
+    # 3. EXECUTION LOGIC LAYER
+    # Position sizing: Base (0.13) + Conviction Adjustment + Session Liquidity
+    if raw_signal == 0:
+        pos_size = 0.0
+    else:
+        # Scale sizing moderately by conviction and session
+        base_size = 0.14
+        conviction_bonus = min(0.04, (signal_conviction - 1.0) * 0.05)
+        session_bonus = 0.015 if is_us else -0.01
+        
+        # Funding Adjustment: Penalize high-cost trades
+        funding_filter = 1.0
+        if (raw_signal == 1 and funding > 0.001) or (raw_signal == -1 and funding < -0.001):
+            funding_filter = 0.85
+            
+        pos_size = (base_size + conviction_bonus + session_bonus) * funding_filter
+        pos_size = max(0.08, min(0.18, pos_size))
+
+    # Exit parameters: ATR/Vol-Elastic targets
+    # Base exits verified in previous crossovers: TP 0.004 / SL 0.003
+    # Use vol_trend to expand targets during high-vol regimes to capture runners
+    tp_elasticity = 0.8 + (0.2 * min(2.0, vol_trend))
+    sl_elasticity = 0.9 + (0.1 * min(2.0, vol_impulse))
+
+    take_profit = 0.0041 * tp_elasticity
+    stop_loss = 0.0029 * sl_elasticity
+    
+    # Time-based risk
+    # Exit faster if volatility is trending down (stagnation risk)
+    max_bars = 4
+    if vol_trend < 0.8:
+        max_bars = 3
+
+    return {
+        "signal": int(raw_signal),
+        "position_size": float(pos_size),
+        "take_profit": float(take_profit),
+        "stop_loss": float(stop_loss),
+        "max_bars": int(max_bars)
+    }
+# EVOLVE-BLOCK-END
+```
+</CODE>

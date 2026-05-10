@@ -1,0 +1,14 @@
+{
+  "generation": 41,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "vol_adaptive_micro_ensemble",
+  "patch_description": "This program performs a crossover of the top-performing Seed 3 (Fitness: 89.42) and the current modular implementation. \n\nKey improvements:\n1.  **Volatility-Adaptive Thresholding**: Inherits the `0.0018 * (0.9 + 0.2 * vol_regime)` logic from Seed 3, which dynamically adjusts entry sensitivity based on price volatility expansion (vol5/vol20), preventing over-trading during noise while capturing momentum in trending periods.\n2.  **Weighted Microstructure Ensemble**: Uses the 4-factor OBI (1, 3, 5, 10 min) and Book Pressure ensemble from Seed 3, which provides a high-fidelity confirmation of order book support.\n3.  **High-Conviction Sizing**: Adopts the 0.13-0.18 range used in the top seed, providing asymmetric boosts for US session liquidity and high model conviction (predicted return > 0.0036).\n4.  **Robust Execution & Risk**: Incorporates Seed 3's optimized spread filter (< 9.5 bps) and funding filter, while adding a slight time-based risk reduction for weekend trading and funding windows taken from the current program.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:59:35.500758",
+  "llm_cost": 0.010995000000000001,
+  "llm_model": "gemini-3-flash-preview"
+}

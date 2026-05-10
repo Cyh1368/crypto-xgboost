@@ -1,0 +1,153 @@
+# Analysis
+
+Looking at the performance metrics, the current program (89.42) is underperforming compared to the best seed (98.36). The key differences I notice:
+
+1. **Current program**: Sharpe 33.33, win_rate 0.78, num_trades 468
+2. **Best seed (Seed 3)**: Sharpe 34.35, win_rate 0.76, num_trades 530
+
+The current program has:
+- **Fewer trades** (468 vs 530): More conservative filtering is leaving money on the table
+- **Slightly lower Sharpe**: Despite high win rate, not enough capital deployment
+- **Tighter spread filter** (9.5 bps vs 10.5 bps): Too restrictive
+- **No volatility-elastic exit mechanism**: Fixed TP/SL vs dynamic elasticity
+- **No conviction-based position scaling**: Base sizing doesn't scale with signal strength
+- **Missing vol_60 for long-term trend analysis**: Can't distinguish momentum vs mean reversion
+
+**Key improvements from Seed 3 that should be adopted:**
+
+1. **Elastic thresholding**: BASE_THRESH scaled by vol_impulse (0.88 + 0.18 * vol_impulse) increases trade frequency while maintaining signal quality
+2. **Loosened microstructure filters**: (-0.85 to 0.85 instead of -0.8 to 0.8) captures more valid trades
+3. **Relaxed spread limit**: 10.5 bps instead of 9.5 bps
+4. **Conviction-scaled position sizing**: Scale base_size by signal_conviction ratio
+5. **Volatility-elastic exits**: TP/SL scaled by vol_trend (long-term vol)
+6. **Dynamic max_bars**: Exit faster when volatility trending down
+
+Let me propose targeted mutations:
+
+<NAME>
+elastic_threshold_conviction_exits
+</NAME>
+
+<DESCRIPTION>
+Adopt the proven elastic thresholding mechanism from Seed 3 to increase trade frequency while maintaining signal quality. Add conviction-scaled position sizing and volatility-elastic exits. These changes directly address why the current program trades 62 fewer times (468 vs 530) while maintaining win rate. The elastic multiplier (0.88 + 0.18 * vol_impulse) allows the model to capture more high-probability moves during volatile regimes while being more conservative in low-volatility noise. Conviction scaling ensures we size larger for stronger signals. Volatility-elastic exits prevent over-holding in declining volatility regimes.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 3. Dynamic Signal Thresholding
+    # Scaling thresholds with volatility prevents over-trading in noise and captures meaningful moves.
+    BASE_THRESH = 0.0018
+    long_thresh = BASE_THRESH * (0.9 + 0.2 * vol_regime)
+    short_thresh = -BASE_THRESH * (0.9 + 0.2 * vol_regime)
+
+    signal = 0
+    # Core signal logic: Model prediction must exceed threshold, confirmed by microstructure flow
+    # and filtered by execution cost (spread) and carry cost (funding).
+    if predicted_return > long_thresh:
+        if micro_quality > -0.8 and funding < 0.002 and spread_bps < 9.5:
+            signal = 1
+    elif predicted_return < short_thresh:
+        if micro_quality < 0.8 and funding > -0.002 and spread_bps < 9.5:
+            signal = -1
+=======
+    # 3. Dynamic Signal Thresholding
+    # Elastic thresholding: base scaled by volatility impulse improves signal quality
+    # while increasing trade frequency in meaningful vol regimes
+    BASE_THRESH = 0.00172
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_regime))
+    current_threshold = BASE_THRESH * elastic_multiplier
+
+    signal = 0
+    signal_conviction = 0.0
+    # Core signal logic: Model prediction must exceed elastic threshold, confirmed by microstructure
+    # and filtered by execution cost (spread) and carry cost (funding).
+    if predicted_return > current_threshold:
+        if micro_quality > -0.85 and funding < 0.0025 and spread_bps < 10.5:
+            signal = 1
+            signal_conviction = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        if micro_quality < 0.85 and funding > -0.0025 and spread_bps < 10.5:
+            signal = -1
+            signal_conviction = abs(predicted_return) / current_threshold
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 4. Asymmetric Position Sizing
+    # We increase size based on predicted conviction and favorable session liquidity.
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size slightly increased from previous seed to leverage high win rate
+        base_size = 0.13
+        # Conviction boost
+        conviction_boost = 0.02 if abs(predicted_return) > 0.0036 else 0.0
+        # US Session boost (liquidity and move persistence)
+        session_boost = 0.01 if is_us else 0.0
+
+        position_size = base_size + conviction_boost + session_boost
+        position_size = min(0.18, max(0.10, position_size))
+=======
+    # 4. Asymmetric Position Sizing
+    # Scale sizing by conviction strength and session liquidity for better capital efficiency
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size from proven high-performing seed
+        base_size = 0.145
+        # Conviction bonus: scale with signal strength relative to threshold
+        conviction_bonus = min(0.035, max(0, (signal_conviction - 1.0) * 0.06))
+        # US Session boost (liquidity and move persistence)
+        session_bonus = 0.01 if is_us else 0.0
+        # Funding adjustment: mild penalty for unfavorable carry
+        funding_filter = 1.0
+        if (signal == 1 and funding > 0.0015) or (signal == -1 and funding < -0.0015):
+            funding_filter = 0.90
+
+        position_size = (base_size + conviction_bonus + session_bonus) * funding_filter
+        position_size = max(0.10, min(0.18, position_size))
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    # vol_regime: > 1.0 means volatility is expanding relative to the recent past
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+=======
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    vol60 = max(float(_get("vol_60")), 1e-8)
+    # vol_regime: > 1.0 means volatility is expanding relative to the recent past
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+    # vol_trend: long-term volatility regime for exit timing
+    vol_trend = max(0.5, min(2.0, vol5 / vol60))
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 5. Fixed-Horizon Risk Management
+    # Fixed TP/SL has proven to be the most robust exit strategy for this 15-min model.
+    take_profit = 0.004
+    stop_loss = 0.003
+    max_bars = 4 # Time-based exit at 60 minutes
+=======
+    # 5. Volatility-Elastic Risk Management
+    # Scale exits by volatility regime: expand in high-vol, contract in low-vol
+    tp_elasticity = 0.94 + (0.06 * min(2.0, vol_trend))
+    sl_elasticity = 0.97 + (0.03 * min(2.0, vol_regime))
+
+    take_profit = 0.0040 * tp_elasticity
+    stop_loss = 0.0030 * sl_elasticity
+
+    # Dynamic time-based exit: exit faster if volatility trending down (stagnation risk)
+    max_bars = 4
+    if vol_trend < 0.8:
+        max_bars = 3
+>>>>>>> REPLACE
+</DIFF>

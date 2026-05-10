@@ -1,0 +1,68 @@
+<NAME>
+refine_threshold_and_filters
+</NAME>
+
+<DESCRIPTION>
+This edit improves the current signal generation strategy by:
+1. Refining the base threshold to 0.00172 and re-integrating a momentum-based adjustment ('trend_strength'), which was a key component of the historical best-performing iteration (Score 98.52).
+2. Introducing a VWAP deviation filter (vwap_dev) to prevent entries into overextended price positions, acting as a mean-reversion safety check.
+3. Tuning the 'max_bars' (maximum hold time) logic to account for liquidity-risk regimes like weekends and pending funding rate events, which typically experience increased noise and volatility.
+4. Correcting spread and funding rate extraction with safer defaults to ensure consistent filtering behavior.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    spread_bps = float(_get("spread_bps"))
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+
+    # 2. Signal Generation
+    threshold_base = 0.00171
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = threshold_base * elastic_multiplier
+=======
+    spread_bps = float(_get("spread_bps", 5.0))
+    funding = float(_get("funding_rate", 0.0))
+    vwap_dev = float(_get("vwap_dev", 0.0))
+    trend_strength = float(_get("trend_strength", 0.0))
+    is_us = bool(_get("is_us_session", False))
+    is_weekend = bool(_get("is_weekend", False))
+    min_to_funding = float(_get("minutes_to_funding", 999.0))
+
+    # 2. Signal Generation
+    threshold_base = 0.00172
+    trend_adj = 1.0 - (0.04 * min(1.0, trend_strength))
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = threshold_base * elastic_multiplier * trend_adj
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    if predicted_return > current_threshold:
+        if micro_quality > -0.85 and funding < 0.0025 and spread_bps < 10.5:
+            signal = 1
+            conviction_ratio = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        if micro_quality < 0.85 and funding > -0.0025 and spread_bps < 10.5:
+            signal = -1
+            conviction_ratio = abs(predicted_return) / current_threshold
+=======
+    if predicted_return > current_threshold:
+        if micro_quality > -0.85 and funding < 0.0025 and spread_bps < 10.5 and vwap_dev < 0.008:
+            signal = 1
+            conviction_ratio = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        if micro_quality < 0.85 and funding > -0.0025 and spread_bps < 10.5 and vwap_dev > -0.008:
+            signal = -1
+            conviction_ratio = abs(predicted_return) / current_threshold
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # 5. Time-based Exit
+    max_bars = 3 if vol_trend < 0.8 else 4
+=======
+    # 5. Time-based Exit
+    max_bars = 4
+    if vol_trend < 0.8:
+        max_bars = 3
+    if is_weekend or (0.0 < min_to_funding < 30.0):
+        max_bars = min(max_bars, 2)
+>>>>>>> REPLACE
+</DIFF>

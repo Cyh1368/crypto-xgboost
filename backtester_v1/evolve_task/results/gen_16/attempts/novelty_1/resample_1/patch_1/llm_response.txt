@@ -1,0 +1,89 @@
+<NAME>
+vol_adaptive_thresholds_and_lenient_filters
+</NAME>
+
+<DESCRIPTION>
+The current program's performance (66.00) is significantly lower than the best seed (80.50) primarily due to a lower trade frequency (323 vs 462). This edit aims to increase trade frequency while maintaining high precision by:
+1.  Lowering the base threshold from 0.0019 to 0.0018 and making it adaptive to the volatility regime (vol5/vol20).
+2.  Expanding the microstructure quality metric to include `obi_tau5` for a more robust view of the order book.
+3.  Relaxing the microstructure and funding filters to be more lenient, ensuring we don't block high-probability trades unless the book is heavily against us.
+4.  Increasing the base position size to 0.12 (from 0.11) and adding a dynamic boost for high-conviction signals (predicted return > 0.35%) to maximize total return.
+5.  Adding a spread filter (10 bps) to avoid trading in low-liquidity environments.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Microstructure
+    obi1 = float(_get("obi_tau1"))
+    obi3 = float(_get("obi_tau3"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+=======
+    # Microstructure
+    obi1 = float(_get("obi_tau1"))
+    obi3 = float(_get("obi_tau3"))
+    obi5 = float(_get("obi_tau5"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # 2. Regime & Quality Metrics
+    # micro_quality: positive means book supports long, negative supports short
+    micro_quality = 0.4 * obi1 + 0.3 * obi3 + 0.3 * book_pressure
+
+    # vol_regime: > 1.0 means volatility is expanding
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+
+    # 3. Signal Generation (Thresholds slightly more aggressive than seed)
+    LONG_THRESH = 0.0019
+    SHORT_THRESH = -0.0019
+
+    signal = 0
+    # Relaxed filters to increase trade frequency while avoiding toxic flow
+    if predicted_return > LONG_THRESH:
+        if micro_quality > -0.7 and funding < 0.001:
+            signal = 1
+    elif predicted_return < SHORT_THRESH:
+        if micro_quality < 0.7 and funding > -0.001:
+            signal = -1
+=======
+    # 2. Regime & Quality Metrics
+    # micro_quality: positive means book supports long, negative supports short
+    micro_quality = 0.3 * obi1 + 0.25 * obi3 + 0.25 * obi5 + 0.2 * book_pressure
+
+    # vol_regime: > 1.0 means volatility is expanding
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+
+    # 3. Signal Generation
+    # Threshold scales with volatility regime to capture more trades in low-vol and filter noise in high-vol
+    LONG_THRESH = 0.0018 * (0.9 + 0.2 * vol_regime)
+    SHORT_THRESH = -0.0018 * (0.9 + 0.2 * vol_regime)
+
+    signal = 0
+    # Lenient filters to increase trade frequency while avoiding extreme toxic flow or high costs
+    if predicted_return > LONG_THRESH:
+        if micro_quality > -0.8 and funding < 0.002 and spread_bps < 10.0:
+            signal = 1
+    elif predicted_return < SHORT_THRESH:
+        if micro_quality < 0.8 and funding > -0.002 and spread_bps < 10.0:
+            signal = -1
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # 4. Position Sizing
+    # Standardized size slightly above seed to maximize total return
+    if signal == 0:
+        position_size = 0.0
+    else:
+        position_size = 0.11
+=======
+    # 4. Position Sizing
+    # Base size 0.12, with a boost for high-conviction signals
+    if signal == 0:
+        position_size = 0.0
+    else:
+        position_size = 0.12
+        if abs(predicted_return) > 0.0035:
+            position_size = 0.14
+>>>>>>> REPLACE
+
+</DIFF>

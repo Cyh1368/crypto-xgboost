@@ -1,0 +1,138 @@
+--- a/original.py
++++ b/original.py
+@@ -1,51 +1,102 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+-    Seed trading signal generator.
+-    Args:
+-        predicted_return: float, model's predicted 15-min return (e.g. 0.003 = +0.3%)
+-        bar_context: dict with keys:
+-            - OHLCV: open, high, low, close, volume
+-            - Microstructure: obi_tau1, obi_tau3, obi_tau5, obi_tau10, spread_bps,
+-                              depth_ratio_5, depth_ratio_10, mid_price_move,
+-                              book_pressure_3, kyle_lambda_est
+-            - Price Action: ret_1, ret_3, ret_6, ret_12, ret_48, vol_5, vol_20, vol_60,
+-                            rsi_14, rsi_6, macd_signal, bb_pct, atr_14, momentum_bar,
+-                            wick_ratio_up, wick_ratio_down, volume_ratio_5, volume_ratio_20,
+-                            vwap_dev, autocorr_5, skew_20, kurt_20, realized_vol_ratio,
+-                            trend_strength, close_rank_48, gap_open, overnight_ret
+-            - Macro: funding_rate, funding_8h_ma
+-            - Time: hour_sin, hour_cos, dow_sin, dow_cos, is_asia_session,
+-                    is_us_session, is_weekend, minutes_to_funding
+-            - Aliases: atr (atr_14), rsi (rsi_14)
+-    Returns:
+-        dict with signal, position_size, take_profit, stop_loss, max_bars
++    Expert trading signal generator utilizing microstructure filters and 
++    dynamic risk management.
+     """
+-    LONG_THRESH   = 0.002    # enter long if predicted return > 0.2%
+-    SHORT_THRESH  = -0.002   # enter short if predicted return < -0.2%
+-    POSITION_SIZE = 0.10     # 10% of portfolio per trade
+-    TAKE_PROFIT   = 0.004    # exit at +0.4% gain
+-    STOP_LOSS     = 0.003    # exit at -0.3% loss
+-    MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
++    # 1. Parameter Extraction & Cleaning
++    vol_20 = bar_context.get('vol_20', 0.01)
++    atr_14 = bar_context.get('atr_14', 0.003)
++    obi_tau5 = bar_context.get('obi_tau5', 0.0)
++    rsi_14 = bar_context.get('rsi_14', 50.0)
++    trend_strength = bar_context.get('trend_strength', 0.0)
++    is_us_session = bar_context.get('is_us_session', False)
++    funding_rate = bar_context.get('funding_rate', 0.0)
++    autocorr_5 = bar_context.get('autocorr_5', 0.0)
++    
++    # 2. Dynamic Threshold Logic
++    # Base entry threshold
++    base_thresh = 0.0018
++    
++    # Increase threshold during volatile US session to avoid noise
++    session_mult = 1.1 if is_us_session else 1.0
++    
++    # Adjust for funding costs (if we go long but funding is very high, require higher signal)
++    funding_bias = 0.0
++    if predicted_return > 0 and funding_rate > 0.0001:
++        funding_bias = 0.0002
++    elif predicted_return < 0 and funding_rate < -0.0001:
++        funding_bias = -0.0002
++        
++    long_thresh = base_thresh * session_mult + funding_bias
++    short_thresh = -(base_thresh * session_mult) + funding_bias
+ 
+-    if predicted_return > LONG_THRESH:
++    # 3. Microstructure & Indicator Filters
++    # Directional momentum confirmation
++    obi_confirm_long = obi_tau5 > -0.1
++    obi_confirm_short = obi_tau5 < 0.1
++    
++    # RSI filters - avoid buying the blow-off top or selling the local bottom
++    rsi_safe_long = rsi_14 < 72
++    rsi_safe_short = rsi_14 > 28
++
++    # 4. Signal Generation
++    signal = 0
++    confidence = 0.0
++    
++    if predicted_return > long_thresh and obi_confirm_long and rsi_safe_long:
+         signal = 1
+-    elif predicted_return < SHORT_THRESH:
++        confidence = min(1.5, predicted_return / 0.002)
++    elif predicted_return < short_thresh and obi_confirm_short and rsi_safe_short:
+         signal = -1
++        confidence = min(1.5, abs(predicted_return) / 0.002)
++
++    # 5. Dynamic Position Sizing
++    # Baseline 10% size, scaled by signal confidence and volatility
++    # If vol is high, we reduce size to maintain constant risk
++    vol_scaling = 0.01 / max(0.005, vol_20)
++    if signal != 0:
++        position_size = 0.10 * confidence * vol_scaling
++        position_size = max(0.04, min(0.18, position_size))
+     else:
+-        signal = 0
++        position_size = 0.0
++
++    # 6. Optimized Risk/Reward (Anchored to seed 0.004/0.003)
++    # We use atmospheric ATR and vol_20 to scale the distance
++    vol_factor = max(0.7, min(1.3, vol_20 / 0.01))
++    
++    # Baseline TP and SL
++    base_sl = 0.003 * vol_factor
++    base_tp = 0.004 * vol_factor
++    
++    # Trend adjustment: if trend strength is high, widen TP to capture larger moves
++    if (signal == 1 and trend_strength > 0.2) or (signal == -1 and trend_strength < -0.2):
++        take_profit = base_tp * 1.25
++        stop_loss = base_sl * 0.95  # Slightly tighter stop in strong trends
++    else:
++        take_profit = base_tp
++        stop_loss = base_sl
++
++    # 7. Dynamic Hold Time (max_bars)
++    # Default to 4 (seed value)
++    if abs(autocorr_5) > 0.3: # Trending or mean-reverting persistence
++        max_bars = 5
++    elif (rsi_14 > 65 or rsi_14 < 35): # Overextended, get out quicker
++        max_bars = 3
++    else:
++        max_bars = 4
+ 
+     return {
+-        "signal":        signal,
+-        "position_size": POSITION_SIZE if signal != 0 else 0.0,
+-        "take_profit":   TAKE_PROFIT,
+-        "stop_loss":     STOP_LOSS,
+-        "max_bars":      MAX_BARS,
++        "signal": signal,
++        "position_size": float(position_size),
++        "take_profit": float(take_profit),
++        "stop_loss": float(stop_loss),
++        "max_bars": int(max_bars)
+     }
+ # EVOLVE-BLOCK-END

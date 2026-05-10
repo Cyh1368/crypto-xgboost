@@ -1,0 +1,52 @@
+<NAME>
+robust_atr_signal
+</NAME>
+
+<DESCRIPTION>
+The error `AttributeError: 'NoneType' object has no attribute 'loader'` in `importlib` typically occurs when a file cannot be found or is not recognized as a valid Python module. While often an environment issue, it can be mitigated by ensuring the code is syntactically perfect and uses robust, standard logic. 
+
+I have fixed the signaling function by:
+1.  **Robust Input Handling**: Using `float()` and `.get()` to safely handle `predicted_return` and `bar_context` keys, preventing potential `NaN` or `None` errors.
+2.  **Volatility-Adjusted Exits**: Replacing fixed TP/SL percentages with ATR-based levels (e.g., 2.5x ATR for take-profit) to adapt to changing market volatility.
+3.  **Trend Filtering**: Adding an ADX filter to ensure trades only occur when a market trend is established, reducing noise.
+4.  **Standard Type Casting**: Explicitly casting all return values to native `int` and `float` to ensure compatibility with the backtester's expected types.
+5.  **Local Imports**: Including `math` and `numpy` inside the block to ensure they are available even if the global namespace is cleared during evaluation.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Evolved trading signal generator.
+    Translates XGBoost 15-min return prediction into a trading decision with ATR stops and ADX filtering.
+    """
+    import numpy as np
+    import math
+
+    # 1. Clean and normalize inputs
+    pred_val = float(predicted_return)
+    close_price = float(bar_context.get('close', 0.0))
+    atr_value = float(bar_context.get('atr', 0.0))
+    adx_value = float(bar_context.get('adx', 0.0))
+    rsi_value = float(bar_context.get('rsi', 50.0))
+    
+    # 2. Logic Parameters
+    # Trend filter: ADX > 20 indicates some market momentum
+    # Signal threshold: Predicted return of at least 0.18%
+    LONG_THRESH = 0.0018
+    SHORT_THRESH = -0.0018
+    
+    signal = 0
+    if pred_val > LONG_THRESH:
+        if adx_value > 20 and rsi_value < 70:
+            signal = 1
+    elif pred_val < SHORT_THRESH:
+        if adx_value > 20 and rsi_value > 30:
+            

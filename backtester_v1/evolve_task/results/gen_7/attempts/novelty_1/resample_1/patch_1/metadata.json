@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "micro_refined_threshold_strategy",
+  "patch_description": "This strategy performs a crossover between the high-performing \"Current Program\" (Score 80.50) and the context-aware \"Prior Program\". \n\nKey improvements:\n1.  **High-Precision Entry**: Retains the successful `0.002` predicted return threshold from the current program as the primary trigger.\n2.  **Microstructure Filtering**: Incorporates a `micro_quality` metric (derived from OBI and Book Pressure) to filter out signals where the order book heavily opposes the predicted direction, reducing false positives.\n3.  **Volatility-Adjusted Exits**: Instead of fixed TP/SL, it uses a volatility scalar (based on `vol_5/vol_20` and `ATR`) to scale the base `0.004/0.003` exits, allowing for more breathing room in high-volatility regimes and tighter control in low-volatility ones.\n4.  **Asymmetric Sizing**: Adjusts the base `0.10` position size based on prediction conviction and session quality (e.g., US session boost, weekend reduction).\n5.  **Funding Awareness**: Prevents entering longs during extreme positive funding spikes to avoid \"long squeeze\" scenarios.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:43:02.902145",
+  "llm_cost": 0.0077915,
+  "llm_model": "gemini-3-flash-preview"
+}

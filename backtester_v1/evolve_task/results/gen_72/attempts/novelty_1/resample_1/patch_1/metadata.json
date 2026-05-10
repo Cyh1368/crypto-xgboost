@@ -1,0 +1,14 @@
+{
+  "generation": 72,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "microstructure_regime_alignment",
+  "patch_description": "This edit aligns the signal generator with the highest-performing parameters identified in previous iterations while incorporating refined session-based and microstructure filters.\n\nKey adjustments include:\n1.  **Threshold Reset**: Standardize the entry threshold to 0.0018, which historically yielded the highest trade count and Sharpe.\n2.  **Filter Expansion**: Loosened the OBI hurdle to -0.7/+0.7 and the spread limit to 10 bps to capture more alpha while maintaining essential floor protection.\n3.  **Mean Reversion Filter**: Integrated `vwap_dev` (VWAP deviation) to prevent entry during extreme overextensions, which improves the win rate on mean-reverting signals.\n4.  **Position Size Standardization**: Fixed the position size at 0.13, mirroring the best-performing regime's approach to capitalize on high win-rate signals.\n5.  **Fixed Risk Targets**: Reverted to fixed 0.004/0.003 risk targets, which proved more robust than volatility-adjusted ones over the 15-minute horizon.\n6.  **Context-Aware Hold Times**: Re-enabled the 5-bar hold extension for trending US sessions to maximize gain retention.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:12:28.110787",
+  "llm_cost": 0.006174499999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

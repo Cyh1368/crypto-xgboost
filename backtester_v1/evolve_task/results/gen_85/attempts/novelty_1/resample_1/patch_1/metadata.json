@@ -1,0 +1,14 @@
+{
+  "generation": 85,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "adaptive_thresholds_and_tightened_filters",
+  "patch_description": "This edit improves the signal quality and win rate by implementing session-adaptive entry thresholds and tightening microstructure filters (OBI, VWAP deviation, spread, and funding). It also introduces a liquidity-based penalty directly into the entry threshold (inspired by the top-performing 92.88 score program) and refines the position sizing and max-bars logic to focus on high-confidence, high-persistence regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:16:44.168314",
+  "llm_cost": 0.007308500000000001,
+  "llm_model": "gemini-3-flash-preview"
+}

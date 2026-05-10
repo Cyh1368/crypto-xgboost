@@ -1,0 +1,14 @@
+{
+  "generation": 81,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dynamic_regime_adapter",
+  "patch_description": "This algorithm evolves the \"Elastic Threshold\" concept by implementing a multi-factor regime adaptation layer. \nKey innovations include:\n1. **Dynamic Threshold Scaling**: Combines volatility impulse, trend strength, and autocorrelation to adjust entry sensitivity. High autocorrelation and strong trends compress the threshold to capture momentum, while high volatility expands it to prevent noise-based entries.\n2. **Mean-Reversion Guardrail**: Uses VWAP deviation to filter out \"overextended\" momentum signals that are likely to mean-revert before hit-targets.\n3. **Micro-Regime Quality**: Integrates order book imbalance (OBI) and depth ratios with Kyle's Lambda to ensure signals are backed by significant liquidity and one-sided book pressure.\n4. **Asymmetric Exit Logic**: Adjusts TP and SL based on RSI extremes and volatility trends, using a slightly more aggressive TP in trending markets and tighter SL in low-autocorrelation environments.\n5. **Funding Sensitivity**: Heuristically adjusts position size based on the proximity to funding events when funding rates are extreme.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:14:53.152576",
+  "llm_cost": 0.009514,
+  "llm_model": "gemini-3-flash-preview"
+}

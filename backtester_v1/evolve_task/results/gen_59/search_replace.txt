@@ -1,0 +1,147 @@
+<NAME>
+volatility_elastic_scoring_and_sizing
+</NAME>
+
+<DESCRIPTION>
+This edit implements a more sophisticated signal and execution layer inspired by the highest-performing previous iteration.
+Key improvements include:
+1.  **Elastic Thresholding**: Replaces the linear volatility scaling with an elastic multiplier (0.88 to 1.24) based on the volatility impulse (v5/v20), allowing for more trades in stable regimes and tighter filtering during spikes.
+2.  **Refined Microstructure Weighting**: Adjusts OBI and book pressure weights to prioritize immediate order book imbalance (obi_tau1).
+3.  **Conviction-Based Sizing**: Increases the base position size to 0.145 and adds a dynamic bonus based on how much the prediction exceeds the threshold.
+4.  **Volatility-Adaptive Exits**: Implements elastic take-profit and stop-loss levels that expand or contract based on volatility trends, maintaining win-rate stability across different market regimes.
+5.  **Stagnation Exit**: Reduces the maximum holding time (max_bars) from 4 to 3 if volatility is trending downwards, avoiding trades that lose momentum.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 1. Extract Core Context
+    # Microstructure
+    obi1 = float(_get("obi_tau1"))
+    obi3 = float(_get("obi_tau3"))
+    obi5 = float(_get("obi_tau5"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    atr = float(_get("atr_14", _get("atr", 0.001)))
+    rsi14 = float(_get("rsi_14", 50.0))
+    trend = float(_get("trend_strength"))
+
+    # Macro & Time
+    funding = float(_get("funding_rate"))
+    funding_ma = float(_get("funding_8h_ma"))
+    is_us = bool(_get("is_us_session", False))
+    is_weekend = bool(_get("is_weekend", False))
+
+    # 2. Regime & Quality Metrics
+    # micro_quality: positive means book supports long, negative supports short
+    micro_quality = 0.3 * obi1 + 0.25 * obi3 + 0.25 * obi5 + 0.2 * book_pressure
+
+    # vol_regime: > 1.0 means volatility is expanding
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+
+    # 3. Signal Generation
+    # Threshold scales with volatility regime to capture more trades in low-vol and filter noise in high-vol
+    LONG_THRESH = 0.0018 * (0.9 + 0.2 * vol_regime)
+    SHORT_THRESH = -0.0018 * (0.9 + 0.2 * vol_regime)
+
+    signal = 0
+    # Lenient filters to increase trade frequency while avoiding extreme toxic flow or high costs
+    if predicted_return > LONG_THRESH:
+        if micro_quality > -0.8 and funding < 0.002 and spread_bps < 10.0:
+            signal = 1
+    elif predicted_return < SHORT_THRESH:
+        if micro_quality < 0.8 and funding > -0.002 and spread_bps < 10.0:
+            signal = -1
+=======
+    # 1. Context & Regime
+    v5 = max(float(_get("vol_5", 0.015)), 1e-8)
+    v20 = max(float(_get("vol_20", 0.015)), 1e-8)
+    v60 = max(float(_get("vol_60", 0.015)), 1e-8)
+    vol_impulse = v5 / v20
+    vol_trend = v5 / v60
+
+    micro_quality = (0.32 * float(_get("obi_tau1")) +
+                     0.24 * float(_get("obi_tau3")) +
+                     0.24 * float(_get("obi_tau5")) +
+                     0.20 * float(_get("book_pressure_3")))
+
+    spread_bps = float(_get("spread_bps"))
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+
+    # 2. Signal Generation
+    threshold_base = 0.00171
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = threshold_base * elastic_multiplier
+
+    signal = 0
+    conviction_ratio = 0.0
+    if predicted_return > current_threshold:
+        if micro_quality > -0.85 and funding < 0.0025 and spread_bps < 10.5:
+            signal = 1
+            conviction_ratio = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        if micro_quality < 0.85 and funding > -0.0025 and spread_bps < 10.5:
+            signal = -1
+            conviction_ratio = abs(predicted_return) / current_threshold
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # 4. Position Sizing
+    # Base size 0.12, with a boost for high-conviction signals
+    if signal == 0:
+        position_size = 0.0
+    else:
+        position_size = 0.12
+        if abs(predicted_return) > 0.0035:
+            position_size = 0.14
+
+    # 5. Fixed Exits from high-performing seed
+    take_profit = 0.004
+    stop_loss = 0.003
+
+    # 6. Time-based Exit
+    max_bars = 4
+
+    return {
+        "signal":        int(signal),
+        "position_size": float(position_size),
+        "take_profit":   float(take_profit),
+        "stop_loss":     float(stop_loss),
+        "max_bars":      int(max_bars),
+    }
+=======
+    # 3. Position Sizing
+    if signal == 0:
+        position_size = 0.0
+    else:
+        base_size = 0.145
+        conviction_bonus = min(0.035, max(0, (conviction_ratio - 1.0) * 0.06))
+        session_bonus = 0.01 if is_us else 0.0
+
+        funding_filter = 1.0
+        if (signal == 1 and funding > 0.0015) or (signal == -1 and funding < -0.0015):
+            funding_filter = 0.90
+
+        position_size = max(0.10, min(0.18, (base_size + conviction_bonus + session_bonus) * funding_filter))
+
+    # 4. Volatility-Elastic Exits
+    tp_elasticity = 0.94 + (0.06 * min(2.0, vol_trend))
+    sl_elasticity = 0.97 + (0.03 * min(2.0, vol_impulse))
+    take_profit = 0.0040 * tp_elasticity
+    stop_loss = 0.0030 * sl_elasticity
+
+    # 5. Time-based Exit
+    max_bars = 3 if vol_trend < 0.8 else 4
+
+    return {
+        "signal":        int(signal),
+        "position_size": float(position_size),
+        "take_profit":   float(take_profit),
+        "stop_loss":     float(stop_loss),
+        "max_bars":      int(max_bars),
+    }
+>>>>>>> REPLACE
+</DIFF>

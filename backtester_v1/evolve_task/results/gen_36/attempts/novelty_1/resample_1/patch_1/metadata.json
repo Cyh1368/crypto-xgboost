@@ -1,0 +1,14 @@
+{
+  "generation": 36,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_vol_thresholds_and_micro_sizing",
+  "patch_description": "This edit implements several key improvements inspired by the best-performing previous seeds:\n1.  **Adaptive Thresholds**: Replaces fixed 0.002 thresholds with a volatility-regime-aware threshold (Seed 3 logic). This allows the model to be more sensitive in low-volatility environments and more conservative during high-volatility spikes.\n2.  **Microstructure Quality Filter**: Re-introduces a light microstructure filter using a weighted sum of OBI (tau1, 3, 5) and book pressure. This filters out trades where the order book heavily opposes the predicted direction.\n3.  **High-Conviction Sizing**: Increases the base position size to 0.13 and adds boosts for high-conviction predictions (abs return > 0.0036) and the US session, matching the sizing strategy that yielded the highest total return.\n4.  **Parameter Extraction**: Adds `obi_tau1` and `obi_tau3` to the parameter resolution step.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:58:54.879223",
+  "llm_cost": 0.0053054999999999995,
+  "llm_model": "gemini-3-flash-preview"
+}

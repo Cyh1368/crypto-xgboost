@@ -1,0 +1,14 @@
+{
+  "generation": 63,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_micro_conviction_v2",
+  "patch_description": "The current program (score: 89.42) uses fixed thresholds and simple conviction boosting, resulting in fewer trades (468) and lower total return (23.88%) compared to the best prior programs (score: 98.27, 532 trades, 30.74% return).\n\nKey improvements in this evolution:\n\n1. **Refined Microstructure Weighting**: Shift from equal weighting (0.3/0.25/0.25/0.2) to the proven high-performance weights (0.32/0.24/0.24/0.20) that better capture order flow dynamics.\n\n2. **Elastic Threshold Mechanism**: Replace fixed BASE_THRESH (0.0018) with volatility-adaptive thresholding using vol_impulse (v5/v20) ratio. This increases trade frequency in high-conviction regimes while maintaining discipline. New base: 0.00172 with multiplier range 0.88-1.24.\n\n3. **Conviction-Based Sizing**: Replace binary conviction boost (0.02 if > 0.0036 else 0.0) with continuous conviction ratio calculation (predicted_return / threshold). This rewards high-conviction signals with proportional position increases up to 0.035 bonus.\n\n4. **Volatility-Elastic Exits**: Replace fixed TP/SL (0.004/0.003) with elasticity-adjusted exits based on vol_trend (v5/v60). TP ranges 0.00376-0.00424, SL ranges 0.00291-0.00309, maintaining win-rate stability while adapting to regime.\n\n5. **Funding Filter Refinement**: Add mild funding adjustment (0.90x multiplier) for adverse carry trades, reducing drawdown without harsh penalties.\n\n6. **Adaptive Time Horizon**: Reduce max_bars from fixed 4 to 3 when vol_trend < 0.8, preventing stagnation losses.\n\nThese changes target the gap between current (468 trades, 23.88% return) and best prior (532 trades, 30.74% return), aiming for ~530+ trades with improved conviction filtering and volatility adaptation.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:09:40.949720",
+  "llm_cost": 0.015585,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 83,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "session_aware_micro_sizing",
+  "patch_description": "This edit enhances the signal generator by incorporating session-specific entry thresholds, a refined microstructure filter combining OBI and book pressure, and confidence-weighted position sizing. \n\nKey improvements:\n1.  **Dynamic Thresholds**: Adjusts the entry hurdle based on the trading session (lower for US, higher for Asia) and adds a liquidity penalty using Kyle's Lambda to avoid slippage in thin markets.\n2.  **Micro-Alignment**: Combines `obi_tau5` and `book_pressure_3` into a single `micro_score` for more robust liquidity confirmation.\n3.  **Confidence Sizing**: Scales the position size based on the strength of the model's prediction relative to the threshold, capped at a safe maximum.\n4.  **Asymmetric Risk**: Widens the take-profit slightly when the trade aligns with the funding rate (getting paid to hold the position).\n5.  **Extended Hold**: Uses both trend strength and autocorrelation to dynamically extend the holding period to 5 bars in persistent regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:15:51.350338",
+  "llm_cost": 0.007845,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 31,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "vol_adaptive_vwap_filter",
+  "patch_description": "This edit introduces three key improvements to the trading signal function:\n1.  **VWAP Deviation Filter**: Adds a filter to prevent entering long positions when the price is already overextended above the VWAP (and vice versa for shorts), reducing the risk of buying the top or selling the bottom.\n2.  **Refined Microstructure Quality**: Incorporates `obi_tau10` into the `micro_quality` metric and rebalances weights to place more emphasis on `book_pressure_3`, which is often a more stable indicator of near-term direction.\n3.  **Volatility-Adjusted Exits and Sizing**: Scales the `take_profit` and `stop_loss` levels based on the current volatility regime (`vol_regime`), allowing for wider targets in high-volatility environments. It also increases the base position size and conviction boost to leverage the strategy's high win rate.\n4.  **Dynamic Time Exit**: Slightly extends the `max_bars` for low-volatility regimes to allow more time for the predicted move to materialize.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:53:43.657765",
+  "llm_cost": 0.0045185,
+  "llm_model": "gemini-3-flash-preview"
+}

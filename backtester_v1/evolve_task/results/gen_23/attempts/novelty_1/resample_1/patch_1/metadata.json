@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "liquidity_and_vol_optimization",
+  "patch_description": "The current program's performance (Combined Score: 47.15) is significantly lower than the seed program (80.50), primarily due to a higher maximum drawdown (0.37 vs 0.25) and fewer trades (274 vs 462). This suggests the current filters are too restrictive and the dynamic volatility-based TP/SL widening is increasing risk rather than managing it.\n\nThis edit proposes:\n1.  **Simplifying Thresholds**: Reverting to a base threshold of 0.0019 (closer to the seed's 0.002) while adding a linear penalty for wide spreads and high funding costs.\n2.  **Relaxing Filters**: Slightly loosening the OBI and RSI filters to increase trade frequency, while adding a hard filter for excessive spreads (>7 bps).\n3.  **Fixed Risk/Reward**: Moving back to fixed TP/SL (0.0042/0.0030) to stabilize the Sharpe ratio and reduce drawdown, as dynamic widening in high volatility often leads to larger losses.\n4.  **Refined Sizing**: Using a simpler confidence-based sizing (11% base) with a mild reduction only during extreme volatility.\n5.  **Trend-Based Hold Time**: Using trend strength to decide between a 4-bar and 5-bar hold, rather than autocorrelation.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:49:09.354559",
+  "llm_cost": 0.008291,
+  "llm_model": "gemini-3-flash-preview"
+}

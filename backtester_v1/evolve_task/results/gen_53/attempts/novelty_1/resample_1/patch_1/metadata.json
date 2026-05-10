@@ -1,0 +1,14 @@
+{
+  "generation": 53,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "elastic_vol_micro_optimizer",
+  "patch_description": "The new algorithm improves upon the previous iterations by implementing an \"Elastic Volatility-Microstructure\" framework. \n\nKey parameter changes and algorithmic refinements:\n1.  **Lowered Base Threshold**: Reduced the `threshold_base` from 0.00172 (Seed 3) and 0.002 (Current) to 0.00165. This aims to increase trade frequency (targeting >550 trades) to capture more of the model's predictive alpha.\n2.  **Trend-Sensitive Entry**: Introduced a `trend_strength` adjustment to the entry threshold. When trend strength is high, the threshold is lowered by up to 10%, allowing for easier entry into momentum-aligned moves.\n3.  **Refined Microstructure Quality (MQ)**: Re-weighted the OBI components (0.4 for tau1, 0.3 for tau3/5) to prioritize the most immediate order book state, while maintaining a loose filter (MQ > -0.9) to avoid only the most toxic adverse selection.\n4.  **Aggressive Position Sizing**: Increased the `base_size` to 0.15 and added a `vol_scalar` that inversely scales with volatility regime. This leverages the high win rate (78%) by putting more capital to work when the market is stable.\n5.  **Asymmetric Exit Elasticity**: TP and SL are scaled independently using `vol_trend` (long-term) and `vol_impulse` (short-term) respectively, with slightly wider base targets (0.0042/0.0032) to allow trades more room to breathe in expanding volatility.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:05:02.322810",
+  "llm_cost": 0.008395,
+  "llm_model": "gemini-3-flash-preview"
+}

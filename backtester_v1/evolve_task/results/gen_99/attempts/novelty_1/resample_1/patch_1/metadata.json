@@ -1,0 +1,14 @@
+{
+  "generation": 99,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "elastic_vol_impulse_v3",
+  "patch_description": "This strategy performs a crossover between the high-performing \"elastic threshold\" logic (score 98.52) and the robust \"microstructure filter\" logic (score 89.42). \n\nKey enhancements:\n1.  **Refined Elastic Thresholding**: adopts a base threshold of 0.00172 (from the 98.52 script), scaled by both volatility impulse (short-term vol vs medium-term vol) and trend strength. This captures momentum more aggressively during trending periods while tightening during noise.\n2.  **Weighted Micro-Quality Filter**: implements a 4-component weighted order flow quality metric (OBI 1, 3, 5 + Book Pressure) to confirm entries, using 'loose' bounds (\u00b10.85) to preserve trade frequency which is critical for total return.\n3.  **Conviction-Session-Funding Sizing**: uses a 0.145 base position size, enhanced by signal conviction (relative to threshold) and US session liquidity, then penalized for unfavorable funding/carry.\n4.  **Volatility-Elastic Exits**: adapts TP/SL based on the ratio of short-term volatility to the 60-bar trend volatility, allowing trades more room in expansionary regimes and tightening in contraction.\n5.  **Volatility-Dynamic Time Exit**: reduces `max_bars` when volatility is trending lower or near funding events to avoid capital lockups in stagnant regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:21:17.477616",
+  "llm_cost": 0.01129,
+  "llm_model": "gemini-3-flash-preview"
+}

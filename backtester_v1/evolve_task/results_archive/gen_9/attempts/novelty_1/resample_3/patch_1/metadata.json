@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "robust_atr_signal",
+  "patch_description": "The error `AttributeError: 'NoneType' object has no attribute 'loader'` in `importlib` typically occurs when a file cannot be found or is not recognized as a valid Python module. While often an environment issue, it can be mitigated by ensuring the code is syntactically perfect and uses robust, standard logic. \n\nI have fixed the signaling function by:\n1.  **Robust Input Handling**: Using `float()` and `.get()` to safely handle `predicted_return` and `bar_context` keys, preventing potential `NaN` or `None` errors.\n2.  **Volatility-Adjusted Exits**: Replacing fixed TP/SL percentages with ATR-based levels (e.g., 2.5x ATR for take-profit) to adapt to changing market volatility.\n3.  **Trend Filtering**: Adding an ADX filter to ensure trades only occur when a market trend is established, reducing noise.\n4.  **Standard Type Casting**: Explicitly casting all return values to native `int` and `float` to ensure compatibility with the backtester's expected types.\n5.  **Local Imports**: Including `math` and `numpy` inside the block to ensure they are available even if the global namespace is cleared during evaluation.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:29:46.156701",
+  "llm_cost": 0.0025645,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,315 @@
+--- a/original.py
++++ b/original.py
+@@ -1,88 +1,245 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+-    Advanced signal generator using microstructure filtering and dynamic volatility scaling.
++    Regime-scored signal generator with asymmetric exits and liquidity-aware sizing.
+     """
+-    # 1. Extract Core Context
+-    atr = bar_context.get('atr_14', bar_context.get('atr', 0.001))
+-    close = bar_context.get('close', 1.0)
+-    vol_norm = bar_context.get('vol_20', 0.002)
+-    trend_strength = bar_context.get('trend_strength', 0.5)
+-    obi = bar_context.get('obi_tau5', 0.0)
+-    spread = bar_context.get('spread_bps', 1.0)
+-    vwap_dev = bar_context.get('vwap_dev', 0.0)
+-    
+-    # 2. Dynamic Thresholding
+-    # Lower the entry bar if trend strength is high, but raise it if spread is wide
+-    base_threshold = 0.0018 
+-    if trend_strength > 0.6:
+-        base_threshold *= 0.85
+-    
+-    # 3. Signal Determination with Microstructure Filters
++    def clip(x, lo, hi):
++        return lo if x < lo else hi if x > hi else x
++
++    # --- Core market state ---
++    close = float(bar_context.get("close", 1.0))
++    atr = float(bar_context.get("atr_14", bar_context.get("atr", 0.001)))
++    vol_5 = float(bar_context.get("vol_5", 0.002))
++    vol_20 = float(bar_context.get("vol_20", 0.002))
++    vol_60 = float(bar_context.get("vol_60", vol_20))
++    spread = float(bar_context.get("spread_bps", 1.0))
++    obi1 = float(bar_context.get("obi_tau1", 0.0))
++    obi3 = float(bar_context.get("obi_tau3", 0.0))
++    obi5 = float(bar_context.get("obi_tau5", 0.0))
++    obi10 = float(bar_context.get("obi_tau10", 0.0))
++    depth5 = float(bar_context.get("depth_ratio_5", 1.0))
++    depth10 = float(bar_context.get("depth_ratio_10", 1.0))
++    book_pressure = float(bar_context.get("book_pressure_3", 0.0))
++    kyle = float(bar_context.get("kyle_lambda_est", 0.0))
++
++    rsi6 = float(bar_context.get("rsi_6", bar_context.get("rsi", 50.0)))
++    rsi14 = float(bar_context.get("rsi_14", 50.0))
++    macd_signal = float(bar_context.get("macd_signal", 0.0))
++    bb_pct = float(bar_context.get("bb_pct", 0.5))
++    momentum = float(bar_context.get("momentum", bar_context.get("momentum_bar", 0.0)))
++    wick_up = float(bar_context.get("wick_ratio_up", 0.0))
++    wick_down = float(bar_context.get("wick_ratio_down", 0.0))
++    vwap_dev = float(bar_context.get("vwap_dev", 0.0))
++    autocorr = float(bar_context.get("autocorr_5", 0.0))
++    trend_strength = float(bar_context.get("trend_strength", 0.0))
++    skew = float(bar_context.get("skew_20", 0.0))
++    kurt = float(bar_context.get("kurt_20", 0.0))
++
++    funding = float(bar_context.get("funding_rate", 0.0))
++    funding_ma = float(bar_context.get("funding_8h_ma", funding))
++
++    is_asia = bool(bar_context.get("is_asia_session", False))
++    is_us = bool(bar_context.get("is_us_session", False))
++    is_weekend = bool(bar_context.get("is_weekend", False))
++    minutes_to_funding = float(bar_context.get("minutes_to_funding", 9999.0))
++
++    # --- Microstructure friction / liquidity quality ---
++    spread_penalty = clip(spread / 10.0, 0.0, 1.5)
++    lambda_penalty = clip(kyle * 1200.0, 0.0, 1.5)
++    friction = 1.0 + 0.35 * spread_penalty + 0.45 * lambda_penalty
++
++    book_align = (
++        0.35 * obi1 +
++        0.25 * obi3 +
++        0.25 * obi5 +
++        0.15 * obi10 +
++        0.20 * book_pressure +
++        0.12 * np.tanh((depth5 - 1.0) * 1.2) +
++        0.08 * np.tanh((depth10 - 1.0) * 0.8)
++    )
++    book_align = float(np.tanh(book_align))
++
++    # --- Trend / mean-reversion regime composite ---
++    vol_ratio = vol_5 / (vol_20 + 1e-9)
++    vol_regime = clip((vol_ratio - 1.0) * 0.9, -1.0, 1.2)
++
++    trend_comp = (
++        0.28 * np.tanh(momentum * 60.0) +
++        0.22 * np.tanh(macd_signal * 12.0) +
++        0.18 * np.tanh(trend_strength * 2.0) +
++        0.12 * np.tanh(autocorr * 3.0)
++    )
++
++    stretch_long = (
++        0.30 * np.tanh((bb_pct - 0.82) * 4.0) +
++        0.24 * np.tanh(vwap_dev * 55.0) +
++        0.18 * np.tanh((rsi14 - 68.0) / 8.0) +
++        0.10 * np.tanh((rsi6 - 72.0) / 7.0) +
++        0.10 * np.tanh((wick_up - 0.65) * 3.5)
++    )
++
++    stretch_short = (
++        0.30 * np.tanh((0.18 - bb_pct) * 4.0) +
++        0.24 * np.tanh((-vwap_dev) * 55.0) +
++        0.18 * np.tanh((32.0 - rsi14) / 8.0) +
++        0.10 * np.tanh((28.0 - rsi6) / 7.0) +
++        0.10 * np.tanh((wick_down - 0.65) * 3.5)
++    )
++
++    tail_risk = 0.08 * abs(skew) + 0.05 * max(0.0, kurt - 3.0)
++    regime_bias = trend_comp - 0.35 * vol_regime - tail_risk
++
++    # --- Funding / session timing adjustments ---
++    funding_bias_long = 0.0
++    funding_bias_short = 0.0
++    if funding > funding_ma and funding > 0:
++        funding_bias_long -= 0.10
++        funding_bias_short += 0.05
++    elif funding < funding_ma and funding < 0:
++        funding_bias_short -= 0.10
++        funding_bias_long += 0.05
++
++    if minutes_to_funding < 25:
++        funding_bias_long -= 0.08
++        funding_bias_short -= 0.08
++
++    session_bias = 0.0
++    if is_us:
++        session_bias += 0.05
++    if is_asia:
++        session_bias -= 0.03
++    if is_weekend:
++        session_bias -= 0.06
++
++    # --- Prediction normalization and edge score ---
++    pred_mag = abs(predicted_return)
++    pred_scaled = np.tanh(pred_mag / 0.0018)
++    pred_dir = 1.0 if predicted_return > 0 else -1.0 if predicted_return < 0 else 0.0
++
++    long_edge = (
++        1.35 * np.tanh(predicted_return / 0.0018) +
++        0.55 * book_align +
++        0.40 * trend_comp +
++        0.22 * (1.0 - clip(stretch_long, -1.0, 1.2)) +
++        0.10 * np.tanh((rsi14 - 50.0) / 15.0) +
++        0.08 * np.tanh(macd_signal * 10.0) +
++        session_bias +
++        funding_bias_long
++    )
++
++    short_edge = (
++        -1.35 * np.tanh(predicted_return / 0.0018) +
++        -0.55 * book_align +
++        -0.40 * trend_comp +
++        0.22 * (1.0 - clip(stretch_short, -1.0, 1.2)) +
++        -0.10 * np.tanh((rsi14 - 50.0) / 15.0) +
++        -0.08 * np.tanh(macd_signal * 10.0) +
++        (-session_bias) +
++        funding_bias_short
++    )
++
++    # Confirmation filters that block poor-quality entries
++    long_ok = (
++        book_align > -0.08 and
++        spread < 10.0 and
++        wick_up < 1.15 and
++        rsi14 < 78.0 and
++        vwap_dev < 0.03
++    )
++    short_ok = (
++        book_align < 0.08 and
++        spread < 10.0 and
++        wick_down < 1.15 and
++        rsi14 > 22.0 and
++        vwap_dev > -0.03
++    )
++
++    # Extra caution in high-vol / unstable regime
++    unstable = (
++        vol_5 > vol_20 * 1.35 or
++        vol_20 > vol_60 * 1.35 or
++        abs(vwap_dev) > 0.04 or
++        spread > 12.0
++    )
++
+     signal = 0
+-    if predicted_return > base_threshold:
+-        # Long Filter: OBI should not be heavily negative, and not overextended above VWAP
+-        if obi > -0.2 and vwap_dev < 0.015 and spread < 8.0:
+-            signal = 1
+-    elif predicted_return < -base_threshold:
+-        # Short Filter: OBI should not be heavily positive, and not overextended below VWAP
+-        if obi < 0.2 and vwap_dev > -0.015 and spread < 8.0:
+-            signal = -1
+-
+-    # 4. Risk Management (Volatility-Based)
+-    # Scale TP/SL by ATR to adapt to market regime
+-    # Ensure a minimum stop to avoid noise, and a maximum to prevent blowouts
+-    atr_pct = atr / close
+-    
+-    if signal != 0:
+-        # Asymmetric TP/SL based on trend
+-        if signal == 1:
+-            # In longs, if trend is up, aim higher
+-            tp_mult = 2.2 if trend_strength > 0.5 else 1.8
+-            sl_mult = 1.4 if trend_strength > 0.5 else 1.6
+-        else:
+-            # In shorts, markets often drop faster
+-            tp_mult = 2.0 if trend_strength > 0.5 else 1.6
+-            sl_mult = 1.5 if trend_strength > 0.5 else 1.7
+-            
+-        stop_loss = clip_value(atr_pct * sl_mult, 0.0015, 0.012)
+-        take_profit = clip_value(atr_pct * tp_mult, 0.0025, 0.025)
+-        
+-        # 5. Position Sizing (Confidence & Volatility Weighted)
+-        # Higher confidence (predicted_return) and lower volatility increases size
+-        confidence = abs(predicted_return) / base_threshold
+-        vol_adj = 0.002 / (vol_norm + 1e-6)
+-        position_size = clip_value(0.1 * confidence * vol_adj, 0.05, 0.25)
+-        
+-        # 6. Time-Based Exit (Session Dependent)
+-        # US sessions have more follow-through; Asia sessions mean-revert faster
+-        if bar_context.get('is_us_session', False):
+-            max_bars = 6
+-        elif bar_context.get('is_asia_session', False):
+-            max_bars = 3
+-        else:
+-            max_bars = 4
++    if predicted_return > 0 and long_edge > 0.42 and long_ok and not (unstable and long_edge < 0.85):
++        signal = 1
++    elif predicted_return < 0 and short_edge > 0.42 and short_ok and not (unstable and short_edge < 0.85):
++        signal = -1
++
++    if signal == 0:
++        return {
++            "signal": 0,
++            "position_size": 0.0,
++            "take_profit": 0.0,
++            "stop_loss": 0.0,
++            "max_bars": 0,
++        }
++
++    # --- Position sizing ---
++    conf = clip((abs(long_edge) if signal == 1 else abs(short_edge)) / 1.15, 0.0, 1.5)
++    pred_boost = clip(pred_scaled * 1.15, 0.0, 1.15)
++    liquidity_scale = 1.0 / friction
++    vol_scale = 1.0 / clip((vol_5 / (vol_20 + 1e-9)) ** 0.5, 0.75, 1.6)
++
++    size = 0.11 * (0.55 + 0.45 * conf) * (0.65 + 0.35 * pred_boost) * liquidity_scale * vol_scale
++    if unstable:
++        size *= 0.72
++    if is_weekend:
++        size *= 0.85
++
++    position_size = clip(size, 0.04, 0.22)
++
++    # --- Asymmetric exits ---
++    atr_pct = atr / max(close, 1e-9)
++    base_risk = clip(max(atr_pct * 1.15, vol_20 * 0.85), 0.0015, 0.0125)
++
++    if signal == 1:
++        conviction = clip(0.75 + 0.35 * trend_comp + 0.20 * book_align - 0.15 * stretch_long, 0.55, 1.35)
++        stop_loss = base_risk * clip(1.15 - 0.10 * conviction, 0.90, 1.25)
++        take_profit = base_risk * clip(1.75 + 0.55 * conviction, 1.55, 2.65)
++        if trend_strength > 0.6:
++            take_profit *= 1.08
++        if stretch_long > 0.45:
++            stop_loss *= 0.92
++            take_profit *= 0.96
+     else:
+-        position_size = 0.0
+-        take_profit = 0.0
+-        stop_loss = 0.0
+-        max_bars = 0
++        conviction = clip(0.75 - 0.35 * trend_comp + 0.20 * (-book_align) - 0.15 * stretch_short, 0.55, 1.35)
++        stop_loss = base_risk * clip(1.18 - 0.08 * conviction, 0.92, 1.28)
++        take_profit = base_risk * clip(1.70 + 0.60 * conviction, 1.50, 2.75)
++        if trend_strength < -0.6:
++            take_profit *= 1.08
++        if stretch_short > 0.45:
++            stop_loss *= 0.92
++            take_profit *= 0.96
++
++    stop_loss = clip(stop_loss, 0.0012, 0.0150)
++    take_profit = clip(take_profit, stop_loss * 1.15, 0.0280)
++
++    # --- Holding period logic ---
++    if unstable:
++        max_bars = 3
++    elif abs(autocorr) > 0.35 or abs(trend_strength) > 0.65:
++        max_bars = 5
++    elif is_us and vol_regime < 0.4:
++        max_bars = 6
++    elif is_asia:
++        max_bars = 3
++    else:
++        max_bars = 4
+ 
+     return {
+         "signal": int(signal),
+         "position_size": float(position_size),
+         "take_profit": float(take_profit),
+         "stop_loss": float(stop_loss),
+         "max_bars": int(max_bars),
+     }
+-
+-def clip_value(val, min_val, max_val):
+-    return max(min_val, min(max_val, val))
+-
+ # EVOLVE-BLOCK-END

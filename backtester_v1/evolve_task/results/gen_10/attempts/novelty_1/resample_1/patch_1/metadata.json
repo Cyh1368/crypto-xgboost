@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ensemble_regime_adaptive_signal",
+  "patch_description": "This algorithm takes a fundamentally different approach by implementing an ensemble-based regime detection system combined with adaptive thresholds. Instead of using fixed or linearly-adjusted thresholds, it:\n\n1. **Regime Classification**: Classifies market conditions into 4 distinct regimes (Trending-High-Vol, Mean-Revert-Low-Vol, Choppy-High-Vol, Quiet-Low-Vol) using a combination of trend strength, volatility ratios, autocorrelation, and skew/kurtosis.\n\n2. **Regime-Specific Logic**: Each regime has its own entry thresholds, position sizing rules, and exit parameters. This allows the algorithm to be aggressive in favorable regimes and defensive in unfavorable ones.\n\n3. **Multi-Factor Confirmation**: Uses a weighted ensemble of microstructure (OBI, spread, depth), momentum (returns, RSI, MACD), and macro (funding) signals rather than simple threshold crossing.\n\n4. **Dynamic Risk Management**: Position sizing and stops adapt not just to volatility, but to regime-specific risk profiles. Mean-revert regimes get tighter stops; trending regimes get wider stops.\n\n5. **Liquidity-Aware Entry**: Combines spread, depth ratio, and kyle_lambda into a liquidity score that gates entries and scales position size.\n\n6. **Session-Aware Micro Adjustments**: Uses time-of-day signals (hour_sin/cos) to fine-tune thresholds within sessions, not just binary session flags.\n\nWhy this should perform better:\n- The prior best performer (80.50 score) used extreme simplicity with high selectivity (462 trades, 78% win rate). This approach maintains that selectivity while adding intelligent regime adaptation.\n- The complex weighted approach (11.63 score) suffered from over-parameterization and conflicting signals. This ensemble approach is more modular and interpretable.\n- By classifying regimes first, we avoid applying the same logic to fundamentally different market conditions, which is a key source of drawdown.\n- The multi-factor confirmation reduces false signals while the regime-specific thresholds increase true signal capture in favorable conditions.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:43:38.081821",
+  "llm_cost": 0.030765,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 30,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "microstructure_asymmetry_v2",
+  "patch_description": "This edit upgrades the signal generator from a mostly threshold-only entry model into a regime-aware, asymmetric decision function that uses the richer bar context already available in the environment.\n\nKey improvements:\n- Adds stronger entry filters using order-book imbalance, depth, spread, kyle lambda, RSI, MACD, VWAP deviation, Bollinger position, trend strength, autocorrelation, and funding.\n- Separates momentum-trend entries from mean-reversion entries so the model can exploit both continuation and reversion regimes without lookahead.\n- Makes thresholds adaptive to volatility and execution cost, reducing low-quality trades when spreads or impact are elevated.\n- Uses volatility-adjusted asymmetric exits: long and short trades get different TP/SL multipliers based on regime quality and trend confirmation.\n- Scales position size by conviction and liquidity quality instead of a flat size, while keeping bounds conservative to protect win rate and drawdown.\n- Tightens time-in-trade in noisy or cost-heavy regimes and allows a little more runway when trend and book quality align.\n\nThe goal is to improve combined score by preserving the current high win rate while increasing average trade quality, especially in toxic-flow or choppy conditions.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:52:37.939256",
+  "llm_cost": 0.0200205,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "increase_trade_frequency_and_anchor_targets",
+  "patch_description": "The current program has a very high win rate (0.84) but a low trade count (150), which limits its total return and Sharpe ratio compared to the top-performing seed (462 trades, 32.89 Sharpe). \n\nThis edit aims to increase trade frequency and improve the combined score by:\n1. Lowering the base threshold from 0.0019 to 0.0017 and reducing the liquidity penalty scaling to capture more high-conviction signals.\n2. Relaxing the RSI and funding rate filters to be more inclusive.\n3. Adding a mild Order Book Imbalance (OBI) filter to maintain signal quality despite the lower threshold.\n4. Anchoring the take-profit and stop-loss floors closer to the successful 0.004/0.003 ratio found in the best-performing seed.\n5. Simplifying the max_bars logic to a more robust 4-5 bar window.\n6. Slightly increasing the base position size and adjusting the confidence scaling.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:50:09.160935",
+  "llm_cost": 0.0087995,
+  "llm_model": "gemini-3-flash-preview"
+}

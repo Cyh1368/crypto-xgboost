@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "robust_signal_logic",
+  "patch_description": "The validation failure trace shows the evaluator could not properly load the module (`spec.loader` was `None`), which commonly happens when the submitted file is malformed or not importable as a normal Python module. I kept the program import-safe and ensured the EVOLVE block contains a clean, valid `generate_signal` implementation with the same input/output contract.\n\nI also improved the trading logic to be more robust: dynamic entry thresholds based on ATR/ADX, RSI trend filters, volatility-adjusted stop loss / take profit, asymmetric long/short rules, and simple signal smoothing using recent bar context when available. No external libraries beyond `numpy` and `random` are used, and the code remains self-contained.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:25:47.282153",
+  "llm_cost": 0.009405,
+  "llm_model": "gpt-5.4-mini"
+}

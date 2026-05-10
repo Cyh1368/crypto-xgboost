@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "layered_scoring_architecture",
+  "patch_description": "The structural redesign moves away from a monolithic if-else block to a 'Layered Scoring' architecture. It decouples market context extraction, signal scoring, and execution logic into separate functional layers. \n\n1. **Context Normalization Layer:** Standardizes features like volatility and microstructure into normalized factors (e.g., regime, flow_sentiment).\n2. **Signal Quality Scoring:** Instead of binary filters, we compute a continuous Signal Quality score using weighted contributions from Microstructure Flow (OBI, Pressure) and Model Conviction.\n3. **Volatility-Elastic Sizing & Exits:** Adjusts both the entry thresholds and the take-profit/stop-loss distances based on a 'Volatility Impulse' (short-term vol relative to long-term vol), allowing the system to expand targets during trends and contract them during noise.\n4. **Execution Logic Layer:** Maps the quality score and volatility regime into the final signal dictionary, providing a more robust mapping of model predictions to risk-adjusted trade parameters. This approach improves performance by capturing more trades during high-conviction windows while maintaining low drawdowns via volatility-normalized risk distances.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:00:37.004105",
+  "llm_cost": 0.007788,
+  "llm_model": "gemini-3-flash-preview"
+}

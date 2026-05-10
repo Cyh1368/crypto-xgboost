@@ -1,0 +1,52 @@
+ll use a simpler `SEARCH` block that is easier to match.
+
+    *   *Block 1 (Markers):*
+        ```python
+        <<<<<<< SEARCH
+            is_asia = bar_context.get('is_asia_session', False)
+            funding = bar_context.get('funding_rate', 0.0)
+        =======
+            is_asia = bar_context.get('is_asia_session', False)
+            funding = bar_context.get('funding_rate', 0.0)
+            spread = bar_context.get('spread_bps', 1.0)
+        >>>>>>> REPLACE
+        ```
+
+    *   *Block 2 (Threshold & Signal):*
+        ```python
+        <<<<<<< SEARCH
+            # 2. Liquidity-Adjusted Dynamic Threshold
+            # Lowered base threshold to increase trade frequency, with a scaled liquidity penalty.
+            liquidity_penalty = max(0.0, min(0.0004, kyle_lambda * 40.0))
+            base_thresh = 0.0017 + liquidity_penalty
+
+            # 3. Execution Signal Logic
+            signal = 0
+            if predicted_return > base_thresh:
+                # Relaxed filters to capture more opportunities while using OBI for quality
+                if rsi < 82 and funding < 0.0008 and obi > -0.45:
+                    signal = 1
+            elif predicted_return < -base_thresh:
+                if rsi > 18 and funding > -0.0008 and obi < 0.45:
+                    signal = -1
+        =======
+            # 2. Threshold & Signal Logic
+            # Use a spread-adjusted threshold to maintain trade frequency while filtering high-cost bars.
+            base_thresh = 0.0019 + (min(spread, 10.0) * 0.00001)
+            signal = 0
+            if predicted_return > base_thresh and rsi < 85 and obi > -0.55 and spread < 7.5:
+                signal = 1
+            elif predicted_return < -base_thresh and rsi > 15 and obi < 0.55 and spread < 7.5:
+                signal = -1
+        >>>>>>> REPLACE
+        ```
+
+    *   *Block 3 (Risk & Sizing):*
+        ```python
+        <<<<<<< SEARCH
+            # 4. Adaptive Hold Time (Max Bars)
+            # Standardize on 4-5 bars; US session and strong trends favor longer holds.
+            max_bars = 5 if (abs(trend) > 0.5 or (is_us and autocorr > 0.0)) else 4
+
+            # 5. Dynamic Risk Targets (TP/SL)
+            # Anchored to the successful 0.00

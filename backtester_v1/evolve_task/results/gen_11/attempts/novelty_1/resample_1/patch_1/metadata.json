@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "microstructure_trend_optimized_strategy",
+  "patch_description": "This strategy evolves the high-performing simplicity of the best-scoring seed (80.50) by integrating key microstructure and session-based enhancements from the other top-performing programs. \n\nKey improvements:\n1.  **Dynamic Thresholding**: Anchors the base entry threshold at 0.002 (as in the 80.50 program) but introduces a 10% discount (0.0018) when the predicted return aligns with the overall `trend_strength`, allowing for more trades in high-conviction directions.\n2.  **Microstructure Filtering**: Implements loose `obi_tau5` (Order Book Imbalance) and `spread_bps` filters to avoid entering trades where the book is heavily stacked against the signal or where execution costs are prohibitively high.\n3.  **Session-Aware Hold Times**: Adapts `max_bars` based on market sessions, extending the hold time to 5 bars during the more trending US session (from the 66.99 program) while maintaining the 4-bar default for others.\n4.  **Optimized Sizing**: Slightly increases the base position size to 0.11 to capitalize on the high win rate (78%) observed in the seed programs.\n5.  **Volatility/Mean-Reversion Safety**: Adds a loose `vwap_dev` filter to prevent trend-following entries at extreme price extensions where mean reversion is likely.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:44:42.864320",
+  "llm_cost": 0.0074585,
+  "llm_model": "gemini-3-flash-preview"
+}

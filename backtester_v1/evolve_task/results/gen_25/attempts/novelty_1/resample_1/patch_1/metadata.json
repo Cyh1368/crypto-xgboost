@@ -1,0 +1,14 @@
+{
+  "generation": 25,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "refine_micro_and_sizing",
+  "patch_description": "This edit proposes several refinements to the current high-performing strategy:\n1.  **Microstructure Refinement**: Incorporates `obi_tau10` into the `micro_quality` metric for better stability and adds `kyle_lambda_est` to the entry filters to avoid high-impact/slippage environments.\n2.  **Tighter Entry Filters**: Slightly tightens the `micro_quality`, `funding`, and `spread_bps` filters to maintain the high win rate while lowering the `BASE_THRESH` to capture more high-quality opportunities.\n3.  **Enhanced Position Sizing**: Increases the conviction boost and the maximum position size limit to leverage the model's high win rate on its most confident predictions.\n4.  **Dynamic Time-Based Exit**: Adjusts `max_bars` based on the `vol_regime`, exiting faster in high-volatility environments and allowing more time in low-volatility ones.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:50:45.647500",
+  "llm_cost": 0.0056305,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "robust_vol_threshold_logic",
+  "patch_description": "The previous program likely failed due to the 'numpy' and 'math' imports being outside the EVOLVE-BLOCK, causing it to be undefined when the block is extracted for evaluation. This fix moves the imports inside the block, adds robust handling for NaN/infinite predicted returns, and incorporates a volatility-adjusted entry logic. The signal generator now uses ADX to filter for trend strength, RSI to avoid entries into exhausted momentum, and ATR for dynamic volatility-based position sizing and exits (Take Profit/Stop Loss). This approach improves the Sharpe ratio and Calmar ratio by adapting and protecting against market noise.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:25:06.766033",
+  "llm_cost": 0.0052055,
+  "llm_model": "gemini-3-flash-preview"
+}

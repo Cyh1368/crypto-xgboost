@@ -1,0 +1,55 @@
+<NAME>
+robust_signal_logic
+</NAME>
+
+<DESCRIPTION>
+The previous program failed with an `AttributeError: 'NoneType' object has no attribute 'loader'` during the import process in the evaluator. This error typically indicates that the file being imported could not be found or was not recognized as a valid Python module. To fix this, I have:
+1. Ensured the `EVOLVE-BLOCK` markers are clean and correctly placed.
+2. Added robust handling for `None` and `NaN` values in both `predicted_return` and `bar_context` fields to prevent runtime errors that might interfere with the evaluation process.
+3. Simplified the logic to use only built-in functions and standard Python types, ensuring compatibility.
+4. Maintained the exact structure of the seed program, which is known to pass the import stage.
+5. Added a trend filter (ADX) and a momentum filter (RSI) to improve signal quality, while ensuring all calculations are safe from division-by-zero or invalid value errors.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Translates XGBoost 15-min return prediction into a trading decision.
+    Args:
+        predicted_return: float, model's predicted 15-min return
+        bar_context: dict with keys: close, high, low, volume, atr, rsi, adx
+    Returns:
+        dict with signal, position_size, take_profit, stop_loss, max_bars
+    """
+    import math
+
+    # 1. Robust Input Validation
+    if predicted_return is None or (isinstance(predicted_return, float) and math.isnan(predicted_return)):
+        predicted_return = 0.0
+    
+    if not bar_context:
+        bar_context = {}
+
+    # 2. Safe extraction of bar_context fields with defaults
+    def get_float(key, default):
+        val = bar_context.get(key)
+        if val is None or (isinstance(val, float) and math.isnan(val)):
+            return default
+        return float(val)
+
+    close = get_float('close', 1.0)
+    atr   = get_float('atr', 0.001)
+    rsi   = get_float('rsi', 50.0)
+    adx   = get_float('adx', 20.0)
+
+    # 3. Dynamic Thresholds based on Volatility and Trend
+    # Normalize ADX (0-100) to a factor (0.5-1.5) to adjust entry sensitivity
+    adx_factor = max(0.5, min(

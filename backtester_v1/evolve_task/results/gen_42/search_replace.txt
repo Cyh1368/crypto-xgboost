@@ -1,0 +1,47 @@
+<NAME>
+microstructure_and_vol_refinement
+</NAME>
+
+<DESCRIPTION>
+Refines the signal generation logic by:
+1.  Updating `micro_quality` weights to include longer-term OBI (obi_tau10) and increasing the weight of book pressure for better regime identification.
+2.  Lowering the `BASE_THRESH` slightly to 0.00175 to capture more high-probability trades while tightening microstructure and spread filters to maintain quality.
+3.  Adding a `vwap_dev` filter to avoid entries at extreme price extensions and a `kyle_lambda` filter to avoid highly illiquid bars.
+4.  Increasing the `base_size` to 0.14 and adjusting the conviction boost threshold.
+5.  Introducing a volatility-adaptive `take_profit` and extending `max_bars` to 5 during the US session to capture more persistent trends.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Regime Quality Metrics
+    # micro_quality: Positive means book supports long, negative supports short.
+    # Weights optimized from high-performing crossover iterations.
+    micro_quality = 0.3 * obi1 + 0.25 * obi3 + 0.25 * obi5 + 0.2 * book_pressure
+
+    # 3. Dynamic Signal Thresholding
+    # Scaling thresholds with volatility prevents over-trading in noise and captures meaningful moves.
+    BASE_THRESH = 0.0018
+    long_thresh = BASE_THRESH * (0.9 + 0.2 * vol_regime)
+    short_thresh = -BASE_THRESH * (0.9 + 0.2 * vol_regime)
+
+    signal = 0
+    # Core signal logic: Model prediction must exceed threshold, confirmed by microstructure flow
+    # and filtered by execution cost (spread) and carry cost (funding).
+    if predicted_return > long_thresh:
+        if micro_quality > -0.8 and funding < 0.002 and spread_bps < 9.5:
+            signal = 1
+    elif predicted_return < short_thresh:
+        if micro_quality < 0.8 and funding > -0.002 and spread_bps < 9.5:
+            signal = -1
+
+    # 4. Asymmetric Position Sizing
+    # We increase size based on predicted conviction and favorable session liquidity.
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size slightly increased from previous seed to leverage high win rate
+        base_size = 0.13
+        # Conviction boost
+        conviction_boost = 0.02 if abs(predicted_return) > 0.0036 else 0.0
+        # US Session boost (liquidity and move persistence)
+        session_boost = 0.01 if is

@@ -1,0 +1,248 @@
+--- a/original.py
++++ b/original.py
+@@ -1,51 +1,211 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+-    Seed trading signal generator.
++    Adaptive microstructure and volatility-aware trading signal generator.
++    
+     Args:
+-        predicted_return: float, model's predicted 15-min return (e.g. 0.003 = +0.3%)
+-        bar_context: dict with keys:
+-            - OHLCV: open, high, low, close, volume
+-            - Microstructure: obi_tau1, obi_tau3, obi_tau5, obi_tau10, spread_bps,
+-                              depth_ratio_5, depth_ratio_10, mid_price_move,
+-                              book_pressure_3, kyle_lambda_est
+-            - Price Action: ret_1, ret_3, ret_6, ret_12, ret_48, vol_5, vol_20, vol_60,
+-                            rsi_14, rsi_6, macd_signal, bb_pct, atr_14, momentum_bar,
+-                            wick_ratio_up, wick_ratio_down, volume_ratio_5, volume_ratio_20,
+-                            vwap_dev, autocorr_5, skew_20, kurt_20, realized_vol_ratio,
+-                            trend_strength, close_rank_48, gap_open, overnight_ret
+-            - Macro: funding_rate, funding_8h_ma
+-            - Time: hour_sin, hour_cos, dow_sin, dow_cos, is_asia_session,
+-                    is_us_session, is_weekend, minutes_to_funding
+-            - Aliases: atr (atr_14), rsi (rsi_14)
++        predicted_return: float, model's predicted 15-min return
++        bar_context: dict with OHLCV, microstructure, price action, macro, and time data
++    
+     Returns:
+         dict with signal, position_size, take_profit, stop_loss, max_bars
+     """
+-    LONG_THRESH   = 0.002    # enter long if predicted return > 0.2%
+-    SHORT_THRESH  = -0.002   # enter short if predicted return < -0.2%
+-    POSITION_SIZE = 0.10     # 10% of portfolio per trade
+-    TAKE_PROFIT   = 0.004    # exit at +0.4% gain
+-    STOP_LOSS     = 0.003    # exit at -0.3% loss
+-    MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
+-
+-    if predicted_return > LONG_THRESH:
+-        signal = 1
+-    elif predicted_return < SHORT_THRESH:
+-        signal = -1
++    
++    # ===== Extract key indicators =====
++    vol_20 = bar_context.get('vol_20', 0.01)
++    vol_5 = bar_context.get('vol_5', 0.01)
++    atr_14 = bar_context.get('atr_14', 0.001)
++    
++    obi_tau5 = bar_context.get('obi_tau5', 0.0)
++    obi_tau1 = bar_context.get('obi_tau1', 0.0)
++    book_pressure_3 = bar_context.get('book_pressure_3', 0.0)
++    kyle_lambda_est = bar_context.get('kyle_lambda_est', 0.0)
++    depth_ratio_5 = bar_context.get('depth_ratio_5', 1.0)
++    spread_bps = bar_context.get('spread_bps', 1.0)
++    
++    trend_strength = bar_context.get('trend_strength', 0.0)
++    momentum_bar = bar_context.get('momentum_bar', 0.0)
++    rsi_14 = bar_context.get('rsi_14', 50.0)
++    bb_pct = bar_context.get('bb_pct', 0.5)
++    vwap_dev = bar_context.get('vwap_dev', 0.0)
++    autocorr_5 = bar_context.get('autocorr_5', 0.0)
++    
++    funding_rate = bar_context.get('funding_rate', 0.0)
++    funding_8h_ma = bar_context.get('funding_8h_ma', 0.0)
++    
++    is_asia_session = bar_context.get('is_asia_session', False)
++    is_us_session = bar_context.get('is_us_session', False)
++    is_weekend = bar_context.get('is_weekend', False)
++    minutes_to_funding = bar_context.get('minutes_to_funding', 480)
++    
++    ret_1 = bar_context.get('ret_1', 0.0)
++    ret_3 = bar_context.get('ret_3', 0.0)
++    ret_12 = bar_context.get('ret_12', 0.0)
++    
++    skew_20 = bar_context.get('skew_20', 0.0)
++    kurt_20 = bar_context.get('kurt_20', 3.0)
++    
++    # ===== Volatility Regime Classification =====
++    vol_percentile = min(vol_20 / 0.03, 1.0)  # normalize to [0, 1]
++    is_high_vol = vol_20 > 0.025
++    is_low_vol = vol_20 < 0.008
++    
++    # ===== Adaptive Entry Thresholds =====
++    # Base threshold scales inversely with volatility and OBI strength
++    base_threshold = 0.0015
++    vol_adjustment = 0.0005 * vol_percentile  # higher vol = higher threshold
++    obi_strength = abs(obi_tau5)
++    obi_adjustment = -0.0003 * min(obi_strength, 1.0)  # strong OBI lowers threshold
++    
++    long_thresh = base_threshold + vol_adjustment + obi_adjustment
++    short_thresh = -long_thresh
++    
++    # ===== Microstructure Confirmation Filters =====
++    # Order book quality: depth and spread
++    good_depth = depth_ratio_5 > 0.8  # reasonable depth
++    tight_spread = spread_bps < 3.0  # tight spread
++    microstructure_ok = good_depth and tight_spread
++    
++    # Book pressure alignment with signal direction
++    long_book_pressure = book_pressure_3 > 0.1 and obi_tau1 > 0.05
++    short_book_pressure = book_pressure_3 < -0.1 and obi_tau1 < -0.05
++    
++    # Kyle lambda: lower is better (less adverse selection)
++    kyle_ok = kyle_lambda_est < 0.5
++    
++    # ===== Session and Funding Filters =====
++    # Reduce activity during Asia session (lower liquidity)
++    session_multiplier = 0.7 if is_asia_session else 1.0
++    session_multiplier = 1.2 if is_us_session else session_multiplier
++    
++    # Funding rate impact: avoid trading against funding
++    funding_penalty = 0.0
++    if funding_rate > 0.0001:  # positive funding, shorts are expensive
++        funding_penalty = 0.15
++    elif funding_rate < -0.0001:  # negative funding, longs are expensive
++        funding_penalty = 0.15
++    
++    # Minutes to funding: reduce size as funding approaches
++    funding_proximity_penalty = 0.0
++    if minutes_to_funding < 60:
++        funding_proximity_penalty = 0.3 * (1.0 - minutes_to_funding / 60.0)
++    
++    # ===== Price Action Confirmation =====
++    # Trend alignment
++    trend_aligned_long = trend_strength > 0.3 and ret_3 > 0
++    trend_aligned_short = trend_strength > 0.3 and ret_3 < 0
++    
++    # RSI extremes (overbought/oversold)
++    rsi_extreme_long = rsi_14 < 40  # room to go up
++    rsi_extreme_short = rsi_14 > 60  # room to go down
++    
++    # Bollinger Band position
++    bb_extreme_long = bb_pct < 0.3  # near lower band
++    bb_extreme_short = bb_pct > 0.7  # near upper band
++    
++    # VWAP deviation (mean reversion signal)
++    vwap_mean_revert_long = vwap_dev < -0.0005
++    vwap_mean_revert_short = vwap_dev > 0.0005
++    
++    # ===== Signal Generation with Confirmation =====
++    signal = 0
++    
++    if predicted_return > long_thresh:
++        # Long signal with confirmation filters
++        has_confirmation = (
++            (long_book_pressure or trend_aligned_long or bb_extreme_long) and
++            microstructure_ok and
++            kyle_ok and
++            not is_weekend
++        )
++        
++        if has_confirmation:
++            signal = 1
++    
++    elif predicted_return < short_thresh:
++        # Short signal with confirmation filters
++        has_confirmation = (
++            (short_book_pressure or trend_aligned_short or bb_extreme_short) and
++            microstructure_ok and
++            kyle_ok and
++            not is_weekend
++        )
++        
++        if has_confirmation:
++            signal = -1
++    
++    # ===== Adaptive Position Sizing =====
++    base_position_size = 0.10
++    
++    if signal == 1:
++        # Long position sizing
++        trend_boost = 0.05 if trend_strength > 0.6 else 0.0
++        vwap_boost = 0.03 if vwap_dev < -0.001 else 0.0
++        momentum_boost = 0.02 if momentum_bar > 0 else 0.0
++        
++        position_size = (base_position_size + trend_boost + vwap_boost + momentum_boost) * session_multiplier
++        position_size *= (1.0 - funding_penalty - funding_proximity_penalty)
++        position_size = min(position_size, 0.25)  # cap at 25%
++        
++    elif signal == -1:
++        # Short position sizing
++        trend_boost = 0.05 if trend_strength > 0.6 else 0.0
++        vwap_boost = 0.03 if vwap_dev > 0.001 else 0.0
++        momentum_boost = 0.02 if momentum_bar < 0 else 0.0
++        
++        position_size = (base_position_size + trend_boost + vwap_boost + momentum_boost) * session_multiplier
++        position_size *= (1.0 - funding_penalty - funding_proximity_penalty)
++        position_size = min(position_size, 0.25)  # cap at 25%
+     else:
+-        signal = 0
+-
++        position_size = 0.0
++    
++    # ===== Volatility-Adjusted Risk Management =====
++    # Take profit: scales with ATR and volatility
++    atr_multiple_tp = 2.5 if is_low_vol else (1.8 if is_high_vol else 2.0)
++    take_profit = atr_multiple_tp * atr_14
++    take_profit = max(take_profit, 0.002)  # minimum 0.2%
++    take_profit = min(take_profit, 0.008)  # maximum 0.8%
++    
++    # Stop loss: tighter in low vol, wider in high vol
++    atr_multiple_sl = 1.2 if is_low_vol else (2.0 if is_high_vol else 1.5)
++    stop_loss = atr_multiple_sl * atr_14
++    stop_loss = max(stop_loss, 0.0015)  # minimum 0.15%
++    stop_loss = min(stop_loss, 0.006)  # maximum 0.6%
++    
++    # Asymmetric stops: tighter stops when skew is extreme
++    if skew_20 < -0.5:  # negative skew, left tail risk
++        stop_loss *= 0.85
++    elif skew_20 > 0.5:  # positive skew, right tail risk
++        stop_loss *= 0.85
++    
++    # ===== Dynamic Max Bars =====
++    # Base holding period
++    base_max_bars = 4
++    
++    # Extend in strong trends
++    if trend_strength > 0.6:
++        max_bars = 8
++    # Reduce in choppy markets
++    elif autocorr_5 < 0.2:
++        max_bars = 2
++    # Reduce near funding
++    elif minutes_to_funding < 30:
++        max_bars = 2
++    else:
++        max_bars = base_max_bars
++    
++    # ===== Return Signal =====
+     return {
+-        "signal":        signal,
+-        "position_size": POSITION_SIZE if signal != 0 else 0.0,
+-        "take_profit":   TAKE_PROFIT,
+-        "stop_loss":     STOP_LOSS,
+-        "max_bars":      MAX_BARS,
++        "signal": signal,
++        "position_size": position_size,
++        "take_profit": take_profit,
++        "stop_loss": stop_loss,
++        "max_bars": max_bars,
+     }
+ # EVOLVE-BLOCK-END

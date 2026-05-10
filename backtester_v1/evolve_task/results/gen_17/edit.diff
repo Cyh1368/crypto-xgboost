@@ -1,0 +1,293 @@
+--- a/original.py
++++ b/original.py
+@@ -1,81 +1,235 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+-    Combines high-precision thresholding with microstructure filters and
+-    volatility-adjusted exit logic.
++    Regime-aware trading signal generator with lightweight crossover logic.
++    Keeps the strong simple threshold core, while adding microstructure,
++    volatility, funding, and session filters for better precision.
+     """
+-    import math
+-    import numpy as np
+ 
+     def _get(key, default=0.0):
+         v = bar_context.get(key, default)
+         return default if v is None else v
+ 
+-    # 1. Extract Core Context
+-    # Microstructure
+-    obi1 = float(_get("obi_tau1"))
+-    obi3 = float(_get("obi_tau3"))
+-    book_pressure = float(_get("book_pressure_3"))
+-    spread_bps = float(_get("spread_bps"))
+-
+-    # Price Action & Volatility
+-    vol5 = max(float(_get("vol_5")), 1e-8)
+-    vol20 = max(float(_get("vol_20")), 1e-8)
+-    atr = float(_get("atr_14", _get("atr", 0.001)))
+-    rsi14 = float(_get("rsi_14", 50.0))
+-    trend = float(_get("trend_strength"))
+-
+-    # Macro & Time
+-    funding = float(_get("funding_rate"))
+-    funding_ma = float(_get("funding_8h_ma"))
+-    is_us = bool(_get("is_us_session", False))
++    # --- Core market inputs ---
++    obi1 = float(_get("obi_tau1", 0.0))
++    obi3 = float(_get("obi_tau3", 0.0))
++    obi5 = float(_get("obi_tau5", 0.0))
++    obi10 = float(_get("obi_tau10", 0.0))
++    spread_bps = float(_get("spread_bps", 5.0))
++    depth_5 = float(_get("depth_ratio_5", _get("depth_ratio5", 1.0)))
++    depth_10 = float(_get("depth_ratio_10", _get("depth_ratio10", 1.0)))
++    book_pressure = float(_get("book_pressure_3", 0.0))
++    kyle_lambda = abs(float(_get("kyle_lambda_est", 0.0)))
++
++    ret_1 = float(_get("ret_1", 0.0))
++    ret_3 = float(_get("ret_3", 0.0))
++    ret_6 = float(_get("ret_6", 0.0))
++    ret_12 = float(_get("ret_12", 0.0))
++
++    vol_5 = max(float(_get("vol_5", 0.015)), 1e-8)
++    vol_20 = max(float(_get("vol_20", 0.015)), 1e-8)
++    vol_60 = max(float(_get("vol_60", 0.015)), 1e-8)
++
++    rsi_14 = float(_get("rsi_14", _get("rsi", 50.0)))
++    rsi_6 = float(_get("rsi_6", rsi_14))
++    macd_signal = float(_get("macd_signal", 0.0))
++    bb_pct = float(_get("bb_pct", 0.5))
++    atr_14 = max(float(_get("atr_14", _get("atr", 0.001))), 1e-8)
++    momentum = float(_get("momentum", _get("momentum_bar", 0.0)))
++    vwap_dev = float(_get("vwap_dev", 0.0))
++    autocorr_5 = float(_get("autocorr_5", 0.0))
++    skew_20 = float(_get("skew_20", 0.0))
++    kurt_20 = float(_get("kurt_20", 3.0))
++    trend_strength = float(_get("trend_strength", 0.0))
++
++    funding_rate = float(_get("funding_rate", 0.0))
++    funding_8h_ma = float(_get("funding_8h_ma", 0.0))
++
++    is_us_session = bool(_get("is_us_session", False))
++    is_asia_session = bool(_get("is_asia_session", False))
+     is_weekend = bool(_get("is_weekend", False))
+-
+-    # 2. Regime & Quality Metrics
+-    # micro_quality: positive means book supports long, negative supports short
+-    micro_quality = 0.4 * obi1 + 0.3 * obi3 + 0.3 * book_pressure
+-
+-    # vol_regime: > 1.0 means volatility is expanding
+-    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+-
+-    # 3. Signal Generation (Thresholds slightly more aggressive than seed)
+-    LONG_THRESH = 0.0019
+-    SHORT_THRESH = -0.0019
++    minutes_to_funding = float(_get("minutes_to_funding", 999.0))
++
++    # --- Stable regime / quality features ---
++    vol_ratio_short = vol_5 / vol_20
++    vol_ratio_long = vol_20 / vol_60
++    vol_regime = max(0.6, min(1.8, 0.65 * vol_ratio_short + 0.35 * vol_ratio_long))
++
++    recent_mom = 0.5 * ret_1 + 0.3 * ret_3 + 0.2 * ret_6
++    medium_mom = 0.6 * ret_6 + 0.4 * ret_12
++
++    # book/liquidity quality: higher is better
++    spread_score = max(0.0, 1.0 - spread_bps / 15.0)
++    depth_score = max(0.0, min(1.0, (depth_5 + depth_10) / 4.0))
++    kyle_score = max(0.0, 1.0 - 50.0 * kyle_lambda)
++    liquidity_score = max(0.0, min(1.0, 0.42 * spread_score + 0.33 * depth_score + 0.25 * kyle_score))
++
++    micro_quality = 0.35 * obi1 + 0.20 * obi3 + 0.15 * obi5 + 0.10 * obi10 + 0.20 * book_pressure
++
++    churn = abs(autocorr_5) + 0.08 * max(0.0, kurt_20 - 3.0) + 0.05 * abs(skew_20)
++    trend_bias = 0.55 * trend_strength + 0.45 * max(-1.0, min(1.0, medium_mom / 0.0025))
++
++    # --- Regime classification ---
++    is_trending = trend_strength > 0.12 and abs(medium_mom) > 0.0008
++    is_high_vol = vol_regime > 1.08
++    is_mean_revert = (bb_pct < 0.25 or bb_pct > 0.75) and churn < 0.35
++    is_choppy = churn > 0.42 and vol_regime > 1.0
++
++    if is_trending and is_high_vol:
++        regime = "trend"
++    elif is_mean_revert and not is_high_vol:
++        regime = "mean"
++    elif is_choppy:
++        regime = "chop"
++    else:
++        regime = "quiet"
++
++    # --- Macro / timing filters ---
++    near_funding = minutes_to_funding < 20.0
++    funding_extreme = abs(funding_rate - funding_8h_ma) > 0.00035
++
++    long_funding_ok = (funding_rate <= funding_8h_ma) or (funding_rate < 0.0)
++    short_funding_ok = (funding_rate >= funding_8h_ma) or (funding_rate > 0.0)
++
++    session_boost = 0.04 if is_us_session else (0.02 if is_asia_session else 0.0)
++    weekend_penalty = 0.85 if is_weekend else 1.0
++
++    # --- Asymmetric directional evidence ---
++    rsi_long = (rsi_14 < 45.0 and rsi_6 < 42.0)
++    rsi_short = (rsi_14 > 55.0 and rsi_6 > 58.0)
++    macd_long = macd_signal > 0.0
++    macd_short = macd_signal < 0.0
++
++    micro_long = (obi1 > 0.03 or obi3 > 0.02 or obi5 > 0.015 or obi10 > 0.01 or book_pressure > 0.05)
++    micro_short = (obi1 < -0.03 or obi3 < -0.02 or obi5 < -0.015 or obi10 < -0.01 or book_pressure < -0.05)
++
++    # Score core: predicted return remains primary, but confirmation adds edge
++    long_score = predicted_return
++    short_score = -predicted_return
++
++    # Directional confirmations
++    long_score += 0.20 * float(micro_long) + 0.12 * max(0.0, micro_quality)
++    short_score += 0.20 * float(micro_short) + 0.12 * max(0.0, -micro_quality)
++
++    long_score += 0.12 * float(rsi_long) + 0.10 * float(macd_long)
++    short_score += 0.12 * float(rsi_short) + 0.10 * float(macd_short)
++
++    long_score += 0.08 * max(0.0, -vwap_dev / 0.002) + 0.06 * max(0.0, -recent_mom / 0.0015)
++    short_score += 0.08 * max(0.0, vwap_dev / 0.002) + 0.06 * max(0.0, recent_mom / 0.0015)
++
++    long_score += 0.10 * liquidity_score + 0.05 * session_boost + 0.05 * trend_bias
++    short_score += 0.10 * liquidity_score + 0.05 * session_boost + 0.05 * trend_bias
++
++    # Regime-specific refinements
++    if regime == "trend":
++        long_score += 0.12 * max(0.0, medium_mom / 0.002)
++        short_score += 0.12 * max(0.0, -medium_mom / 0.002)
++    elif regime == "mean":
++        long_score += 0.12 * float(bb_pct < 0.20)
++        short_score += 0.12 * float(bb_pct > 0.80)
++    elif regime == "chop":
++        long_score -= 0.08 * churn
++        short_score -= 0.08 * churn
++    else:
++        long_score += 0.04 * float(momentum > 0.0)
++        short_score += 0.04 * float(momentum < 0.0)
++
++    # --- Entry thresholds: keep the strong simple core, then refine ---
++    long_thresh = 0.0020
++    short_thresh = -0.0020
+ 
+     signal = 0
+-    # Relaxed filters to increase trade frequency while avoiding toxic flow
+-    if predicted_return > LONG_THRESH:
+-        if micro_quality > -0.7 and funding < 0.001:
+-            signal = 1
+-    elif predicted_return < SHORT_THRESH:
+-        if micro_quality < 0.7 and funding > -0.001:
+-            signal = -1
+-
+-    # 4. Position Sizing
+-    # Standardized size slightly above seed to maximize total return
++    if predicted_return > long_thresh:
++        # Relaxed but informed long filter
++        if micro_quality > -0.30 and liquidity_score > 0.18 and long_funding_ok and not near_funding:
++            if long_score > 0.0022:
++                signal = 1
++    elif predicted_return < short_thresh:
++        if micro_quality < 0.30 and liquidity_score > 0.18 and short_funding_ok and not near_funding:
++            if short_score > 0.0022:
++                signal = -1
++
++    # Additional regime-aware overrides for stronger confirmation
++    if signal == 0 and not near_funding:
++        if regime == "trend" and liquidity_score > 0.25:
++            if long_score > 0.0030 and long_funding_ok and predicted_return > 0.0013:
++                signal = 1
++            elif short_score > 0.0030 and short_funding_ok and predicted_return < -0.0013:
++                signal = -1
++        elif regime == "mean":
++            if long_score > 0.0026 and long_funding_ok and bb_pct < 0.22:
++                signal = 1
++            elif short_score > 0.0026 and short_funding_ok and bb_pct > 0.78:
++                signal = -1
++
++    # --- Position sizing ---
+     if signal == 0:
+         position_size = 0.0
++        take_profit = 0.004
++        stop_loss = 0.003
++        max_bars = 4
+     else:
+-        position_size = 0.11
+-
+-    # 5. Fixed Exits from high-performing seed
+-    take_profit = 0.004
+-    stop_loss = 0.003
+-
+-    # 6. Time-based Exit
+-    max_bars = 4
++        base_size = 0.10
++
++        # Conviction based on model edge and aligned context
++        edge = abs(predicted_return) - 0.002
++        conviction = max(0.0, min(0.06, edge * 12.0))
++
++        # Contextual boosts / penalties
++        liquidity_adj = 0.015 * liquidity_score
++        vol_adj = max(0.0, min(0.03, 0.012 * (1.0 - abs(vol_regime - 1.0))))
++        funding_adj = 0.0 if abs(funding_rate) <= 0.001 else -min(0.03, abs(funding_rate) * 18.0)
++        regime_adj = 0.015 if regime == "trend" else (0.01 if regime == "mean" else -0.005 if regime == "chop" else 0.0)
++        session_adj = 0.01 if is_us_session else (-0.008 if is_weekend else 0.0)
++
++        position_size = base_size + conviction + liquidity_adj + vol_adj + funding_adj + regime_adj + session_adj
++        position_size *= weekend_penalty
++        position_size = float(max(0.05, min(0.20, position_size)))
++
++        # --- Volatility-adjusted exits ---
++        # ATR normalizes with vol regime, but remains anchored to the base values.
++        atr_scalar = max(0.75, min(1.35, atr_14 / max(atr_14, 1e-8)))
++        vol_scalar = 0.85 + 0.25 * (vol_regime - 1.0)
++        vol_scalar = max(0.80, min(1.25, vol_scalar))
++
++        # Slightly asymmetric exits: longs in strong trend can run a bit more, shorts a bit tighter
++        if signal == 1:
++            take_profit = 0.0042 * vol_scalar * (1.0 + 0.05 * max(0.0, trend_strength))
++            stop_loss = 0.0030 * atr_scalar * (1.0 - 0.05 * min(1.0, liquidity_score))
++        else:
++            take_profit = 0.0040 * vol_scalar * (1.0 + 0.03 * max(0.0, -trend_strength))
++            stop_loss = 0.0031 * atr_scalar * (1.0 - 0.03 * min(1.0, liquidity_score))
++
++        take_profit = float(max(0.0028, min(0.0065, take_profit)))
++        stop_loss = float(max(0.0020, min(0.0055, stop_loss)))
++
++        # --- Time-based exit ---
++        max_bars = 4
++        if regime == "trend":
++            max_bars = 5
++        elif regime == "mean":
++            max_bars = 3
++        elif regime == "chop":
++            max_bars = 2
++
++        if is_weekend or near_funding or funding_extreme:
++            max_bars = max(2, max_bars - 1)
++        if vol_regime > 1.25:
++            max_bars = max(2, max_bars - 1)
++        if liquidity_score > 0.65 and regime == "trend":
++            max_bars = min(6, max_bars + 1)
+ 
+     return {
+-        "signal":        int(signal),
++        "signal": int(signal),
+         "position_size": float(position_size),
+-        "take_profit":   float(take_profit),
+-        "stop_loss":     float(stop_loss),
+-        "max_bars":      int(max_bars),
++        "take_profit": float(take_profit),
++        "stop_loss": float(stop_loss),
++        "max_bars": int(max_bars),
+     }
+ # EVOLVE-BLOCK-END

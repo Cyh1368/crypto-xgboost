@@ -1,0 +1,110 @@
+Looking at the performance metrics across the prior programs, I notice:
+
+1. **Program 3 (95.18 score)** achieves the best performance with:
+   - Session-specific thresholds (US: 0.00172, Asia: 0.00205)
+   - Confidence-weighted sizing with bounds
+   - Funding alignment bonus on TP/SL
+   - Higher max_bars (5) with multiple trigger conditions
+
+2. **Current program (86.97 score)** has:
+   - Fixed base hurdle (0.00185)
+   - Range-based hurdle adjustments that may be too conservative
+   - Simpler sizing logic without confidence weighting
+   - Lower TP/SL values (0.0041/0.0029 vs 0.0042/0.0032)
+
+The key insight is that **Program 3's session-specific thresholds and confidence-weighted sizing** significantly outperform the current approach. The current program's range-based hurdle adjustments (adding 0.0003 at extremes) appear to be overly restrictive, reducing trade frequency without improving quality.
+
+I'll propose three targeted improvements:
+
+1. **Restore session-specific thresholds** from Program 3 (which showed +8.21 score improvement)
+2. **Implement confidence-weighted sizing** with proper bounds
+3. **Optimize TP/SL values** to match the higher-performing regime
+
+<NAME>
+session_thresholds_confidence_sizing
+</NAME>
+
+<DESCRIPTION>
+Replace the fixed base hurdle with session-specific thresholds (US: 0.00172, Asia: 0.00205, default: 0.00185) and implement confidence-weighted position sizing. This approach was validated in Program 3 which achieved 95.18 score. The session-specific thresholds adapt to different market microstructure regimes, while confidence weighting scales position size based on prediction strength relative to the hurdle. This should increase both trade quality and frequency while maintaining risk discipline.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Dynamic Entry Hurdle
+    # Base hurdle around the high-performing 0.0018 mark
+    base_hurdle = 0.00185
+    
+    # Adjust hurdle based on range positioning to avoid over-extended entries
+    long_hurdle = base_hurdle
+    short_hurdle = base_hurdle
+    
+    if close_rank > 0.8 or bb_pct > 0.85:
+        long_hurdle += 0.0003  # Harder to go long at the top
+    if close_rank < 0.2 or bb_pct < 0.15:
+        short_hurdle += 0.0003 # Harder to go short at the bottom
+=======
+    # 2. Dynamic Entry Hurdle with Session-Specific Thresholds
+    # Session-specific thresholds adapt to different market microstructure regimes
+    if is_us:
+        base_hurdle = 0.00172
+    elif bar_context.get('is_asia_session', False):
+        base_hurdle = 0.00205
+    else:
+        base_hurdle = 0.00185
+    
+    long_hurdle = base_hurdle
+    short_hurdle = base_hurdle
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 4. Adaptive Position Sizing
+    # Base size 0.135, scaled down by liquidity impact (Kyle's Lambda)
+    if signal != 0:
+        # kyle_lambda_est typically ranges from 0.00001 to 0.0005 in this context
+        liquidity_scaler = max(0.7, 1.0 - (kyle_lambda * 400.0))
+        position_size = 0.135 * liquidity_scaler
+        # Confidence boost if prediction is significantly above hurdle
+        confidence = abs(predicted_return) / base_hurdle
+        position_size *= min(1.2, confidence)
+        position_size = max(0.09, min(0.16, position_size))
+    else:
+        position_size = 0.0
+=======
+    # 4. Adaptive Position Sizing with Confidence Weighting
+    # Confidence-weighted sizing based on prediction strength relative to hurdle
+    if signal != 0:
+        confidence = abs(predicted_return) / base_hurdle
+        position_size = 0.14 * min(1.25, confidence)
+        position_size = max(0.10, min(0.18, position_size))
+    else:
+        position_size = 0.0
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 5. Risk Management (TP/SL)
+    # Asymmetric TP/SL based on funding alignment
+    tp = 0.0041
+    sl = 0.0029
+    
+    if signal == 1:
+        if funding < 0: # Getting paid to be long
+            tp += 0.0004
+            sl += 0.0001
+    elif signal == -1:
+        if funding > 0: # Getting paid to be short
+            tp += 0.0004
+            sl += 0.0001
+=======
+    # 5. Risk Management (TP/SL)
+    # Optimized TP/SL with funding alignment bonus
+    tp = 0.0042
+    sl = 0.0032
+    
+    if (signal == 1 and funding < 0) or (signal == -1 and funding > 0):
+        tp += 0.0004
+>>>>>>> REPLACE
+</DIFF>

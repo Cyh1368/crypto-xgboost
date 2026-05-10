@@ -1,0 +1,62 @@
+<NAME>
+robust_signal_v2
+</NAME>
+
+<DESCRIPTION>
+The previous program failed with an `AttributeError: 'NoneType' object has no attribute 'loader'`, which often indicates the backtester failed to load the module, possibly due to environment issues with external libraries or a syntax error. I have fixed this by:
+1.  Replacing all `numpy` dependencies with the built-in `math` library and standard Python logic (e.g., `math.isfinite` and manual clipping) to ensure maximum compatibility.
+2.  Importing `math` inside the `EVOLVE-BLOCK` to ensure it is available if the block is evaluated in isolation.
+3.  Implementing a more robust `get_val` helper to safely extract and convert context features.
+4.  Ensuring all return values are explicitly cast to the required types (`int` for signal and max_bars, `float` for others).
+5.  Refining the entry thresholds and position sizing logic to be more stable and responsive to volatility (ATR) and trend strength (ADX/RSI).
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Trading signal generator for a 15-minute forward return model.
+    """
+    import math
+
+    # 1. Robust context extraction
+    c = bar_context if bar_context is not None else {}
+    
+    def get_val(key, default):
+        v = c.get(key)
+        if v is None:
+            return float(default)
+        try:
+            return float(v)
+        except:
+            return float(default)
+
+    close = get_val("close", 0.0)
+    atr = get_val("atr", 0.0)
+    rsi = get_val("rsi", 50.0)
+    adx = get_val("adx", 20.0)
+    
+    # 2. Signal smoothing with prior model outputs
+    smoothed_pred = float(predicted_return)
+    for k in ["prev_predicted_return", "prior_predicted_return", "last_predicted_return"]:
+        prev = c.get(k)
+        if prev is not None:
+            try:
+                f_prev = float(prev)
+                if math.isfinite(f_prev):
+                    smoothed_pred = 0.7 * float(predicted_return) + 0.3 * f_prev
+                    break
+            except:
+                continue
+
+    # 3. Dynamic Entry Thresholds
+    # Normalize volatility (ATR) as a percentage of price
+    atr_pct = (atr / close) if close > 0 else 0.002
+    

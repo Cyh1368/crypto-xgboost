@@ -1,0 +1,228 @@
+--- a/original.py
++++ b/original.py
+@@ -1,81 +1,196 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+-    Combines high-precision thresholding with microstructure filters and
+-    volatility-adjusted exit logic.
++    Combines volatility-aware thresholding with richer microstructure,
++    momentum, mean-reversion, and execution-cost filters.
+     """
+     import math
+     import numpy as np
+ 
+     def _get(key, default=0.0):
+         v = bar_context.get(key, default)
+         return default if v is None else v
+ 
+-    # 1. Extract Core Context
+-    # Microstructure
++    # --- Microstructure ---
+     obi1 = float(_get("obi_tau1"))
+     obi3 = float(_get("obi_tau3"))
++    obi5 = float(_get("obi_tau5"))
++    obi10 = float(_get("obi_tau10"))
+     book_pressure = float(_get("book_pressure_3"))
+     spread_bps = float(_get("spread_bps"))
++    depth5 = float(_get("depth_ratio_5", _get("depth_ratio5", 1.0)))
++    depth10 = float(_get("depth_ratio_10", _get("depth_ratio10", 1.0)))
++    kyle_lambda = abs(float(_get("kyle_lambda_est")))
+ 
+-    # Price Action & Volatility
++    # --- Price action ---
++    ret1 = float(_get("ret_1"))
++    ret3 = float(_get("ret_3"))
++    ret6 = float(_get("ret_6"))
++    ret12 = float(_get("ret_12"))
+     vol5 = max(float(_get("vol_5")), 1e-8)
+     vol20 = max(float(_get("vol_20")), 1e-8)
+-    atr = float(_get("atr_14", _get("atr", 0.001)))
++    vol60 = max(float(_get("vol_60")), 1e-8)
++    atr = max(float(_get("atr_14", _get("atr", 0.001))), 1e-8)
+     rsi14 = float(_get("rsi_14", 50.0))
++    rsi6 = float(_get("rsi_6", rsi14))
++    macd_signal = float(_get("macd_signal"))
++    bb_pct = float(_get("bb_pct", 0.5))
++    momentum = float(_get("momentum", 0.0))
++    vwap_dev = float(_get("vwap_dev"))
++    autocorr5 = float(_get("autocorr_5"))
++    skew = float(_get("skew_20"))
++    kurt = float(_get("kurt_20"))
+     trend = float(_get("trend_strength"))
++    wick_up = float(_get("wick_ratio_up"))
++    wick_down = float(_get("wick_ratio_down"))
++    vol_ratio5 = float(_get("volume_ratio_5", 1.0))
++    vol_ratio20 = float(_get("volume_ratio_20", 1.0))
+ 
+-    # Macro & Time
++    # --- Macro / time ---
+     funding = float(_get("funding_rate"))
+     funding_ma = float(_get("funding_8h_ma"))
++    minutes_to_funding = float(_get("minutes_to_funding", 999.0))
+     is_us = bool(_get("is_us_session", False))
++    is_asia = bool(_get("is_asia_session", False))
+     is_weekend = bool(_get("is_weekend", False))
+ 
+-    # 2. Regime & Quality Metrics
+-    # micro_quality: positive means book supports long, negative supports short
+-    micro_quality = 0.4 * obi1 + 0.3 * obi3 + 0.3 * book_pressure
++    # --- Regime / quality ---
++    micro_obi = 0.35 * obi1 + 0.25 * obi3 + 0.20 * obi5 + 0.20 * obi10
++    micro_quality = 0.50 * micro_obi + 0.25 * book_pressure + 0.15 * (depth5 - 1.0) + 0.10 * (depth10 - 1.0)
++    cost_penalty = 0.012 * spread_bps + 0.30 * kyle_lambda
++    vol_regime = max(0.5, min(2.5, 0.5 * (vol5 / vol20) + 0.5 * (vol20 / vol60)))
++    churn_penalty = 0.12 * abs(autocorr5) + 0.08 * max(0.0, kurt - 3.0) + 0.05 * abs(skew)
+ 
+-    # vol_regime: > 1.0 means volatility is expanding
+-    vol_regime = max(0.5, min(2.0, vol5 / vol20))
++    short_mom = 0.45 * ret1 + 0.30 * ret3 + 0.25 * ret6
++    medium_mom = 0.40 * ret6 + 0.35 * ret12 + 0.25 * trend
++    rsi_bias = (50.0 - rsi14) / 50.0
++    rsi6_bias = (50.0 - rsi6) / 50.0
+ 
+-    # 3. Signal Generation (Thresholds slightly more aggressive than seed)
+-    LONG_THRESH = 0.0019
+-    SHORT_THRESH = -0.0019
++    mean_revert_long = (bb_pct < 0.18 and vwap_dev < -0.0015 and rsi14 < 38.0 and wick_down > wick_up)
++    mean_revert_short = (bb_pct > 0.82 and vwap_dev > 0.0015 and rsi14 > 62.0 and wick_up > wick_down)
++
++    funding_long_ok = (funding <= funding_ma) or (funding < 0.0)
++    funding_short_ok = (funding >= funding_ma) or (funding > 0.0)
++    near_funding_penalty = 0.18 if minutes_to_funding < 25.0 else 0.0
++    weekend_penalty = 0.18 if is_weekend else 0.0
++    session_boost = 0.10 if is_us else (0.04 if is_asia else 0.0)
++
++    long_score = (
++        predicted_return
++        + 0.38 * micro_quality
++        + 0.24 * medium_mom
++        + 0.10 * short_mom
++        + 0.10 * rsi_bias
++        + 0.08 * rsi6_bias
++        + 0.08 * macd_signal
++        + 0.08 * trend
++        + 0.06 * max(0.0, -vwap_dev)
++        + 0.04 * max(0.0, 0.5 - bb_pct)
++        + 0.03 * max(0.0, vol_ratio5 - 1.0)
++        + session_boost
++        - cost_penalty
++        - churn_penalty
++        - near_funding_penalty
++        - weekend_penalty
++    )
++
++    short_score = (
++        -predicted_return
++        - 0.38 * micro_quality
++        - 0.24 * medium_mom
++        - 0.10 * short_mom
++        - 0.10 * rsi_bias
++        - 0.08 * rsi6_bias
++        - 0.08 * macd_signal
++        - 0.08 * trend
++        - 0.06 * max(0.0, vwap_dev)
++        - 0.04 * max(0.0, bb_pct - 0.5)
++        + session_boost
++        - cost_penalty
++        - churn_penalty
++        - near_funding_penalty
++        - weekend_penalty
++    )
++
++    # Adaptive thresholds: higher costs and noisy regimes require stronger edge
++    base_thresh = 0.0018 + 0.0005 * max(0.0, spread_bps / 10.0) + 0.0005 * max(0.0, kyle_lambda)
++    threshold_adj = 0.0007 * (vol_regime - 1.0) + 0.0005 * max(0.0, churn_penalty)
++    long_thresh = base_thresh + threshold_adj - 0.0005 * micro_quality
++    short_thresh = base_thresh + threshold_adj - 0.00035 * micro_quality
+ 
+     signal = 0
+-    # Relaxed filters to increase trade frequency while avoiding toxic flow
+-    if predicted_return > LONG_THRESH:
+-        if micro_quality > -0.7 and funding < 0.001:
+-            signal = 1
+-    elif predicted_return < SHORT_THRESH:
+-        if micro_quality < 0.7 and funding > -0.001:
+-            signal = -1
++    edge = 0.0
+ 
+-    # 4. Position Sizing
+-    # Standardized size slightly above seed to maximize total return
++    long_ok = (
++        predicted_return > 0.0
++        and long_score > long_thresh
++        and funding_long_ok
++        and spread_bps < 12.0
++        and cost_penalty < 0.12
++    )
++    short_ok = (
++        predicted_return < 0.0
++        and short_score > short_thresh
++        and funding_short_ok
++        and spread_bps < 12.0
++        and cost_penalty < 0.12
++    )
++
++    # Allow mean reversion when model is mildly wrong but local extremes support it
++    if long_ok or (mean_revert_long and long_score > 0.0022 and funding_long_ok):
++        signal = 1
++        edge = long_score - long_thresh
++    elif short_ok or (mean_revert_short and short_score > 0.0022 and funding_short_ok):
++        signal = -1
++        edge = short_score - short_thresh
++
++    # Position sizing: conviction + liquidity, capped to preserve win rate
+     if signal == 0:
+         position_size = 0.0
+     else:
+-        position_size = 0.11
++        quality = max(0.0, min(1.0, 0.5 + 0.16 * micro_quality - 0.10 * cost_penalty - 0.08 * churn_penalty))
++        conviction = max(0.0, min(1.0, edge / 0.004))
++        size = 0.05 + 0.15 * conviction * quality
++        if mean_revert_long or mean_revert_short:
++            size *= 0.88
++        if is_weekend:
++            size *= 0.80
++        position_size = float(max(0.02, min(0.20, size)))
+ 
+-    # 5. Fixed Exits from high-performing seed
+-    take_profit = 0.004
+-    stop_loss = 0.003
++    # Volatility-adjusted asymmetric exits
++    atr_pct = atr / max(1.0, abs(vwap_dev) + 1.0)
++    base_move = max(0.0025, min(0.012, 0.0026 + 0.70 * (vol5 / vol20) * 0.002 + 0.45 * atr_pct * 0.01))
++    if signal == 1:
++        take_profit = float(base_move * (1.70 if long_score > short_score else 1.50))
++        stop_loss = float(base_move * (0.95 if trend > 0.0 else 1.05))
++    elif signal == -1:
++        take_profit = float(base_move * (1.70 if short_score > long_score else 1.50))
++        stop_loss = float(base_move * (0.95 if trend < 0.0 else 1.05))
++    else:
++        take_profit = float(base_move * 1.6)
++        stop_loss = float(base_move * 1.0)
+ 
+-    # 6. Time-based Exit
+     max_bars = 4
++    if vol_regime > 1.25 or cost_penalty > 0.04 or minutes_to_funding < 25.0:
++        max_bars = 3
++    elif trend > 0.12 and micro_quality > 0.15:
++        max_bars = 5
++    if mean_revert_long or mean_revert_short:
++        max_bars = min(max_bars, 3)
++    if is_weekend:
++        max_bars = min(max_bars, 3)
+ 
+     return {
+         "signal":        int(signal),
+         "position_size": float(position_size),
+         "take_profit":   float(take_profit),
+         "stop_loss":     float(stop_loss),
+         "max_bars":      int(max_bars),
+     }
+ # EVOLVE-BLOCK-END

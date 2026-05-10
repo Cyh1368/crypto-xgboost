@@ -1,0 +1,14 @@
+{
+  "generation": 58,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "liquidity_and_exhaustion_filters",
+  "patch_description": "This edit refines the trading logic to recover the win rate that degraded in the previous iteration. \n1.  **Threshold Correction**: Slightly increases the base threshold to 0.00170 to filter out lower-quality signals (capturing the balance between trade count and win rate).\n2.  **Microstructure Refinement**: Updates the Microstructure Quality (MQ) weights to a more balanced distribution across multiple tau horizons and includes tau10 for better stability.\n3.  **Liquidity & Exhaustion Filters**: Introduces Kyle's Lambda (market impact) and Bollinger %B filters. Kyle's Lambda helps avoid trading in illiquid spikes, while BB %B prevents buying at the top of a range (exhaustion).\n4.  **Exit Normalization**: Reverts TP/SL anchors to the proven 40/30 bps levels and dampens the elasticity slightly to stabilize performance.\n5.  **Funding & Spread Tightening**: Tighter spread and funding limits are reapplied to maintain a higher profit factor.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:07:26.919211",
+  "llm_cost": 0.0096695,
+  "llm_model": "gemini-3-flash-preview"
+}

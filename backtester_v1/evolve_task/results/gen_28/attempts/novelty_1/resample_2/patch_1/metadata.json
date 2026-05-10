@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "micro_regime_optimizer",
+  "patch_description": "This algorithm improves upon the seed by implementing a high-precision filtering layer based on market microstructure and volatility regimes. \n\nKey improvements:\n1.  **Dynamic Thresholding**: Instead of a fixed 0.002, it uses a base threshold of 0.0019, adjusted by `trend_strength` and `spread_bps`. This allows for more aggressive entries during strong trends while filtering out trades where slippage (spread) would eat the alpha.\n2.  **Microstructure Quality Filter**: It uses `obi_tau5` (Order Book Imbalance) and `kyle_lambda_est` (Market Impact) to ensure the trade aligns with the current book state and that liquidity is sufficient to support the position.\n3.  **Volatility-Adjusted Asymmetric Risk**: TP and SL are scaled by the `realized_vol_ratio`. If volatility is expanding, targets are widened to avoid being stopped out by noise. It also uses a slightly asymmetric R/R ratio (approx 1.35) which proved effective in the seed.\n4.  **Session-Aware Hold Times**: `max_bars` is adjusted based on the trading session (US vs. Asia) and `autocorr_5`, recognizing that US sessions tend to exhibit more follow-through (momentum) while Asia sessions often mean-revert.\n5.  **Liquidity-Scaled Sizing**: Position size is centered at 0.12 (a 20% increase over the seed) but scaled down if market impact (`kyle_lambda_est`) is high, protecting against adverse slippage.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:52:32.870848",
+  "llm_cost": 0.0073735,
+  "llm_model": "gemini-3-flash-preview"
+}

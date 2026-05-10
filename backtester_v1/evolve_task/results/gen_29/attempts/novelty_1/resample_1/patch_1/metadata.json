@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "micro_liquidity_adaptive_v2",
+  "patch_description": "The key strategy change involves aligning more closely with the \"Seed\" program's high trade frequency while introducing surgical microstructure filters. The previous \"Current\" program was too restrictive (only 234 trades), resulting in lower total returns. \n\nMy new algorithm uses:\n1. **Dynamic Frequency Balancing**: A base threshold of 0.0018 (slightly lower than the Seed's 0.002) is used to ensure high trade density, which is further lowered to 0.0016 for US sessions to capitalize on higher directional volatility.\n2. **Microstructure Confirmation**: Instead of heavy filters, it uses OBI (Order Book Imbalance) and Spread BPS as \"safety switches\" rather than entry drivers, blocking trades only when the book is heavily skewed against the trade (OBI > 0.6 or < -0.6) or when execution costs are prohibitive (Spread > 6.0 bps).\n3. **Volatility-Adjusted Fixed Scaling**: It retains the robust TP/SL ratio (approx 1.35x) of the high-performing Seed but expands the targets slightly (0.0045/0.0033) to account for higher transaction costs in some bars. \n4. **VWAP Mean-Reversion Guard**: It uses VWAP deviation to filter out over-extended moves (buying the top or selling the bottom), which protects the win rate.\n5. **Autocorr-Driven Hold Time**: Utilizing `autocorr_5` to extend hold times only when momentum is persisting, else defaulting to a quick 4-bar exit.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:52:12.035132",
+  "llm_cost": 0.006735999999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

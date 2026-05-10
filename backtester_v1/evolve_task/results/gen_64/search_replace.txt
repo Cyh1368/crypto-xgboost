@@ -1,0 +1,130 @@
+<NAME>
+elastic_volatility_and_conviction_sizing
+</NAME>
+
+<DESCRIPTION>
+This edit improves the signal generation and execution logic by incorporating several high-performance features from the best-performing seeds:
+1.  **Elastic Thresholding**: Replaces the static volatility-adjusted threshold with an elastic multiplier that scales more dynamically with the volatility impulse (vol_5 / vol_20).
+2.  **Refined Microstructure Weights**: Updates the weights for OBI and book pressure to the optimized values (0.32, 0.24, 0.24, 0.20).
+3.  **Conviction-Based Sizing**: Introduces a continuous conviction ratio (predicted_return / threshold) to scale position sizes more granularly, replacing the binary conviction boost.
+4.  **Volatility-Elastic Exits**: Adjusts take-profit and stop-loss levels based on both short-term volatility impulse and long-term volatility trends (vol_5 / vol_60).
+5.  **Dynamic Time Horizon**: Reduces the max_bars from 4 to 3 when volatility is trending downwards, mitigating stagnation risk.
+6.  **Relaxed Filters**: Slightly loosens the spread and funding filters to increase trade frequency while maintaining high quality.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    # vol_regime: > 1.0 means volatility is expanding relative to the recent past
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+
+    # Macro & Session
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+
+    # 2. Regime Quality Metrics
+    # micro_quality: Positive means book supports long, negative supports short.
+    # Weights optimized from high-performing crossover iterations.
+    micro_quality = 0.3 * obi1 + 0.25 * obi3 + 0.25 * obi5 + 0.2 * book_pressure
+=======
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5", 0.015)), 1e-8)
+    vol20 = max(float(_get("vol_20", 0.015)), 1e-8)
+    vol60 = max(float(_get("vol_60", 0.015)), 1e-8)
+    vol_regime = vol5 / vol20
+    vol_trend = vol5 / vol60
+
+    # Macro & Session
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+
+    # 2. Regime Quality Metrics
+    # micro_quality: Positive means book supports long, negative supports short.
+    micro_quality = (0.32 * obi1 + 0.24 * obi3 + 0.24 * obi5 + 0.20 * book_pressure)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # 3. Dynamic Signal Thresholding
+    # Scaling thresholds with volatility prevents over-trading in noise and captures meaningful moves.
+    BASE_THRESH = 0.0018
+    long_thresh = BASE_THRESH * (0.9 + 0.2 * vol_regime)
+    short_thresh = -BASE_THRESH * (0.9 + 0.2 * vol_regime)
+
+    signal = 0
+    # Core signal logic: Model prediction must exceed threshold, confirmed by microstructure flow
+    # and filtered by execution cost (spread) and carry cost (funding).
+    if predicted_return > long_thresh:
+        if micro_quality > -0.8 and funding < 0.002 and spread_bps < 9.5:
+            signal = 1
+    elif predicted_return < short_thresh:
+        if micro_quality < 0.8 and funding > -0.002 and spread_bps < 9.5:
+            signal = -1
+=======
+    # 3. Dynamic Signal Thresholding
+    threshold_base = 0.00172
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_regime))
+    current_threshold = threshold_base * elastic_multiplier
+
+    signal = 0
+    signal_conviction = 0.0
+    if predicted_return > current_threshold:
+        if micro_quality > -0.85 and funding < 0.0025 and spread_bps < 10.0:
+            signal = 1
+            signal_conviction = abs(predicted_return) / current_threshold
+    elif predicted_return < -current_threshold:
+        if micro_quality < 0.85 and funding > -0.0025 and spread_bps < 10.0:
+            signal = -1
+            signal_conviction = abs(predicted_return) / current_threshold
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # 4. Asymmetric Position Sizing
+    # We increase size based on predicted conviction and favorable session liquidity.
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size slightly increased from previous seed to leverage high win rate
+        base_size = 0.13
+        # Conviction boost
+        conviction_boost = 0.02 if abs(predicted_return) > 0.0036 else 0.0
+        # US Session boost (liquidity and move persistence)
+        session_boost = 0.01 if is_us else 0.0
+
+        position_size = base_size + conviction_boost + session_boost
+        position_size = min(0.18, max(0.10, position_size))
+=======
+    # 4. Asymmetric Position Sizing
+    if signal == 0:
+        position_size = 0.0
+    else:
+        base_size = 0.145
+        conviction_bonus = min(0.035, max(0, (signal_conviction - 1.0) * 0.06))
+        session_bonus = 0.01 if is_us else 0.0
+
+        funding_filter = 1.0
+        if (signal == 1 and funding > 0.0015) or (signal == -1 and funding < -0.0015):
+            funding_filter = 0.90
+
+        position_size = (base_size + conviction_bonus + session_bonus) * funding_filter
+        position_size = min(0.18, max(0.10, position_size))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # 5. Fixed-Horizon Risk Management
+    # Fixed TP/SL has proven to be the most robust exit strategy for this 15-min model.
+    take_profit = 0.004
+    stop_loss = 0.003
+    max_bars = 4 # Time-based exit at 60 minutes
+=======
+    # 5. Volatility-Elastic Risk Management
+    tp_elasticity = 0.94 + (0.06 * min(2.0, vol_trend))
+    sl_elasticity = 0.97 + (0.03 * min(2.0, vol_regime))
+    take_profit = 0.0040 * tp_elasticity
+    stop_loss = 0.0030 * sl_elasticity
+    max_bars = 4
+    if vol_trend < 0.8:
+        max_bars = 3
+>>>>>>> REPLACE
+</DIFF>

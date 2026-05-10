@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "microstructure_and_vol_refinement",
+  "patch_description": "Refines the signal generation logic by:\n1.  Updating `micro_quality` weights to include longer-term OBI (obi_tau10) and increasing the weight of book pressure for better regime identification.\n2.  Lowering the `BASE_THRESH` slightly to 0.00175 to capture more high-probability trades while tightening microstructure and spread filters to maintain quality.\n3.  Adding a `vwap_dev` filter to avoid entries at extreme price extensions and a `kyle_lambda` filter to avoid highly illiquid bars.\n4.  Increasing the `base_size` to 0.14 and adjusting the conviction boost threshold.\n5.  Introducing a volatility-adaptive `take_profit` and extending `max_bars` to 5 during the US session to capture more persistent trends.",
+  "error_msg": "No changes applied",
+  "timestamp": "2026-05-10T00:00:21.418085",
+  "llm_cost": 0.0052014999999999995,
+  "llm_model": "gemini-3-flash-preview"
+}

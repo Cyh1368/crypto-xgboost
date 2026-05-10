@@ -1,0 +1,14 @@
+{
+  "generation": 32,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "precision_thresholds_and_tight_risk",
+  "patch_description": "This update aims to push the performance closer to the high-Sharpe 'Seed' strategy by tightening entry thresholds and returning to the more robust risk management parameters (0.4% TP / 0.3% SL). \n\nKey changes:\n1.  **Raised Entry Thresholds**: Reverted focus to high-conviction predictions, using a range from 0.185% to 0.22% depending on the session (US vs. Asia) to improve trade quality and win rate.\n2.  **Stricter Microstructure Filters**: Narrowed the Order Book Imbalance (OBI) requirement (-0.25 to 0.25) and added a `realized_vol_ratio` filter to bypass periods of excessive volatility where XGBoost predictions often degrade.\n3.  **Liquidity Constraint**: Tightened the maximum allowable spread to 5 bps to ensure efficient execution.\n4.  **Optimized Risk/Reward**: Realigned TP/SL to the Seed's 40bps/30bps values which demonstrated superior Sharpe and Drawdown performance in previous iterations.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:53:17.849612",
+  "llm_cost": 0.007660999999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

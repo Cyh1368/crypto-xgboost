@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "volatility_rsi_adx_signal",
+  "patch_description": "The bug identified was a potential failure in the module loading process, possibly due to the simplicity of the seed or environment-specific issues during the import of the generated signal function. The fix involves implementing a more robust and sophisticated signal generator that uses bar_context fields (ATR, RSI, ADX) to filter entries and adjust exit levels. Specifically:\n1. Added RSI and ADX filters to avoid trading in overextended or non-trending markets.\n2. Implemented volatility-adjusted take-profit and stop-loss levels using the ATR (Average True Range).\n3. Introduced dynamic position sizing based on the strength of the predicted return.\n4. Ensured all return values are explicitly cast to the correct types (int, float) and bounded within reasonable trading limits.\n5. Included necessary imports (math, numpy) inside the EVOLVE-BLOCK to ensure they are available regardless of how the block is extracted and loaded.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:27:09.332936",
+  "llm_cost": 0.0028060000000000003,
+  "llm_model": "gemini-3-flash-preview"
+}

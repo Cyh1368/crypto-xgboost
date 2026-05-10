@@ -1,0 +1,5 @@
+# EVOLVE-BLOCK-START
+import numpy as np
+import math
+
+def generate_signal(...):

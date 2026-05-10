@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 2,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "fix_importlib_and_logic_robustness",
+  "patch_description": "The bug was likely caused by the inclusion of `import` statements at the top level of the `EVOLVE-BLOCK`, which may have interfered with the backtester's module-loading or code-extraction logic, leading to the `AttributeError: 'NoneType' object has no attribute 'loader'`. \n\nTo fix this, I have:\n1. Removed all `import` statements from within the `EVOLVE-BLOCK`, relying on `numpy` (imported as `np` at the top of the file) and built-in functions.\n2. Removed nested functions and `try/except` blocks to ensure the code is as simple and robust as possible for the backtester's parser.\n3. Simplified the signal logic to use ATR-adjusted thresholds, RSI filters, and volatility-based position sizing and exits.\n4. Ensured all return values are explicitly cast to standard Python types (`int` and `float`) and handled potential `NaN` or `inf` values in the prediction.\n5. Removed redundant aliases at the end of the block to match the structure of the original seed program.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:27:36.433124",
+  "llm_cost": 0.0037949999999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

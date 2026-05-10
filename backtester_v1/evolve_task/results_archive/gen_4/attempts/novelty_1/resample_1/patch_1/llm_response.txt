@@ -1,0 +1,55 @@
+<NAME>
+vol_adjusted_rsi_filter_v2
+</NAME>
+
+<DESCRIPTION>
+The bug likely stemmed from a structural or environment-related issue when loading the function, possibly exacerbated by the simplicity of the original code or misuse of constants. I have implemented a more robust, 'evolved' version that:
+1.  **Volatility-Adjusted Thresholds:** Uses ATR to normalize the prediction thresholds, making the model more conservative during high volatility.
+2.  **RSI/ADX Filters:** Added trend filters (ADX) and overbought/oversold guards (RSI) to prevent entering trades in unfavorable momentum conditions.
+3.  **Dynamic Sizing and Exits:** Replaced fixed stops with ATR-based distances for take-profit and stop-loss, and scaled position size based on prediction confidence.
+4.  **Robustness:** Added defensive dictionary lookups with defaults and explicit type casting for return values (float/int) to ensure the evaluator receives the expected data types. Re-included imports within the block to ensure function isolation.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Evolved trading signal generator with volatility-adjusted exit logic and filters.
+    """
+    import numpy as np
+    import math
+
+    # 1. Robust data extraction from bar_context
+    close = bar_context.get('close', 1.0)
+    atr = bar_context.get('atr', 0.01 * close)
+    rsi = bar_context.get('rsi', 50.0)
+    adx = bar_context.get('adx', 20.0)
+
+    # Normalize ATR as a percentage of price for relative calculations
+    volatility_pct = atr / close if close > 0 else 0.002
+    
+    # 2. Dynamic Thresholds
+    # Entry threshold scales with volatility: be stricter when price is volatile
+    base_threshold = max(0.0016, volatility_pct * 0.25)
+    
+    # 3. Core Signal Logic with Momentum Filters
+    signal = 0
+    if predicted_return > base_threshold:
+        # Long filter: RSI not overbought, ADX showing trend strength
+        if rsi < 70 and adx > 15:
+            signal = 1
+    elif predicted_return < -base_threshold:
+        # Short filter: RSI not oversold, ADX showing trend strength
+        if rsi > 30 and adx > 15:
+            signal = -1
+            
+    # 4. Position Sizing
+    # Scales linearly with confidence (prediction magnitude), capped at 0.3 (30%)
+    if signal !=

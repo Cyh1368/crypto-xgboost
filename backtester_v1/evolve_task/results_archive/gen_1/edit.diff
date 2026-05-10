@@ -1,0 +1,83 @@
+--- a/original.py
++++ b/original.py
+@@ -1,39 +1,74 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+     Seed trading signal generator.
+     Translates XGBoost 15-min return prediction into a trading decision.
+     Args:
+         predicted_return: float, model's predicted 15-min return (e.g. 0.003 = +0.3%)
+         bar_context: dict with keys: close, high, low, volume, atr, rsi, adx
+     Returns:
+         dict with signal, position_size, take_profit, stop_loss, max_bars
+     """
+-    LONG_THRESH   = 0.002    # enter long if predicted return > 0.2%
+-    SHORT_THRESH  = -0.002   # enter short if predicted return < -0.2%
+-    POSITION_SIZE = 0.10     # 10% of portfolio per trade
+-    TAKE_PROFIT   = 0.004    # exit at +0.4% gain
+-    STOP_LOSS     = 0.003    # exit at -0.3% loss
++    # Input validation
++    if predicted_return is None:
++        predicted_return = 0.0
++    
++    if bar_context is None:
++        bar_context = {}
++    
++    # Safe extraction of bar_context fields with defaults
++    atr = bar_context.get('atr', 0.001)
++    rsi = bar_context.get('rsi', 50.0)
++    adx = bar_context.get('adx', 20.0)
++    close = bar_context.get('close', 1.0)
++    
++    # Ensure atr is positive and non-zero to avoid division issues
++    if atr is None or atr <= 0:
++        atr = 0.001
++    if close is None or close <= 0:
++        close = 1.0
++    
++    # Convert atr to percentage of close price
++    atr_pct = atr / close if close > 0 else 0.001
++    
++    # Dynamic thresholds based on volatility (ADX strength)
++    # Higher ADX = stronger trend, lower threshold needed
++    adx_factor = max(0.5, min(1.5, adx / 25.0))  # normalize ADX to 0.5-1.5 range
++    
++    LONG_THRESH   = 0.002 / adx_factor      # enter long if predicted return > threshold
++    SHORT_THRESH  = -0.002 / adx_factor     # enter short if predicted return < threshold
++    
++    # Volatility-adjusted position sizing (inverse of ATR)
++    # Higher volatility = smaller position
++    BASE_POSITION_SIZE = 0.10
++    volatility_adjusted_size = BASE_POSITION_SIZE / (1.0 + (atr_pct * 100.0))
++    position_size = max(0.02, min(0.20, volatility_adjusted_size))  # cap between 2% and 20%
++    
++    # Volatility-adjusted take profit and stop loss
++    TAKE_PROFIT   = max(0.002, atr_pct * 2.0)   # at least 2x ATR or 0.2%, whichever larger
++    STOP_LOSS     = max(0.002, atr_pct * 1.5)   # at least 1.5x ATR or 0.2%, whichever larger
++    
+     MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
+ 
++    # Generate signal
+     if predicted_return > LONG_THRESH:
+         signal = 1
+     elif predicted_return < SHORT_THRESH:
+         signal = -1
+     else:
+         signal = 0
+ 
+     return {
+         "signal":        signal,
+-        "position_size": POSITION_SIZE if signal != 0 else 0.0,
++        "position_size": position_size if signal != 0 else 0.0,
+         "take_profit":   TAKE_PROFIT,
+         "stop_loss":     STOP_LOSS,
+         "max_bars":      MAX_BARS,
+     }
+ # EVOLVE-BLOCK-END

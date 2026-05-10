@@ -1,0 +1,14 @@
+{
+  "generation": 84,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "tail_regime_persistence_trader",
+  "patch_description": "This algorithm builds upon the highly successful volatility-elastic framework but introduces statistical regime conditioning through Kurtosis and Autocorrelation. \n\nKey insights:\n1. **Statistical Thick-Tailed Entry**: It adjusts the signal threshold based on excess kurtosis. In fat-tailed environments (high kurtosis), the algorithm increases the entry threshold to account for higher \"noise\" return variance, reducing false signals. \n2. **Persistence-Based Holding**: It utilizes 5-bar autocorrelation to dynamically adjust the trade duration (`max_bars`). When price action shows high persistence, the hold time is extended to capture momentum; when mean-reverting (negative autocorrelation), it exits faster.\n3. **VWAP Deviation Guardrails**: It implements asymmetric logic to prevent \"buying the top\" or \"selling the bottom\" by filtering entries that have deviated too far from the VWAP, improving the win rate.\n4. **Liquidity-Aware Scaling**: Position sizing is modulated by the Kyle\u2019s Lambda estimate and depth ratios, ensuring larger sizes are only taken in liquid regimes with low market impact.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:16:21.172963",
+  "llm_cost": 0.009552,
+  "llm_model": "gemini-3-flash-preview"
+}

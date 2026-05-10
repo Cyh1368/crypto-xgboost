@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "robust_atr_rsi_logic",
+  "patch_description": "The previous program failed with an `AttributeError: 'NoneType' object has no attribute 'loader'`, which typically indicates a structural issue in the module loading process, often caused by syntax errors or missing dependencies when the backtester attempts to import the signal function. \n\nI have fixed this by:\n1. Ensuring all necessary imports (`numpy` and `math`) are included inside the `EVOLVE-BLOCK` to guarantee they are available regardless of how the code is extracted.\n2. Adding robust handling for `NaN` values and potential division-by-zero scenarios in `bar_context` (e.g., `close` price or `atr`).\n3. Implementing a more sophisticated trading logic that uses `atr` for volatility-adjusted stops, `rsi` and `adx` for trend filtering, and dynamic position sizing based on the strength of the `predicted_return`.\n4. Ensuring all return values are explicitly cast to the expected types (`int` for signal, `float` for sizes and stops).",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:22:53.901372",
+  "llm_cost": 0.0025495,
+  "llm_model": "gemini-3-flash-preview"
+}

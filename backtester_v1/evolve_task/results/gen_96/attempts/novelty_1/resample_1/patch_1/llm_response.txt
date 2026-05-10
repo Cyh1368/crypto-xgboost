@@ -1,0 +1,46 @@
+<NAME>
+microstructure_session_adaptive_v3
+</NAME>
+
+<DESCRIPTION>
+This signal generator performs a crossover between the highest-performing prior programs, specifically focusing on the 95.18-score logic. It combines session-specific dynamic thresholding with a refined micro-alignment score (averaging OBI and Book Pressure). 
+
+Key improvements include:
+1.  **Session-Specific Hurdles**: Maintains the optimized US and Asia session thresholds.
+2.  **Volatility-Adjusted Thresholds**: Increases the entry hurdle when short-term volatility (vol_5) spikes relative to long-term volatility (vol_20).
+3.  **Microstructure Filtering**: Uses the 'micro_score' from the best-performing program to ensure order book alignment before entry.
+4.  **Asymmetric Funding Bonus**: Enhances the take-profit target when the trade direction aligns with receiving funding payments.
+5.  **Risk-Managed Sizing**: Incorporates an ATR-based penalty to reduce position size during extreme volatility regimes, preventing outsized drawdowns.
+6.  **Liquidity Safety**: Includes a penalty for poor liquidity (Kyle's Lambda) and a filter for high spread.
+7.  **Funding Avoidance**: Adds logic to avoid entering trades immediately before a funding payment if the trader would be on the paying side.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Combines session-specific thresholding, microstructure alignment, 
+    and volatility-adjusted risk management to maximize Sharpe and Calmar ratios.
+    """
+    # 1. Context Extraction
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    is_weekend = bar_context.get('is_weekend', False)
+    
+    obi_tau5 = bar_context.get('obi_tau5', 0.0)
+    pressure = bar_context.get('book_pressure_3', 0.0)
+    spread_bps = bar_context.get('spread_bps', 1.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    
+    trend = bar_context.get('trend_strength', 0.0)
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+    minutes_to_funding = bar_context.get('minutes_to_funding', 480)
+    kyle_lambda = bar_context.get('kyle_lambda_est

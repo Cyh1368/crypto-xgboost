@@ -1,0 +1,61 @@
+<NAME>
+robust_vol_scaled_asymmetric
+</NAME>
+
+<DESCRIPTION>
+The previous program likely failed validation due to potential runtime errors in input handling (e.g., None values in bar_context) or subtle structural issues that caused the importer to fail. My fix addresses this by:
+1. Implementing much more robust input sanitization, ensuring all bar_context values (atr, rsi, adx, close) are defaulted and type-cast to floats safely, even if they are None.
+2. Using a cleaner logic structure to avoid any potential initialization issues.
+3. Adding a refined trend filter using ADX (to adjust entry thresholds) and RSI (to prevent overextended trades).
+4. Implementing ATR-based position sizing and asymmetric take-profit/stop-loss logic to improve risk-adjusted returns (Sharpe/Calmar).
+5. Ensuring the final output dictionary has uniform types and handles the zero-signal case explicitly.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Robust trading signal generator with volatility-scaled position sizing and trend protection.
+    Args:
+        predicted_return: float, model's predicted 15-min return.
+        bar_context: dict with keys: close, high, low, volume, atr, rsi, adx.
+    Returns:
+        dict with signal, position_size, take_profit, stop_loss, max_bars.
+    """
+    import math
+
+    # 1. Robust Input Sanitization
+    pred = predicted_return if predicted_return is not None else 0.0
+    
+    # Default bar_context if None
+    if bar_context is None:
+        bar_context = {}
+        
+    # Extractor with fallbacks for missing/None values
+    def get_context_val(key, default):
+        val = bar_context.get(key)
+        try:
+            return float(val) if val is not None else default
+        except (ValueError, TypeError):
+            return default
+
+    close = get_context_val('close', 1.0)
+    atr = get_context_val('atr', 0.01 * close)
+    rsi = get_context_val('rsi', 50.0)
+    adx = get_context_val('adx', 20.0)
+
+    # Secondary sanitization for mathematical safety
+    if close <= 0: close = 1.0
+    if atr <= 0: atr = 0.01 * close
+    atr_pct = atr / close
+
+    # 2. Strategy Logic & Trend Filters
+    # Dynamic entry thresholds based on ADX (trend strength)
+    adx_factor = 1.0

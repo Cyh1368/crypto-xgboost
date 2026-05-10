@@ -1,0 +1,73 @@
+<NAME>
+loosen_filters_and_boost_frequency
+</NAME>
+
+<DESCRIPTION>
+The current program's trade frequency (323 trades) is significantly lower than the high-performing seed program (462 trades), primarily due to restrictive microstructure filters (obi > -0.5 and spread < 6.0). This edit lowers the entry threshold to 0.0017 and loosens the filters to be more inclusive (spread < 10.0, rsi filters, and a wider obi range). It also introduces a slight position size boost for high-confidence predictions and a session-based hold time adjustment to capture US session momentum.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Dynamic Threshold Logic
+    # Re-anchoring to the high-performing seed threshold with light microstructure filters.
+    obi = bar_context.get('obi_tau3', 0.0)
+    spread = bar_context.get('spread_bps', 1.0)
+    base_thresh = 0.0019
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Permissive filters to improve quality without sacrificing trade frequency
+        if obi > -0.5 and spread < 6.0:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        if obi < 0.5 and spread < 6.0:
+            signal = -1
+=======
+    # 2. Dynamic Threshold Logic
+    # Lowering threshold and loosening filters to recover trade frequency and win rate.
+    obi = bar_context.get('obi_tau3', 0.0)
+    spread = bar_context.get('spread_bps', 1.0)
+    base_thresh = 0.0017
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Looser filters to capture more opportunities while avoiding extreme overbought/illiquid conditions
+        if spread < 10.0 and rsi < 82 and obi > -0.9 and vol_ratio < 2.5:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        if spread < 10.0 and rsi > 18 and obi < 0.9 and vol_ratio < 2.5:
+            signal = -1
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # 4. Adaptive Hold Time (Max Bars)
+    # Reverting to the seed's robust 4-bar (1-hour) hold time.
+    max_bars = 4
+
+    # 5. Dynamic Risk Targets (TP/SL)
+    # Reverting to the seed's highly effective 0.004/0.003 fixed targets.
+    if signal != 0:
+        take_profit = 0.004
+        stop_loss = 0.003
+
+        # 6. Position Sizing
+        # Using a stable 10% position size to maximize Sharpe and minimize Drawdown.
+        position_size = 0.10
+=======
+    # 4. Adaptive Hold Time (Max Bars)
+    # US sessions often show more continuation; hold slightly longer.
+    max_bars = 5 if is_us else 4
+
+    # 5. Dynamic Risk Targets (TP/SL)
+    # Reverting to the seed's highly effective 0.004/0.003 fixed targets.
+    if signal != 0:
+        take_profit = 0.004
+        stop_loss = 0.003
+
+        # 6. Position Sizing
+        # Using a stable 10% base with a slight boost for high-conviction predictions.
+        position_size = 0.11 if abs(predicted_return) > 0.0035 else 0.10
+>>>>>>> REPLACE
+</DIFF>

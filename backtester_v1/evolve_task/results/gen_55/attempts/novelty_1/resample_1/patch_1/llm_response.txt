@@ -1,0 +1,192 @@
+<NAME>
+adaptive_microstructure_asymmetric_sizing
+</NAME>
+
+<DESCRIPTION>
+The current program (score: 61.08) underperforms the best seed (score: 80.50) primarily due to:
+
+1. **Overly restrictive filters**: The funding rate filter (< 0.001 / > -0.001) is too tight and eliminates many valid trades. The best seed uses no funding filter at all.
+
+2. **Fixed position sizing**: Using constant 0.12 ignores volatility and microstructure quality. The best seed uses fixed 0.10, but we can improve by making it adaptive to market conditions.
+
+3. **Suboptimal threshold**: While 0.002 is good, we should test slightly lower (0.0018) to capture more edge while maintaining quality via filters.
+
+4. **Unused high-quality indicators**: The context provides RSI, momentum, autocorrelation, and book pressure that can improve entry quality without over-filtering.
+
+5. **Asymmetric risk parameters**: Current TP/SL (0.004/0.003) is fixed. We can make them adaptive to ATR and volatility for better risk-adjusted returns.
+
+**New approach**:
+- Lower entry threshold to 0.0018 to increase trade frequency (best seed had 462 trades vs current 299)
+- Replace funding filter with RSI extremes filter (proven in prior seeds)
+- Implement volatility-adjusted position sizing (scale down in high vol, up in low vol)
+- Add autocorrelation filter for mean-reversion confirmation
+- Make TP/SL asymmetric and ATR-adjusted
+- Increase max_bars to 5 for better trend capture (proven in prior seed with session logic)
+- Use trend_strength to modulate aggressiveness
+
+This targets: higher trade count (462 vs 299), maintained win rate (0.78+), and improved Sharpe through better risk management.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+import math
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Adaptive microstructure-based signal generator with asymmetric sizing and
+    volatility-adjusted risk management.
+    """
+    # 1. Context Extraction
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    obi_tau5 = bar_context.get('obi_tau5', 0.0)
+    spread_bps = bar_context.get('spread_bps', 1.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    atr = bar_context.get('atr_14', 0.002)
+    rsi_14 = bar_context.get('rsi_14', 50.0)
+    rsi_6 = bar_context.get('rsi_6', 50.0)
+    vol_20 = bar_context.get('vol_20', 0.01)
+    vol_5 = bar_context.get('vol_5', 0.01)
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    momentum = bar_context.get('momentum_bar', 0.0)
+    book_pressure = bar_context.get('book_pressure_3', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+    depth_ratio_5 = bar_context.get('depth_ratio_5', 1.0)
+
+    # 2. Adaptive Entry Thresholds
+    # Lower base threshold to increase trade frequency (best seed used 0.002 with 462 trades)
+    BASE_THRESH = 0.0018
+    
+    # Adjust threshold based on trend strength and volatility regime
+    trend_adj = 0.0002 if abs(trend) > 0.5 else 0.0
+    vol_adj = -0.0002 if vol_20 < 0.008 else 0.0001 if vol_20 > 0.025 else 0.0
+    
+    long_thresh = BASE_THRESH + trend_adj + vol_adj
+    short_thresh = -BASE_THRESH - trend_adj - vol_adj
+
+    signal = 0
+    
+    # 3. Enhanced Filtering Strategy
+    # Microstructure quality filters (no funding filter - proven to be too restrictive)
+    if predicted_return > long_thresh:
+        # Long entry conditions
+        obi_ok = obi_tau5 > -0.6  # Slightly relaxed from -0.5
+        spread_ok = spread_bps < 10.0  # Slightly relaxed from 9.0
+        vwap_ok = vwap_dev < 0.018  # Slightly relaxed from 0.015
+        depth_ok = depth_ratio_5 < 1.5  # Ensure reasonable depth
+        
+        # RSI filter: avoid overbought extremes but allow momentum
+        rsi_ok = rsi_14 < 85 and rsi_6 < 90
+        
+        # Autocorrelation filter: prefer mean-reversion or trending, avoid choppy
+        autocorr_ok = autocorr > -0.3
+        
+        # Book pressure: prefer buying pressure or neutral
+        pressure_ok = book_pressure > -0.4
+        
+        if obi_ok and spread_ok and vwap_ok and depth_ok and rsi_ok and autocorr_ok and pressure_ok:
+            signal = 1
+            
+    elif predicted_return < short_thresh:
+        # Short entry conditions
+        obi_ok = obi_tau5 < 0.6
+        spread_ok = spread_bps < 10.0
+        vwap_ok = vwap_dev > -0.018
+        depth_ok = depth_ratio_5 < 1.5
+        
+        # RSI filter: avoid oversold extremes but allow momentum
+        rsi_ok = rsi_14 > 15 and rsi_6 > 10
+        
+        # Autocorrelation filter
+        autocorr_ok = autocorr > -0.3
+        
+        # Book pressure: prefer selling pressure or neutral
+        pressure_ok = book_pressure < 0.4
+        
+        if obi_ok and spread_ok and vwap_ok and depth_ok and rsi_ok and autocorr_ok and pressure_ok:
+            signal = -1
+
+    # 4. Adaptive Position Sizing
+    # Base position size increased to capture more edge
+    base_pos = 0.11
+    
+    if signal != 0:
+        # Volatility adjustment: reduce in high vol, increase in low vol
+        vol_factor = 1.0
+        if vol_20 > 0.025:
+            vol_factor = 0.75
+        elif vol_20 > 0.020:
+            vol_factor = 0.85
+        elif vol_20 < 0.008:
+            vol_factor = 1.15
+        elif vol_20 < 0.010:
+            vol_factor = 1.05
+        
+        # Spread adjustment: reduce if spread is wide
+        spread_factor = 1.0
+        if spread_bps > 8.0:
+            spread_factor = 0.9
+        
+        # Trend alignment bonus: increase if prediction aligns with trend
+        trend_factor = 1.0
+        if (signal == 1 and trend > 0.3) or (signal == -1 and trend < -0.3):
+            trend_factor = 1.1
+        
+        position_size = base_pos * vol_factor * spread_factor * trend_factor
+        position_size = min(position_size, 0.15)  # Cap at 15%
+        position_size = max(position_size, 0.08)  # Floor at 8%
+    else:
+        position_size = 0.0
+
+    # 5. Adaptive Risk Management
+    # ATR-adjusted and volatility-aware TP/SL
+    atr_factor = max(0.8, min(1.2, atr / 0.002))  # Normalize around 0.002 ATR
+    
+    # Base TP/SL from best seed (0.004/0.003)
+    base_tp = 0.004
+    base_sl = 0.003
+    
+    # Adjust based on volatility regime
+    if vol_20 > 0.025:
+        # High volatility: wider stops
+        take_profit = base_tp * 1.2 * atr_factor
+        stop_loss = base_sl * 1.2 * atr_factor
+    elif vol_20 > 0.015:
+        # Normal volatility
+        take_profit = base_tp * atr_factor
+        stop_loss = base_sl * atr_factor
+    else:
+        # Low volatility: tighter stops to avoid whipsaws
+        take_profit = base_tp * 0.9 * atr_factor
+        stop_loss = base_sl * 0.9 * atr_factor
+    
+    # Ensure minimum TP/SL
+    take_profit = max(take_profit, 0.0025)
+    stop_loss = max(stop_loss, 0.0015)
+
+    # 6. Session-Aware Hold Time
+    # US sessions show better follow-through (from prior seed analysis)
+    if is_us:
+        max_bars = 5
+    elif is_asia:
+        max_bars = 4
+    else:
+        max_bars = 4
+
+    return {
+        "signal": int(signal),
+        "position_size": float(round(position_size, 4)),
+        "take_profit": float(round(take_profit, 6)),
+        "stop_loss": float(round(stop_loss, 6)),
+        "max_bars": int(max_bars)
+    }
+# EVOLVE-BLOCK-END
+```
+</CODE>

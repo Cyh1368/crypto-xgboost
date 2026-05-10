@@ -1,0 +1,14 @@
+{
+  "generation": 44,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_regime_filtering",
+  "patch_description": "This edit adds a richer regime-aware entry filter and volatility-adjusted asymmetric risk management without changing the overall structure of the signal engine. The main improvement is to combine the model forecast with multiple orthogonal confirmations: microstructure alignment, trend/momentum strength, mean-reversion exhaustion, volatility regime, spread/liquidity cost, and funding carry pressure. \n\nCompared with the current version, this should reduce low-quality trades during noisy or adverse conditions while allowing larger sizing when prediction, order book, and price-action signals are aligned. It also introduces asymmetric take-profit and stop-loss settings that adapt to volatility and directional conviction, which can improve the combined score by balancing win rate, drawdown, and payoff asymmetry.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:00:24.054561",
+  "llm_cost": 0.01730175,
+  "llm_model": "gpt-5.4-mini"
+}

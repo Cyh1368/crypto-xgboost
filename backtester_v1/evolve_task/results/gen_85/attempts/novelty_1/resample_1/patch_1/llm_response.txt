@@ -1,0 +1,133 @@
+<NAME>
+adaptive_thresholds_and_tightened_filters
+</NAME>
+
+<DESCRIPTION>
+This edit improves the signal quality and win rate by implementing session-adaptive entry thresholds and tightening microstructure filters (OBI, VWAP deviation, spread, and funding). It also introduces a liquidity-based penalty directly into the entry threshold (inspired by the top-performing 92.88 score program) and refines the position sizing and max-bars logic to focus on high-confidence, high-persistence regimes.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Threshold and Signal Generation
+    # Lowered threshold to increase trade volume, using relaxed microstructure filters.
+    base_thresh = 0.00165
+    signal = 0
+
+    if predicted_return > base_thresh:
+        # Long Filter: Relaxed OBI and VWAP constraints to match high-alpha regime
+        if avg_obi > -0.7 and funding < 0.0014 and spread < 12.0:
+            if vwap_dev < 0.026:
+                signal = 1
+
+    elif predicted_return < -base_thresh:
+        # Short Filter: Ensuring symmetric entry logic for shorts
+        if avg_obi < 0.7 and funding > -0.0014 and spread < 12.0:
+            if vwap_dev > -0.026:
+                signal = -1
+=======
+    # 2. Threshold and Signal Generation
+    # Session-adaptive thresholds with a liquidity penalty to improve win rate.
+    base_thresh = 0.00175
+    if is_us:
+        base_thresh = 0.00168
+    elif is_asia:
+        base_thresh = 0.00195
+    
+    # Liquidity penalty: increase threshold if the book is thin (Kyle's Lambda)
+    effective_thresh = base_thresh + min(0.00025, kyle_lambda * 35.0)
+    signal = 0
+
+    if predicted_return > effective_thresh:
+        # Long Filter: Tightened OBI and VWAP constraints to ensure quality
+        if avg_obi > -0.55 and funding < 0.0012 and spread < 10.0:
+            if vwap_dev < 0.022:
+                signal = 1
+
+    elif predicted_return < -effective_thresh:
+        # Short Filter: Symmetric tightened constraints
+        if avg_obi < 0.55 and funding > -0.0012 and spread < 10.0:
+            if vwap_dev > -0.022:
+                signal = -1
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # 3. Position Sizing
+    # Dynamic sizing based on confidence and order book thickness (Kyle's Lambda)
+    if signal != 0:
+        base_size = 0.15
+        # Confidence boost capped at 1.25x
+        conf_boost = min(1.25, abs(predicted_return) / base_thresh)
+        # Liquiditity penalty: kyle_lambda estimates return per volume; higher lambda = thinner book.
+        liquidity_penalty = min(0.35, kyle_lambda * 15000)
+
+        position_size = base_size * conf_boost * (1.0 - liquidity_penalty)
+        position_size = max(0.06, min(0.24, position_size))
+
+        # 4. Target Setting (TP / SL)
+        # Tight R/R (1.4x) focused on short-term predictive edge of XGBoost over 15-45m.
+        tp_base = 0.0042
+        sl_base = 0.0030
+
+        # Trend alignment: slightly wider TP in strong trends
+        if (signal == 1 and trend > 0.45) or (signal == -1 and trend < -0.45):
+            tp_base += 0.0006
+            sl_base -= 0.0002
+
+        take_profit = tp_base
+        stop_loss = sl_base
+
+        # 5. Time-Based Exit Strategy (Max Bars)
+        # Session-specific persistence; US session trades carry longer
+        if is_us:
+            max_bars = 6 if abs(trend) > 0.3 else 5
+        elif is_asia:
+            max_bars = 4 if autocorr > 0.1 else 3
+        else:
+            max_bars = 4
+
+    else:
+        position_size = 0.0
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+=======
+    # 3. Position Sizing
+    # Dynamic sizing based on confidence and volatility-adjusted scaling.
+    if signal != 0:
+        base_size = 0.142
+        conf_boost = min(1.2, abs(predicted_return) / effective_thresh)
+        position_size = base_size * conf_boost
+        
+        # Volatility scaling: reduce size in extreme volatility
+        atr_pct = (atr / close) if close > 0 else 0.0015
+        if atr_pct > 0.0085:
+            position_size *= 0.85
+        
+        position_size = max(0.09, min(0.19, position_size))
+
+        # 4. Target Setting (TP / SL)
+        # Asymmetric TP/SL with trend-following adjustments.
+        tp_base = 0.0042
+        sl_base = 0.0031
+
+        if (signal == 1 and trend > 0.4) or (signal == -1 and trend < -0.4):
+            tp_base += 0.0006
+            sl_base -= 0.0001
+
+        take_profit = tp_base
+        stop_loss = sl_base
+
+        # 5. Time-Based Exit Strategy (Max Bars)
+        # Optimized for 15m model persistence; longer holds in trending or US sessions.
+        if (is_us and abs(trend) > 0.35) or abs(autocorr) > 0.18:
+            max_bars = 5
+        else:
+            max_bars = 4
+
+    else:
+        position_size = 0.0
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+>>>>>>> REPLACE
+</DIFF>

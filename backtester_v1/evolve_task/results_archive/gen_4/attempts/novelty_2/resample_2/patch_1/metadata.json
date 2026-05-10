@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 2,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "robust_volatility_signal",
+  "patch_description": "The bug was likely related to the signal function being too basic or the evaluator's failure to properly import the module, which can sometimes be triggered by missing imports inside the extracted block or incorrect return types. This fix improves the signal logic by incorporating volatility-adjusted thresholds (using ATR), trend filtering (using ADX and RSI), and dynamic position sizing. It also ensures all necessary imports are inside the EVOLVE-BLOCK and that return types are explicitly cast to Python primitives to avoid any compatibility issues with the backtester.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:26:22.006576",
+  "llm_cost": 0.0025615000000000004,
+  "llm_model": "gemini-3-flash-preview"
+}

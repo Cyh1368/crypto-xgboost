@@ -1,0 +1,139 @@
+--- a/original.py
++++ b/original.py
+@@ -1,106 +1,102 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+     Elastic Volatility-Microstructure Optimizer.
+     Optimizes trade frequency and capital utilization by scaling thresholds
+     and position sizes based on volatility regimes and trend strength.
+     """
+     import math
+     import numpy as np
+ 
+     def _get(key, default=0.0):
+         v = bar_context.get(key, default)
+         return default if v is None else float(v)
+ 
+     # 1. Context Extraction & Normalization
+     # Volatility metrics
+     v5 = max(_get("vol_5", 0.015), 1e-8)
+     v20 = max(_get("vol_20", 0.015), 1e-8)
+     v60 = max(_get("vol_60", 0.015), 1e-8)
+ 
+     vol_regime = v5 / v20   # Short-term vs Medium-term
+     vol_trend = v5 / v60    # Short-term vs Long-term
+ 
+     # Microstructure Quality (MQ)
+-    # Higher weight on immediate OBI (tau1)
+-    mq = (0.40 * _get("obi_tau1") +
+-          0.30 * _get("obi_tau3") +
+-          0.30 * _get("obi_tau5") +
+-          0.15 * _get("book_pressure_3"))
++    mq = (0.35 * _get("obi_tau1") +
++          0.25 * _get("obi_tau3") +
++          0.20 * _get("obi_tau5") +
++          0.20 * _get("obi_tau10"))
+ 
+     spread = _get("spread_bps", 5.0)
++    kyle_lambda = abs(_get("kyle_lambda_est", 0.0))
++    bb_pct = _get("bb_pct", 0.5)
+     trend = _get("trend_strength", 0.0)
+     funding = _get("funding_rate", 0.0)
+     is_us = bool(bar_context.get("is_us_session", False))
+ 
+     # 2. Adaptive Signal Thresholding
+-    # Lower base threshold to increase trade count
+-    threshold_base = 0.00165
++    threshold_base = 0.00170
+ 
+-    # Threshold scales with volatility (filter noise) and trend (easier entry with trend)
+-    # Range: ~0.85x to 1.3x of base
+-    vol_mult = 0.85 + (0.25 * min(2.0, vol_regime))
+-    trend_mult = 1.0 - (0.1 * min(1.0, trend))
+-
++    # Threshold scales with volatility and trend
++    vol_mult = 0.90 + (0.20 * min(2.0, vol_regime))
++    trend_mult = 1.0 - (0.08 * min(1.0, trend))
+     current_threshold = threshold_base * vol_mult * trend_mult
+ 
+     signal = 0
++    # Add Kyle's Lambda filter to avoid high impact/low liquidity environments
++    # Add BB exhaustion filter: don't go long if price is at upper band, or short if at lower band.
+     if predicted_return > current_threshold:
+-        # Loosened MQ filter to capture more momentum
+-        if mq > -0.90 and spread < 11.0 and funding < 0.0025:
++        if mq > -0.85 and spread < 10.0 and funding < 0.0022 and kyle_lambda < 0.01 and bb_pct < 0.92:
+             signal = 1
+     elif predicted_return < -current_threshold:
+-        if mq < 0.90 and spread < 11.0 and funding > -0.0025:
++        if mq < 0.85 and spread < 10.0 and funding > -0.0022 and kyle_lambda < 0.01 and bb_pct > 0.08:
+             signal = -1
+ 
+     # 3. Dynamic Risk & Position Sizing
+     if signal == 0:
+         position_size = 0.0
+         take_profit = 0.0
+         stop_loss = 0.0
+         max_bars = 0
+     else:
+-        # Base size increased to leverage high win rate
+-        base_size = 0.15
++        # Balanced base size (optimized)
++        base_size = 0.145
+ 
+-        # Conviction bonus: extra size for high-confidence predictions
+-        conviction_bonus = min(0.03, max(0, (abs(predicted_return) / current_threshold - 1.0) * 0.05))
+-
+-        # Session bonus: US session typically has higher follow-through
+-        session_bonus = 0.015 if is_us else 0.0
+-
+-        # Volatility scalar: reduce size slightly in high-vol regimes to protect capital
+-        vol_size_scalar = 1.05 - (0.1 * min(1.5, vol_regime))
++        # Conviction bonus
++        conviction_bonus = min(0.035, max(0, (abs(predicted_return) / current_threshold - 1.0) * 0.06))
++        # Session bonus
++        session_bonus = 0.01 if is_us else 0.0
++        # Volatility scalar
++        vol_size_scalar = 1.0 + (0.1 * (1.0 - min(1.5, vol_regime)))
+ 
+         position_size = (base_size + conviction_bonus + session_bonus) * vol_size_scalar
+-        position_size = max(0.08, min(0.18, position_size))
++        position_size = max(0.10, min(0.18, position_size))
+ 
+         # 4. Asymmetric Exit Logic
+-        # TP scales with long-term volatility trend
+-        tp_elasticity = 0.92 + (0.16 * min(2.0, vol_trend))
+-        # SL scales with short-term volatility impulse
+-        sl_elasticity = 0.95 + (0.10 * min(2.0, vol_regime))
++        # TP/SL anchored to 40/30 bps with dampened elasticity
++        tp_elasticity = 0.95 + (0.10 * min(2.0, vol_trend))
++        sl_elasticity = 0.97 + (0.06 * min(2.0, vol_regime))
+ 
+-        take_profit = 0.0042 * tp_elasticity
+-        stop_loss = 0.0032 * sl_elasticity
++        take_profit = 0.0040 * tp_elasticity
++        stop_loss = 0.0030 * sl_elasticity
+ 
+         # 5. Time-based Exit
+-        # Standard 1-hour hold, reduced if volatility is stagnating
++        # Reduced hold time if predicted volatility drops significantly (stagnation)
+         max_bars = 4
+-        if vol_trend < 0.75:
++        if vol_trend < 0.70 or abs(mq) < 0.15:
+             max_bars = 3
+ 
+     return {
+         "signal": int(signal),
+         "position_size": float(position_size),
+         "take_profit": float(take_profit),
+         "stop_loss": float(stop_loss),
+         "max_bars": int(max_bars)
+     }
+ # EVOLVE-BLOCK-END

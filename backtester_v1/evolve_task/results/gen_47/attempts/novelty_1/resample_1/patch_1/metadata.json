@@ -1,0 +1,14 @@
+{
+  "generation": 47,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "micro_precision_v3",
+  "patch_description": "The proposed strategy, `micro_precision_v3`, builds upon the high-performing logic of previous iterations while introducing more granular microstructure filters and a dynamic, risk-aware sizing engine. \n\nKey improvements include:\n1.  **Refined Microstructure Quality:** A weighted composite of OBI (at 1, 3, 5, and 10-bar horizons) and book pressure is used to confirm the model's directional prediction.\n2.  **Volatility-Adaptive Thresholding:** Entry thresholds for the XGBoost model's predicted return are scaled by the current volatility regime (vol5/vol20), ensuring the strategy captures more opportunities in low-volatility environments while filtering noise during spikes.\n3.  **Asymmetric Entry Gating:** Incorporates funding rate carry costs and execution costs (spread) to filter out trades with poor risk-reward profiles. A specific filter is added to avoid entries right before high-funding settlements.\n4.  **Multi-Factor Position Sizing:** Sizing is dynamically adjusted based on session liquidity (US session boost), model conviction (predicted return magnitude), volatility regime (reduction in high-vol), and market impact (Kyle's Lambda).\n5.  **Adaptive Exit Logic:** While maintaining the robust 0.004/0.003 TP/SL ratio, the take-profit and time-based exits (max_bars) are slightly adjusted based on trend strength and weekend session flags to maximize capture and minimize decay.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-10T00:02:09.951571",
+  "llm_cost": 0.0056995,
+  "llm_model": "gemini-3-flash-preview"
+}

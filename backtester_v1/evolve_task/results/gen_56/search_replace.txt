@@ -1,0 +1,71 @@
+<NAME>
+relaxed_alpha_capture
+</NAME>
+
+<DESCRIPTION>
+The previous iteration was over-filtering, resulting in significantly fewer trades than the high-performing seed model. This modification lowers the entry threshold from 0.002 to 0.0018 and relaxes microstructure filters (OBI, VWAP deviation, and spread) to capture more high-conviction signals. It also increases the base position size to 0.13 and introduces a conditional hold-time extension for the US session when trend strength is significant, aiming to improve total return and Sharpe while leveraging the high observed win rate.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Entry Thresholds
+    # Reverting to the robust 0.002 anchor from the top-performing seed.
+    base_thresh = 0.002
+
+    signal = 0
+    # 3. Filtering Strategy
+    # Light microstructure filters to ensure quality without over-filtering high-edge signals.
+    if predicted_return > base_thresh:
+        if obi_tau5 > -0.5 and vwap_dev < 0.015 and spread_bps < 9.0:
+            if funding < 0.001:
+                signal = 1
+    elif predicted_return < -base_thresh:
+        if obi_tau5 < 0.5 and vwap_dev > -0.015 and spread_bps < 9.0:
+            if funding > -0.001:
+                signal = -1
+=======
+    # 2. Entry Thresholds
+    # Threshold lowered to increase volume closer to the high-performing baseline.
+    base_thresh = 0.0018
+
+    signal = 0
+    # 3. Filtering Strategy
+    # Relaxed filters to recapture alpha while maintaining floor protection against toxicity.
+    if predicted_return > base_thresh:
+        if obi_tau5 > -0.7 and vwap_dev < 0.025 and spread_bps < 10.0:
+            if funding < 0.0015:
+                signal = 1
+    elif predicted_return < -base_thresh:
+        if obi_tau5 < 0.7 and vwap_dev > -0.025 and spread_bps < 10.0:
+            if funding > -0.0015:
+                signal = -1
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # 4. Position Sizing
+    # Slightly more aggressive than seed (0.12 vs 0.10) to maximize return while keeping Sharpe high.
+    position_size = 0.12 if signal != 0 else 0.0
+
+    # 5. Risk Management
+    # Reverting to the seed's highly effective 0.004/0.003 parameters.
+    take_profit = 0.004
+    stop_loss = 0.003
+
+    # 6. Hold Time
+    # 4 bars (1 hour) is the optimal holding period for this 15m model.
+    max_bars = 4
+=======
+    # 4. Position Sizing
+    # Size increased to capitalize on the high win rate in this regime.
+    position_size = 0.13 if signal != 0 else 0.0
+
+    # 5. Risk Management
+    # Maintaining seed-based profit targets proved most robust.
+    take_profit = 0.004
+    stop_loss = 0.003
+
+    # 6. Hold Time
+    # Standard 4-bar hold, with an optional extension for trending US sessions.
+    max_bars = 5 if (is_us and abs(trend) > 0.4) else 4
+>>>>>>> REPLACE
+</DIFF>

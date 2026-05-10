@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_entry",
+  "patch_description": "This edit upgrades the signal generator from a static threshold rule into a regime-adaptive selector that uses the richer context already available in `bar_context`.\n\nMain improvements:\n- Microstructure confirmation now blends multiple OBI horizons, book pressure, depth, spread, and Kyle lambda into a single quality score.\n- Directional entries are gated by trend/momentum confirmation, with separate mean-reversion exceptions when price is stretched relative to VWAP/Bollinger/RSI.\n- Funding and session context are used asymmetrically to suppress trades into adverse carry or low-quality periods.\n- Position sizing is now tied to edge quality, execution cost, and volatility regime instead of being fixed.\n- Take-profit, stop-loss, and holding period are volatility-adjusted and shortened in noisy or expensive regimes.\n\nThis should improve win rate and drawdown control while preserving enough trade frequency for Sharpe and total return.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:42:58.835619",
+  "llm_cost": 0.0173445,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,211 @@
+<NAME>
+adaptive_microstructure_regime_signal
+</NAME>
+
+<DESCRIPTION>
+This novel approach draws inspiration from the prior programs' success with microstructure filters and session-based logic, but implements a fundamentally different paradigm: **regime-aware adaptive thresholding with order flow momentum fusion**.
+
+Key insights from context programs:
+1. The top performer (95.18 score) combined dynamic thresholds with confidence-weighted sizing
+2. Microstructure filters (OBI, spread, pressure) consistently improved risk-adjusted returns
+3. Session-specific behavior and funding rate alignment added significant alpha
+4. Fixed TP/SL ratios (0.004/0.003) proved robust across regimes
+
+Novel approach:
+- **Regime Detection**: Instead of static thresholds, detect market microstructure regime using a composite of OBI, book pressure, and autocorrelation to determine if market is in "momentum", "mean-reversion", or "choppy" mode
+- **Order Flow Momentum Fusion**: Combine predicted return with normalized order book imbalance and book pressure as a unified conviction score, rather than using them as binary filters
+- **Volatility-Regime Adaptive Sizing**: Scale position size not just by confidence but by the interaction between realized volatility regime and trend strength, with asymmetric treatment for long vs short
+- **Dynamic TP/SL with Regime Bias**: Adjust take-profit and stop-loss targets based on detected regime (trending markets get wider TP, choppy markets get tighter SL)
+- **Funding Rate Momentum**: Use funding rate as both a filter AND a sizing modifier, recognizing that extreme funding often precedes reversals
+- **Autocorrelation-Driven Hold Optimization**: Extend max_bars in trending regimes with positive autocorrelation, compress in mean-reverting regimes
+
+This differs fundamentally from prior approaches by creating a unified "regime score" that informs all downstream decisions, rather than treating filters as independent binary gates.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+import math
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Adaptive microstructure regime-aware signal generator combining order flow 
+    momentum fusion with volatility-adjusted sizing and regime-specific risk targets.
+    """
+    # 1. Extract Core Context
+    close = bar_context.get('close', 1.0)
+    atr = bar_context.get('atr_14', 0.002)
+    vol_5 = bar_context.get('vol_5', 0.001)
+    vol_20 = bar_context.get('vol_20', 0.001)
+    vol_ratio = bar_context.get('realized_vol_ratio', 1.0)
+    
+    # Microstructure
+    obi_tau5 = bar_context.get('obi_tau5', 0.0)
+    obi_tau1 = bar_context.get('obi_tau1', 0.0)
+    spread_bps = bar_context.get('spread_bps', 1.0)
+    book_pressure = bar_context.get('book_pressure_3', 0.0)
+    kyle_lambda = bar_context.get('kyle_lambda_est', 0.0)
+    
+    # Price Action
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    rsi = bar_context.get('rsi_14', 50.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    momentum = bar_context.get('momentum', 0.0)
+    
+    # Macro & Session
+    funding = bar_context.get('funding_rate', 0.0)
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    is_weekend = bar_context.get('is_weekend', False)
+
+    # 2. Regime Detection (Composite Score)
+    # Detect if market is in momentum, mean-reversion, or choppy regime
+    obi_normalized = np.tanh(obi_tau5 * 2.0)  # Normalize OBI to [-1, 1]
+    pressure_normalized = np.tanh(book_pressure / 50.0)  # Normalize pressure
+    
+    # Momentum regime: positive autocorr + positive OBI + positive pressure
+    momentum_score = (autocorr + obi_normalized + pressure_normalized) / 3.0
+    
+    # Trend alignment bonus
+    trend_alignment = (1.0 if (trend > 0.3 and obi_normalized > 0) or (trend < -0.3 and obi_normalized < 0) else -0.2)
+    
+    # Composite regime score: -1 (mean-revert) to +1 (momentum)
+    regime_score = np.tanh((momentum_score + trend_alignment * 0.3) * 1.5)
+
+    # 3. Order Flow Momentum Fusion
+    # Create unified conviction score combining prediction + microstructure
+    obi_contribution = obi_normalized * 0.0008  # OBI adds/subtracts from predicted return
+    pressure_contribution = pressure_normalized * 0.0005
+    
+    fused_return = predicted_return + obi_contribution + pressure_contribution
+
+    # 4. Dynamic Threshold Logic (Regime & Session Dependent)
+    base_thresh = 0.00175
+    
+    # Session-specific adjustments
+    if is_us:
+        base_thresh = 0.00168
+    elif is_asia:
+        base_thresh = 0.00195
+    
+    # Regime-based threshold adjustment
+    # In strong momentum regimes, lower threshold; in choppy regimes, raise it
+    regime_thresh_adj = base_thresh * (0.92 if regime_score > 0.4 else (1.08 if regime_score < -0.4 else 1.0))
+    
+    # Liquidity penalty
+    liquidity_penalty = min(0.00015, kyle_lambda * 20.0)
+    effective_thresh = regime_thresh_adj + liquidity_penalty
+
+    # 5. Signal Generation with Microstructure Safety
+    signal = 0
+    
+    if fused_return > effective_thresh:
+        # Long Filter: Microstructure alignment + RSI not overbought + funding not extreme
+        spread_ok = spread_bps < 10.5
+        obi_ok = obi_tau5 > -0.65
+        vwap_ok = vwap_dev < 0.028
+        rsi_ok = rsi < 78
+        funding_ok = funding < 0.0016
+        
+        if spread_ok and obi_ok and vwap_ok and rsi_ok and funding_ok:
+            signal = 1
+            
+    elif fused_return < -effective_thresh:
+        # Short Filter: Microstructure alignment + RSI not oversold + funding not extreme
+        spread_ok = spread_bps < 10.5
+        obi_ok = obi_tau5 < 0.65
+        vwap_ok = vwap_dev > -0.028
+        rsi_ok = rsi > 22
+        funding_ok = funding > -0.0016
+        
+        if spread_ok and obi_ok and vwap_ok and rsi_ok and funding_ok:
+            signal = -1
+
+    # 6. Dynamic Risk Management (Regime & Trend Aware)
+    if signal != 0:
+        # Base TP/SL
+        take_profit = 0.0040
+        stop_loss = 0.0030
+        
+        # Regime-based TP/SL adjustment
+        # Trending markets: wider TP, tighter SL (let winners run, protect quickly)
+        # Mean-reverting: tighter TP, wider SL (take profits faster, give room)
+        if regime_score > 0.35:  # Strong momentum
+            take_profit = 0.0046
+            stop_loss = 0.0027
+        elif regime_score < -0.35:  # Strong mean-reversion
+            take_profit = 0.0036
+            stop_loss = 0.0034
+        
+        # Trend alignment bonus: if signal aligns with trend, increase TP
+        if (signal == 1 and trend > 0.4) or (signal == -1 and trend < -0.4):
+            take_profit *= 1.08
+        
+        # Funding rate extreme adjustment: if funding is against us, tighten SL
+        if (signal == 1 and funding > 0.001) or (signal == -1 and funding < -0.001):
+            stop_loss *= 1.15
+
+        # 7. Adaptive Position Sizing
+        # Base confidence from fused return magnitude
+        confidence = min(1.5, abs(fused_return) / effective_thresh)
+        
+        # Volatility regime scaling
+        vol_expansion = np.tanh((vol_ratio - 1.0) * 3.0)  # Positive if vol expanding
+        vol_scale = 1.0 + vol_expansion * 0.15
+        
+        # Regime-based sizing: momentum regimes get larger sizes
+        regime_size_mult = 1.0 + regime_score * 0.12
+        
+        # Funding rate sizing modifier: extreme funding reduces size (crowded)
+        funding_abs = abs(funding)
+        funding_mult = max(0.85, 1.0 - funding_abs * 200.0)
+        
+        # Autocorrelation sizing: positive autocorr supports larger positions
+        autocorr_mult = 1.0 + max(0.0, autocorr) * 0.1
+        
+        # Composite position size
+        base_size = 0.13
+        position_size = base_size * confidence * vol_scale * regime_size_mult * funding_mult * autocorr_mult
+        position_size = max(0.08, min(0.20, position_size))
+        
+        # 8. Adaptive Hold Time
+        # Momentum regimes + positive autocorr: hold longer
+        # Mean-reversion regimes: hold shorter
+        max_bars = 5
+        
+        if is_us and regime_score > 0.3:
+            max_bars = 6
+        elif regime_score < -0.3:
+            max_bars = 3
+        elif is_asia:
+            max_bars = 4
+        
+        # Extend hold if strong trend alignment
+        if abs(trend) > 0.5 and abs(autocorr) > 0.12:
+            max_bars += 1
+        
+        # Reduce hold if extreme spread (liquidity drying up)
+        if spread_bps > 9.0:
+            max_bars = max(3, max_bars - 1)
+    else:
+        position_size = 0.0
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+
+    return {
+        "signal": int(signal),
+        "position_size": float(round(position_size, 4)),
+        "take_profit": float(round(take_profit, 5)),
+        "stop_loss": float(round(stop_loss, 5)),
+        "max_bars": int(max_bars),
+    }
+# EVOLVE-BLOCK-END
+```
+</CODE>

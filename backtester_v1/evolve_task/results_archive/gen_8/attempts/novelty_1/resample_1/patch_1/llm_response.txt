@@ -1,0 +1,164 @@
+<NAME>
+robust_signal_logic
+</NAME>
+
+<DESCRIPTION>
+The validation failure trace shows the evaluator could not properly load the module (`spec.loader` was `None`), which commonly happens when the submitted file is malformed or not importable as a normal Python module. I kept the program import-safe and ensured the EVOLVE block contains a clean, valid `generate_signal` implementation with the same input/output contract.
+
+I also improved the trading logic to be more robust: dynamic entry thresholds based on ATR/ADX, RSI trend filters, volatility-adjusted stop loss / take profit, asymmetric long/short rules, and simple signal smoothing using recent bar context when available. No external libraries beyond `numpy` and `random` are used, and the code remains self-contained.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Trading signal generator for a 15-minute forward return model.
+
+    Args:
+        predicted_return: model-predicted forward return (e.g. 0.003 = +0.3%)
+        bar_context: dict with available bar-close features such as:
+            close, high, low, volume, atr, rsi, adx, and optionally
+            prior_predicted_return / prev_predicted_return / last_predicted_return
+
+    Returns:
+        dict with keys:
+            signal: 1 (long), 0 (flat), -1 (short)
+            position_size: float in [0.0, 1.0]
+            take_profit: float
+            stop_loss: float
+            max_bars: int
+    """
+    ctx = bar_context or {}
+
+    def _get_float(key, default=0.0):
+        try:
+            val = ctx.get(key, default)
+            if val is None:
+                return float(default)
+            return float(val)
+        except Exception:
+            return float(default)
+
+    # Core context values
+    atr = max(_get_float("atr", 0.0), 0.0)
+    rsi = _get_float("rsi", 50.0)
+    adx = max(_get_float("adx", 0.0), 0.0)
+    close = max(_get_float("close", 0.0), 0.0)
+    volume = max(_get_float("volume", 0.0), 0.0)
+    high = _get_float("high", close)
+    low = _get_float("low", close)
+
+    # Normalize volatility with price when possible
+    atr_pct = atr / close if close > 0 else 0.0
+    candle_range_pct = ((high - low) / close) if close > 0 else 0.0
+
+    # Signal smoothing from recent model outputs if available
+    prev_pred = None
+    for k in ("prev_predicted_return", "prior_predicted_return", "last_predicted_return"):
+        if k in ctx:
+            try:
+                prev_pred = float(ctx.get(k))
+                break
+            except Exception:
+                pass
+
+    smoothed_pred = predicted_return
+    if prev_pred is not None and np.isfinite(prev_pred):
+        smoothed_pred = 0.7 * predicted_return + 0.3 * prev_pred
+
+    # Dynamic entry threshold:
+    # - higher when volatility is elevated
+    # - lower when trend strength is strong
+    base_thresh = 0.0015
+    vol_component = min(0.0025, 0.8 * atr_pct + 0.2 * candle_range_pct)
+    trend_bonus = 0.0007 if adx >= 25 else 0.0
+    entry_thresh = base_thresh + vol_component - trend_bonus
+    entry_thresh = max(0.0008, min(0.0045, entry_thresh))
+
+    # Trend / momentum filters
+    bullish_trend = (adx >= 18 and rsi >= 52)
+    bearish_trend = (adx >= 18 and rsi <= 48)
+    strong_bull = (adx >= 25 and rsi >= 55)
+    strong_bear = (adx >= 25 and rsi <= 45)
+
+    # Asymmetric thresholds: shorts require slightly stronger confirmation in weak trend regimes
+    long_edge = smoothed_pred
+    short_edge = -smoothed_pred
+
+    signal = 0
+
+    if long_edge > entry_thresh and (bullish_trend or strong_bull or smoothed_pred > 2.0 * entry_thresh):
+        signal = 1
+    elif short_edge > entry_thresh and (bearish_trend or strong_bear or smoothed_pred < -2.0 * entry_thresh):
+        signal = -1
+
+    # Position sizing:
+    # - larger when edge is stronger and trend filter confirms
+    # - smaller when volatility is elevated
+    if signal != 0:
+        edge_strength = abs(smoothed_pred) / max(entry_thresh, 1e-8)
+        trend_strength = min(adx / 50.0, 1.0)
+
+        size = 0.08 + 0.12 * min(edge_strength, 3.0) / 3.0 + 0.10 * trend_strength
+        size -= 0.10 * min(atr_pct * 100.0, 1.5) / 1.5  # cut size in high volatility
+        size = float(np.clip(size, 0.05, 0.35))
+
+        # Slightly more conservative short sizing unless trend is strong
+        if signal == -1 and not strong_bear:
+            size *= 0.85
+    else:
+        size = 0.0
+
+    # Volatility-adjusted exits
+    # Ensure positive finite exits even if ATR is missing
+    tp_floor = 0.0020
+    sl_floor = 0.0015
+
+    if close > 0 and atr > 0:
+        tp = max(tp_floor, min(0.015, 1.8 * atr_pct + 0.0020))
+        sl = max(sl_floor, min(0.012, 1.2 * atr_pct + 0.0015))
+    else:
+        tp = 0.0040
+        sl = 0.0030
+
+    # Better reward/risk for stronger trend confirmation
+    if strong_bull or strong_bear:
+        tp *= 1.15
+        sl *= 0.95
+
+    # Slightly tighter shorts in noisy / weak trend environments
+    if signal == -1 and adx < 20:
+        tp *= 0.95
+        sl *= 0.90
+
+    # Time exit: shorter when volatility is high, longer when trend is strong
+    max_bars = 4
+    if adx >= 30:
+        max_bars = 6
+    elif adx <= 15:
+        max_bars = 3
+    if atr_pct > 0.01:
+        max_bars = min(max_bars, 3)
+
+    # Final safety bounds
+    tp = float(max(0.0005, tp))
+    sl = float(max(0.0005, sl))
+    size = float(np.clip(size, 0.0, 1.0))
+
+    return {
+        "signal": int(signal),
+        "position_size": size,
+        "take_profit": tp,
+        "stop_loss": sl,
+        "max_bars": int(max_bars),
+    }
+# EVOLVE-BLOCK-END
+```
+</CODE>

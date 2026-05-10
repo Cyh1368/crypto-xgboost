@@ -1,0 +1,14 @@
+{
+  "generation": 54,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "loosen_filters_and_boost_frequency",
+  "patch_description": "The current program's trade frequency (323 trades) is significantly lower than the high-performing seed program (462 trades), primarily due to restrictive microstructure filters (obi > -0.5 and spread < 6.0). This edit lowers the entry threshold to 0.0017 and loosens the filters to be more inclusive (spread < 10.0, rsi filters, and a wider obi range). It also introduces a slight position size boost for high-confidence predictions and a session-based hold time adjustment to capture US session momentum.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:07:19.928369",
+  "llm_cost": 0.004902500000000001,
+  "llm_model": "gemini-3-flash-preview"
+}

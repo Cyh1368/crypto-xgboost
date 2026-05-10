@@ -1,0 +1,14 @@
+{
+  "generation": 98,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_hierarchical_filter",
+  "patch_description": "This algorithm takes a fundamentally different approach by implementing a **hierarchical regime-detection system** rather than static thresholds. Instead of applying fixed entry filters uniformly, it:\n\n1. **Detects market microstructure regimes** using a composite score of OBI, pressure, spread, and Kyle's Lambda to classify the market as \"toxic,\" \"neutral,\" or \"favorable\"\n2. **Applies regime-specific entry logic** where favorable regimes allow more aggressive entries while toxic regimes enforce stricter filters\n3. **Uses dynamic position sizing based on regime confidence** rather than fixed sizes, scaling up in high-confidence favorable regimes\n4. **Implements asymmetric risk management** where TP/SL ratios adapt to regime volatility and autocorrelation patterns\n5. **Incorporates volatility-regime clustering** using ATR and recent returns to avoid over-leverage in unstable conditions\n6. **Applies session-aware micro-filters** that relax in high-alpha sessions (US) but tighten in choppy sessions (Asia)\n\nThis differs fundamentally from the current linear threshold approach by recognizing that market conditions are non-stationary. The same predicted return signal should be treated differently depending on whether the microstructure is supporting or fighting the trade. This should improve Sharpe ratio by reducing drawdowns in toxic regimes while maintaining win rate in favorable ones.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:20:48.808846",
+  "llm_cost": 0.024196000000000002,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 89,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "session_thresholds_confidence_sizing",
+  "patch_description": "Replace the fixed base hurdle with session-specific thresholds (US: 0.00172, Asia: 0.00205, default: 0.00185) and implement confidence-weighted position sizing. This approach was validated in Program 3 which achieved 95.18 score. The session-specific thresholds adapt to different market microstructure regimes, while confidence weighting scales position size based on prediction strength relative to the hurdle. This should increase both trade quality and frequency while maintaining risk discipline.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:17:36.542992",
+  "llm_cost": 0.012416,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

@@ -1,0 +1,102 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Expert trading signal generator utilizing microstructure filters and 
+    dynamic risk management.
+    """
+    # 1. Parameter Extraction & Cleaning
+    vol_20 = bar_context.get('vol_20', 0.01)
+    atr_14 = bar_context.get('atr_14', 0.003)
+    obi_tau5 = bar_context.get('obi_tau5', 0.0)
+    rsi_14 = bar_context.get('rsi_14', 50.0)
+    trend_strength = bar_context.get('trend_strength', 0.0)
+    is_us_session = bar_context.get('is_us_session', False)
+    funding_rate = bar_context.get('funding_rate', 0.0)
+    autocorr_5 = bar_context.get('autocorr_5', 0.0)
+    
+    # 2. Dynamic Threshold Logic
+    # Base entry threshold
+    base_thresh = 0.0018
+    
+    # Increase threshold during volatile US session to avoid noise
+    session_mult = 1.1 if is_us_session else 1.0
+    
+    # Adjust for funding costs (if we go long but funding is very high, require higher signal)
+    funding_bias = 0.0
+    if predicted_return > 0 and funding_rate > 0.0001:
+        funding_bias = 0.0002
+    elif predicted_return < 0 and funding_rate < -0.0001:
+        funding_bias = -0.0002
+        
+    long_thresh = base_thresh * session_mult + funding_bias
+    short_thresh = -(base_thresh * session_mult) + funding_bias
+
+    # 3. Microstructure & Indicator Filters
+    # Directional momentum confirmation
+    obi_confirm_long = obi_tau5 > -0.1
+    obi_confirm_short = obi_tau5 < 0.1
+    
+    # RSI filters - avoid buying the blow-off top or selling the local bottom
+    rsi_safe_long = rsi_14 < 72
+    rsi_safe_short = rsi_14 > 28
+
+    # 4. Signal Generation
+    signal = 0
+    confidence = 0.0
+    
+    if predicted_return > long_thresh and obi_confirm_long and rsi_safe_long:
+        signal = 1
+        confidence = min(1.5, predicted_return / 0.002)
+    elif predicted_return < short_thresh and obi_confirm_short and rsi_safe_short:
+        signal = -1
+        confidence = min(1.5, abs(predicted_return) / 0.002)
+
+    # 5. Dynamic Position Sizing
+    # Baseline 10% size, scaled by signal confidence and volatility
+    # If vol is high, we reduce size to maintain constant risk
+    vol_scaling = 0.01 / max(0.005, vol_20)
+    if signal != 0:
+        position_size = 0.10 * confidence * vol_scaling
+        position_size = max(0.04, min(0.18, position_size))
+    else:
+        position_size = 0.0
+
+    # 6. Optimized Risk/Reward (Anchored to seed 0.004/0.003)
+    # We use atmospheric ATR and vol_20 to scale the distance
+    vol_factor = max(0.7, min(1.3, vol_20 / 0.01))
+    
+    # Baseline TP and SL
+    base_sl = 0.003 * vol_factor
+    base_tp = 0.004 * vol_factor
+    
+    # Trend adjustment: if trend strength is high, widen TP to capture larger moves
+    if (signal == 1 and trend_strength > 0.2) or (signal == -1 and trend_strength < -0.2):
+        take_profit = base_tp * 1.25
+        stop_loss = base_sl * 0.95  # Slightly tighter stop in strong trends
+    else:
+        take_profit = base_tp
+        stop_loss = base_sl
+
+    # 7. Dynamic Hold Time (max_bars)
+    # Default to 4 (seed value)
+    if abs(autocorr_5) > 0.3: # Trending or mean-reverting persistence
+        max_bars = 5
+    elif (rsi_14 > 65 or rsi_14 < 35): # Overextended, get out quicker
+        max_bars = 3
+    else:
+        max_bars = 4
+
+    return {
+        "signal": signal,
+        "position_size": float(position_size),
+        "take_profit": float(take_profit),
+        "stop_loss": float(stop_loss),
+        "max_bars": int(max_bars)
+    }
+# EVOLVE-BLOCK-END

@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "robust_vol_scaled_asymmetric",
+  "patch_description": "The previous program likely failed validation due to potential runtime errors in input handling (e.g., None values in bar_context) or subtle structural issues that caused the importer to fail. My fix addresses this by:\n1. Implementing much more robust input sanitization, ensuring all bar_context values (atr, rsi, adx, close) are defaulted and type-cast to floats safely, even if they are None.\n2. Using a cleaner logic structure to avoid any potential initialization issues.\n3. Adding a refined trend filter using ADX (to adjust entry thresholds) and RSI (to prevent overextended trades).\n4. Implementing ATR-based position sizing and asymmetric take-profit/stop-loss logic to improve risk-adjusted returns (Sharpe/Calmar).\n5. Ensuring the final output dictionary has uniform types and handles the zero-signal case explicitly.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:22:52.769866",
+  "llm_cost": 0.003029,
+  "llm_model": "gemini-3-flash-preview"
+}

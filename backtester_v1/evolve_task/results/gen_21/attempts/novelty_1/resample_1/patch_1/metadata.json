@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "aggressive_threshold_and_sizing",
+  "patch_description": "The current program is overly conservative, as evidenced by its high profit factor (55.13) and win rate (0.84) but low trade count (150) compared to the top-performing seed (462 trades). This edit increases trade frequency and total return by:\n1. Lowering the entry threshold from a liquidity-penalized ~0.0025-0.003 down to a fixed 0.0018.\n2. Replacing the restrictive RSI limits with looser filters (82/18) and incorporating Order Book Imbalance (OBI) to ensure microstructure alignment.\n3. Increasing the base position size from 0.10 to 0.12 and capping it at 0.18.\n4. Anchoring the dynamic TP/SL floors to the seed's 0.004/0.003 while retaining ATR-based scaling for volatility regimes.\n5. Slightly lowering the trend strength requirement for hold-time extensions to capture more momentum moves.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:48:00.375115",
+  "llm_cost": 0.0071875,
+  "llm_model": "gemini-3-flash-preview"
+}

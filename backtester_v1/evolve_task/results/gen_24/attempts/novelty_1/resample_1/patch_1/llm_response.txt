@@ -1,0 +1,140 @@
+<NAME>
+increase_trade_frequency_and_anchor_targets
+</NAME>
+
+<DESCRIPTION>
+The current program has a very high win rate (0.84) but a low trade count (150), which limits its total return and Sharpe ratio compared to the top-performing seed (462 trades, 32.89 Sharpe). 
+
+This edit aims to increase trade frequency and improve the combined score by:
+1. Lowering the base threshold from 0.0019 to 0.0017 and reducing the liquidity penalty scaling to capture more high-conviction signals.
+2. Relaxing the RSI and funding rate filters to be more inclusive.
+3. Adding a mild Order Book Imbalance (OBI) filter to maintain signal quality despite the lower threshold.
+4. Anchoring the take-profit and stop-loss floors closer to the successful 0.004/0.003 ratio found in the best-performing seed.
+5. Simplifying the max_bars logic to a more robust 4-5 bar window.
+6. Slightly increasing the base position size and adjusting the confidence scaling.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    rsi = bar_context.get('rsi_14', 50.0)
+    
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    funding = bar_context.get('funding_rate', 0.0)
+
+    # 2. Liquidity-Adjusted Dynamic Threshold
+    # If kyle_lambda is high, price impact/slippage is higher, so we need more conviction.
+    # Base threshold inspired by the top-performing seed (0.002).
+    liquidity_penalty = max(0.0, min(0.001, kyle_lambda * 100.0))
+    base_thresh = 0.0019 + liquidity_penalty
+    
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Long Filter: Avoid entering at extreme RSI overbought or if funding is punitively high
+        if rsi < 75 and funding < 0.0006:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        # Short Filter: Avoid entering at extreme RSI oversold or if funding is punitively negative
+        if rsi > 25 and funding > -0.0006:
+            signal = -1
+
+    # 4. Adaptive Hold Time (Max Bars)
+    # Autocorrelation gauges if we are in a trending or mean-reverting regime.
+    if is_us:
+        # US Session generally trends more
+        max_bars = 5 if autocorr > 0.0 else 4
+    elif is_asia:
+        # Asia Session often mean-reverts
+        max_bars = 4 if autocorr > 0.1 else 3
+    else:
+        max_bars = 4
+    
+    # Increase hold if trend strength is significant
+    if abs(trend) > 0.6:
+        max_bars += 1
+
+    # 5. Dynamic Risk Targets (TP/SL)
+    # Anchored to the successful 0.004/0.003 ratio (1.33 R/R)
+    # Adjusted slightly by ATR and trend alignment.
+    if signal != 0:
+        # Base TP/SL relative to ATR or fixed baseline
+        atr_pct = (atr / close) if close > 0 else 0.003
+        
+        # Asymmetry: In trending markets, let profits run slightly more
+        if (signal == 1 and trend > 0.3) or (signal == -1 and trend < -0.3):
+            tp_mult, sl_mult = 1.45, 1.05
+        else:
+            tp_mult, sl_mult = 1.35, 1.0
+            
+        take_profit = max(0.0035, min(0.015, atr_pct * tp_mult))
+        stop_loss = max(0.0025, min(0.01, atr_pct * sl_mult))
+        
+        # 6. Position Sizing
+        # Base size 0.10. Scale by prediction confidence and volatility regime.
+        # vol_ratio > 1 means volatility is expanding (potential momentum).
+        confidence = abs(predicted_return) / 0.002
+        vol_scale = max(0.8, min(1.3, vol_ratio))
+        
+        position_size = 0.10 * confidence * vol_scale
+        position_size = max(0.05, min(0.15, position_size)) # Cap to preserve capital
+    else:
+        position_size = 0.0
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+=======
+    rsi = bar_context.get('rsi_14', 50.0)
+    obi = bar_context.get('obi_tau5', 0.0)
+    
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    funding = bar_context.get('funding_rate', 0.0)
+
+    # 2. Liquidity-Adjusted Dynamic Threshold
+    # Lowered base threshold to increase trade frequency, with a scaled liquidity penalty.
+    liquidity_penalty = max(0.0, min(0.0004, kyle_lambda * 40.0))
+    base_thresh = 0.0017 + liquidity_penalty
+    
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Relaxed filters to capture more opportunities while using OBI for quality
+        if rsi < 82 and funding < 0.0008 and obi > -0.45:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        if rsi > 18 and funding > -0.0008 and obi < 0.45:
+            signal = -1
+
+    # 4. Adaptive Hold Time (Max Bars)
+    # Standardize on 4-5 bars; US session and strong trends favor longer holds.
+    max_bars = 5 if (abs(trend) > 0.5 or (is_us and autocorr > 0.0)) else 4
+    
+    # 5. Dynamic Risk Targets (TP/SL)
+    # Anchored to the successful 0.004/0.003 ratio (1.33 R/R)
+    if signal != 0:
+        atr_pct = (atr / close) if close > 0 else 0.003
+        
+        # Asymmetry: In trending markets, expand targets slightly
+        if (signal == 1 and trend > 0.3) or (signal == -1 and trend < -0.3):
+            tp_mult, sl_mult = 1.45, 1.05
+        else:
+            tp_mult, sl_mult = 1.4, 1.05
+            
+        take_profit = max(0.0039, min(0.014, atr_pct * tp_mult))
+        stop_loss = max(0.0030, min(0.009, atr_pct * sl_mult))
+        
+        # 6. Position Sizing
+        # Increased base size and adjusted confidence scaling.
+        confidence = abs(predicted_return) / 0.0018
+        vol_scale = max(0.85, min(1.25, vol_ratio))
+        
+        position_size = 0.11 * confidence * vol_scale
+        position_size = max(0.07, min(0.17, position_size))
+    else:
+        position_size = 0.0
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+>>>>>>> REPLACE
+</DIFF>

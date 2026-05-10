@@ -1,0 +1,169 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Modular trading signal generator with decoupled components.
+
+    Architecture:
+    1. Parameter Resolution: Extract and validate all context values
+    2. Signal Classification: Pure threshold-based entry logic
+    3. Optional Filters: Microstructure/macro checks (disabled to match best performance)
+    4. Risk Management: Position sizing, exits, time-based rules
+    """
+    import math
+    import numpy as np
+
+    # ============================================================================
+    # COMPONENT 1: PARAMETER RESOLUTION
+    # ============================================================================
+    def _safe_get(key, default=0.0, cast_fn=float):
+        """Safely extract and cast context values."""
+        v = bar_context.get(key, default)
+        if v is None:
+            return default
+        try:
+            return cast_fn(v)
+        except (ValueError, TypeError):
+            return default
+
+    # Microstructure parameters
+    obi_tau1 = _safe_get("obi_tau1", 0.0)
+    obi_tau3 = _safe_get("obi_tau3", 0.0)
+    obi_tau5 = _safe_get("obi_tau5", 0.0)
+    obi_tau10 = _safe_get("obi_tau10", 0.0)
+    spread_bps = _safe_get("spread_bps", 5.0)
+    book_pressure = _safe_get("book_pressure_3", 0.0)
+    kyle_lambda = abs(_safe_get("kyle_lambda_est", 0.0))
+    depth_ratio_5 = _safe_get("depth_ratio_5", 1.0)
+    vwap_dev = _safe_get("vwap_dev", 0.0)
+
+    # Price action & volatility
+    vol_5 = max(_safe_get("vol_5", 0.015), 1e-8)
+    vol_20 = max(_safe_get("vol_20", 0.015), 1e-8)
+    vol_60 = max(_safe_get("vol_60", 0.015), 1e-8)
+    atr_14 = max(_safe_get("atr_14", _safe_get("atr", 0.001)), 1e-8)
+    rsi_14 = _safe_get("rsi_14", _safe_get("rsi", 50.0))
+    bb_pct = _safe_get("bb_pct", 0.5)
+    trend_strength = _safe_get("trend_strength", 0.0)
+
+    # Macro parameters
+    funding_rate = _safe_get("funding_rate", 0.0)
+    funding_8h_ma = _safe_get("funding_8h_ma", 0.0)
+    minutes_to_funding = _safe_get("minutes_to_funding", 999.0)
+
+    # Session/time parameters
+    is_us_session = bar_context.get("is_us_session", False) or False
+    is_asia_session = bar_context.get("is_asia_session", False) or False
+    is_weekend = bar_context.get("is_weekend", False) or False
+
+    # ============================================================================
+    # COMPONENT 2: SIGNAL CLASSIFICATION
+    # Seed 3 proved: elastic thresholds scaled by volatility impulse improve both
+    # trade frequency and signal quality
+    # ============================================================================
+    # Volatility impulse: ratio of current vol to recent vol
+    vol_impulse = vol_5 / vol_20
+    vol_impulse = max(0.5, min(2.0, vol_impulse))
+
+    # Elastic threshold mechanism: base threshold scaled by volatility regime and trend
+    # Slightly lowered base to compensate for stricter VWAP and book filters
+    THRESHOLD_BASE = 0.00168
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    # Slightly lower threshold during strong trends to capture momentum
+    trend_adj = 1.0 - (0.05 * min(1.0, trend_strength))
+    current_threshold = THRESHOLD_BASE * elastic_multiplier * trend_adj
+
+    signal = 0
+    signal_conviction = 0.0
+
+    if predicted_return > current_threshold:
+        signal = 1
+        signal_conviction = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        signal = -1
+        signal_conviction = abs(predicted_return) / current_threshold
+
+    # ============================================================================
+    # COMPONENT 3: LIGHT MICROSTRUCTURE & MACRO FILTERS
+    # Seed 3 applied loose filters that preserve signal while validating quality
+    # ============================================================================
+    APPLY_QUALITY_FILTERS = True  # Enable: loose filters validate signal quality
+
+    if APPLY_QUALITY_FILTERS and signal != 0:
+        # Compute microstructure quality with expanded book depth and OBI
+        micro_quality = (0.25 * obi_tau1 +
+                        0.20 * obi_tau3 +
+                        0.15 * obi_tau5 +
+                        0.10 * obi_tau10 +
+                        0.20 * book_pressure +
+                        0.10 * max(-1.0, min(1.0, depth_ratio_5 - 1.0)))
+
+        # Filters: validate signal quality and avoid entering at price extremes
+        if signal == 1:
+            # Long: want positive order flow, reasonable spread, and not overextended from VWAP
+            if not (micro_quality > -0.80 and funding_rate < 0.0025 and spread_bps < 10.5 and vwap_dev < 0.0075):
+                signal = 0
+        elif signal == -1:
+            # Short: want negative order flow, reasonable spread, and not selling the bottom
+            if not (micro_quality < 0.80 and funding_rate > -0.0025 and spread_bps < 10.5 and vwap_dev > -0.0075):
+                signal = 0
+
+    # ============================================================================
+    # COMPONENT 4: RISK MANAGEMENT
+    # Seed 3's conviction-scaled sizing with light funding adjustment
+    # ============================================================================
+
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size slightly increased to boost total return
+        base_size = 0.150
+
+        # Conviction bonus: scale with signal strength relative to threshold
+        conviction_bonus = min(0.035, max(0, (signal_conviction - 1.0) * 0.07))
+
+        # Session bonus: boost in US session for better liquidity
+        session_bonus = 0.015 if is_us_session else 0.0
+
+        # Funding adjustment: mild penalty for unfavorable carry
+        funding_filter = 1.0
+        if (signal == 1 and funding_rate > 0.0015) or (signal == -1 and funding_rate < -0.0015):
+            funding_filter = 0.85
+
+        position_size = (base_size + conviction_bonus + session_bonus) * funding_filter
+        position_size = max(0.10, min(0.19, position_size))  # Clamp to [0.10, 0.19]
+
+    # Exit targets: Seed 3's volatility-elastic mechanism
+    vol_trend = vol_5 / vol_60  # Long-term trend volatility
+    vol_trend = max(0.5, min(2.0, vol_trend))
+
+    # Elasticity: scale exits by volatility regime
+    tp_elasticity = 0.94 + (0.06 * min(2.0, vol_trend))
+    sl_elasticity = 0.97 + (0.03 * min(2.0, vol_impulse))
+
+    take_profit = 0.0040 * tp_elasticity
+    stop_loss = 0.0030 * sl_elasticity
+
+    # Time-based exit: Dynamic based on volatility trend and momentum
+    MAX_BARS = 4
+    if vol_trend < 0.75:
+        MAX_BARS = 3  # Exit faster in low-vol/mean-reverting regimes
+    elif vol_trend > 1.3 and abs(trend_strength) > 0.5:
+        MAX_BARS = 5  # Hold slightly longer in strong trending volatility expansions
+
+    # ============================================================================
+    # RETURN SIGNAL DICT
+    # ============================================================================
+    return {
+        "signal":        int(signal),
+        "position_size": float(position_size),
+        "take_profit":   float(take_profit),
+        "stop_loss":     float(stop_loss),
+        "max_bars":      int(MAX_BARS),
+    }
+# EVOLVE-BLOCK-END

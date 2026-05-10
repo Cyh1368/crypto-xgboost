@@ -1,0 +1,242 @@
+Looking at the performance metrics, I need to understand what's happening:
+
+**Current Program (78.34):**
+- 462 trades, 78% win rate, 16.56 profit factor
+- Lower Sharpe (32.49) and total return (15.01) than prior versions
+
+**Best Prior Program (Seed 3: 98.27):**
+- 532 trades, 76% win rate, 15.49 profit factor
+- Higher Sharpe (34.35) and total return (30.74)
+
+**Key Differences:**
+1. Current program uses fixed 0.002 threshold (too high) → only 462 trades vs 532
+2. Current program disabled all filters but also disabled conviction-based sizing
+3. Current program's position sizing is flat at 0.10, lacking conviction scaling
+4. Current program lacks the elasticity mechanism that worked well in Seed 3
+
+**Root Issues:**
+- The threshold of 0.002 is too rigid and misses valid signals
+- Position sizing doesn't scale with signal conviction
+- Missing the volatility-elastic exit logic that boosted Seed 3's Sharpe
+- The elastic multiplier and conviction-bonus mechanism from Seed 3 proved superior
+
+**Strategy:**
+1. Restore elastic thresholding (0.88 to 1.24 multiplier based on vol_impulse)
+2. Add conviction-based position sizing (similar to Seed 3)
+3. Implement volatility-elastic exits (TP/SL scaled by vol_trend/vol_impulse)
+4. Keep signal thresholds at ~0.00171-0.00172 (proven optimal in Seed 3)
+5. Light session/funding filters that improve trade quality without killing trade count
+
+<NAME>
+elastic_threshold_conviction_sizing_restore
+</NAME>
+
+<DESCRIPTION>
+Restore the proven elastic threshold mechanism and conviction-based position sizing from Seed 3, which achieved 98.27 combined score vs current 78.34. The current program uses overly rigid thresholds (0.002) that reduce trade frequency from 532 to 462 without corresponding quality gains. Seed 3's approach used dynamic thresholds scaled by volatility impulse (0.88-1.24x) combined with conviction-based sizing bonuses, achieving superior Sharpe and total returns. This edit reintroduces that architecture while maintaining the modular structure.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # ============================================================================
+    # COMPONENT 2: SIGNAL CLASSIFICATION
+    # Seed 3 proved: simple fixed thresholds outperform complex adaptive logic
+    # ============================================================================
+    BASE_LONG_THRESH = 0.002
+    BASE_SHORT_THRESH = -0.002
+
+    # No adaptive thresholds based on session (Seed 3 didn't use this and scored best)
+    signal = 0
+    if predicted_return > BASE_LONG_THRESH:
+        signal = 1
+    elif predicted_return < BASE_SHORT_THRESH:
+        signal = -1
+=======
+    # ============================================================================
+    # COMPONENT 2: SIGNAL CLASSIFICATION
+    # Seed 3 proved: elastic thresholds scaled by volatility impulse improve both
+    # trade frequency and signal quality
+    # ============================================================================
+    # Volatility impulse: ratio of current vol to recent vol
+    vol_impulse = vol_5 / vol_20
+    vol_impulse = max(0.5, min(2.0, vol_impulse))
+
+    # Elastic threshold mechanism: base threshold scaled by volatility regime
+    THRESHOLD_BASE = 0.00172
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = THRESHOLD_BASE * elastic_multiplier
+
+    signal = 0
+    signal_conviction = 0.0
+
+    if predicted_return > current_threshold:
+        signal = 1
+        signal_conviction = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        signal = -1
+        signal_conviction = abs(predicted_return) / current_threshold
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # ============================================================================
+    # COMPONENT 3: OPTIONAL FILTERS (Disabled by default)
+    # Current implementation's OBI/spread filters reduced trades 462→253, hurting performance
+    # Keeping code structure for evolutionary exploration but not applying them
+    # ============================================================================
+    APPLY_MICROSTRUCTURE_FILTERS = False  # Disabled: reduces trade count destructively
+
+    if APPLY_MICROSTRUCTURE_FILTERS and signal != 0:
+        # Microstructure validation (if re-enabled)
+        long_obi_filter = obi_tau5 > 0.05
+        short_obi_filter = obi_tau5 < -0.05
+        spread_filter = spread_bps < 10.0
+
+        if signal == 1 and not (long_obi_filter and spread_filter):
+            signal = 0
+        elif signal == -1 and not (short_obi_filter and spread_filter):
+            signal = 0
+
+    # Funding rate check (light: only skip on extreme rates)
+    APPLY_FUNDING_FILTER = False  # Disabled: Seed 3 ignored this
+    if APPLY_FUNDING_FILTER and signal != 0:
+        if signal == 1 and funding_rate > 0.002:
+            signal = 0
+        elif signal == -1 and funding_rate < -0.002:
+            signal = 0
+=======
+    # ============================================================================
+    # COMPONENT 3: LIGHT MICROSTRUCTURE & MACRO FILTERS
+    # Seed 3 applied loose filters that preserve signal while validating quality
+    # ============================================================================
+    APPLY_QUALITY_FILTERS = True  # Enable: loose filters validate signal quality
+
+    if APPLY_QUALITY_FILTERS and signal != 0:
+        # Compute microstructure quality (same weighting as Seed 3)
+        micro_quality = (0.32 * obi_tau1 +
+                        0.24 * obi_tau3 +
+                        0.24 * obi_tau5 +
+                        0.20 * book_pressure)
+
+        # Light filters: allow wider bounds to preserve trade count
+        if signal == 1:
+            # Long: want positive order flow, reasonable spread, not excessive funding
+            if not (micro_quality > -0.85 and funding_rate < 0.0025 and spread_bps < 10.5):
+                signal = 0
+        elif signal == -1:
+            # Short: want negative order flow, reasonable spread, not negative funding
+            if not (micro_quality < 0.85 and funding_rate > -0.0025 and spread_bps < 10.5):
+                signal = 0
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # ============================================================================
+    # COMPONENT 4: RISK MANAGEMENT
+    # Match Seed 3's winning parameters: fixed position sizing and exits
+    # ============================================================================
+
+    # Position sizing: Use fixed base (Seed 3's 0.10 worked best)
+    BASE_POSITION_SIZE = 0.10
+
+    # Volatility scalar (optional enhancement, use conservative bounds)
+    vol_regime = vol_5 / vol_20  # expansion/contraction metric
+    vol_regime = max(0.5, min(2.0, vol_regime))
+
+    # Scale position by volatility: high vol reduces size
+    vol_scalar = 1.0 + (1.0 - vol_regime) * 0.15  # max ±15% adjustment
+    vol_scalar = max(0.85, min(1.15, vol_scalar))
+
+    # Funding scalar: reduce size at extreme funding rates
+    funding_scalar = 1.0
+    if abs(funding_rate) > 0.001:
+        funding_scalar = max(0.7, 1.0 - abs(funding_rate - funding_8h_ma) * 50.0)
+    funding_scalar = max(0.7, min(1.0, funding_scalar))
+
+    if signal == 0:
+        position_size = 0.0
+    else:
+        position_size = BASE_POSITION_SIZE * vol_scalar * funding_scalar
+        position_size = max(0.05, min(0.15, position_size))  # Clamp to [0.05, 0.15]
+=======
+    # ============================================================================
+    # COMPONENT 4: RISK MANAGEMENT
+    # Seed 3's conviction-scaled sizing with light funding adjustment
+    # ============================================================================
+
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size from Seed 3's proven parameters
+        base_size = 0.145
+
+        # Conviction bonus: scale with signal strength relative to threshold
+        conviction_bonus = min(0.035, max(0, (signal_conviction - 1.0) * 0.06))
+
+        # Session bonus: boost in US session for better liquidity
+        session_bonus = 0.01 if is_us_session else 0.0
+
+        # Funding adjustment: mild penalty for unfavorable carry
+        funding_filter = 1.0
+        if (signal == 1 and funding_rate > 0.0015) or (signal == -1 and funding_rate < -0.0015):
+            funding_filter = 0.90
+
+        position_size = (base_size + conviction_bonus + session_bonus) * funding_filter
+        position_size = max(0.10, min(0.18, position_size))  # Clamp to [0.10, 0.18]
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Exit targets: Match Seed 3's proven fixed values
+    BASE_TAKE_PROFIT = 0.004
+    BASE_STOP_LOSS = 0.003
+
+    # Optional: Slight adjustment based on regime (conservative)
+    tp_multiplier = 1.0
+    sl_multiplier = 1.0
+
+    # In very low volatility, allow slightly larger moves
+    if vol_5 < 0.008:
+        tp_multiplier = 1.1
+        sl_multiplier = 1.05
+    # In very high volatility, keep tighter
+    elif vol_5 > 0.035:
+        tp_multiplier = 0.95
+        sl_multiplier = 0.95
+
+    take_profit = BASE_TAKE_PROFIT * tp_multiplier
+    stop_loss = BASE_STOP_LOSS * sl_multiplier
+
+    # Time-based exit: Seed 3 used 4 bars (1 hour)
+    MAX_BARS = 4
+
+    # Optional: Reduce max bars near funding time (avoid overnight holds)
+    if minutes_to_funding < 30.0 and minutes_to_funding > 0.0:
+        MAX_BARS = min(MAX_BARS, 2)
+
+    if is_weekend:
+        MAX_BARS = min(MAX_BARS, 3)  # Reduce weekend exposure
+=======
+    # Exit targets: Seed 3's volatility-elastic mechanism
+    vol_trend = vol_5 / vol_60  # Long-term trend volatility
+    vol_trend = max(0.5, min(2.0, vol_trend))
+
+    # Elasticity: scale exits by volatility regime
+    tp_elasticity = 0.94 + (0.06 * min(2.0, vol_trend))
+    sl_elasticity = 0.97 + (0.03 * min(2.0, vol_impulse))
+
+    take_profit = 0.0040 * tp_elasticity
+    stop_loss = 0.0030 * sl_elasticity
+
+    # Time-based exit: Dynamic based on volatility trend
+    MAX_BARS = 4
+    if vol_trend < 0.8:
+        MAX_BARS = 3  # Exit faster if volatility trending down
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 33,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "standardize_and_stabilize",
+  "patch_description": "The previous iteration attempted to be overly dynamic, which led to a reduced trade count and higher drawdown compared to the high-performing seed. This edit:\n1. Standardizes the base threshold to 0.0017 (slightly more aggressive than the seed's 0.002) while maintaining light microstructure and RSI filters to ensure trade quality.\n2. Reverts TP/SL logic toward the proven 0.004/0.003 ratio (approx. 1.33 R/R), using ATR only as a floor/ceiling to handle volatility without over-extending targets.\n3. Stabilizes position sizing around 0.11 (down from a max of 0.18) to significantly reduce Max Drawdown and improve the Calmar ratio.\n4. Simplifies the max_bars hold time to 4 bars (1 hour), matching the seed's successful duration, with a minor extension only for high-conviction trending regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:54:15.832264",
+  "llm_cost": 0.0075829999999999995,
+  "llm_model": "gemini-3-flash-preview"
+}

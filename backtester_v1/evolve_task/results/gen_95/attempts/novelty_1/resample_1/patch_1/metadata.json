@@ -1,0 +1,14 @@
+{
+  "generation": 95,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "volatility_scaled_asymmetric_targets",
+  "patch_description": "Optimized the signal generator by introducing:\n1. Volatility-scaled take-profit and stop-loss targets using the 5-bar vs 20-bar realized volatility ratio to adapt to changing market regimes.\n2. Slightly tighter entry thresholds for US and Asia sessions and intensified liquidity penalties incorporating spread sensitivity.\n3. Tightened VWAP deviation filters to avoid overextended entries.\n4. Increased position sizing baseline to 0.145 to capitalize on the high win rate, while maintaining strict risk bounds.\n5. Adjusted the maximum holding period to include an earlier exit for Asia sessions with low autocorrelation, promoting faster capital rotation in choppy markets.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:19:53.551677",
+  "llm_cost": 0.006834,
+  "llm_model": "gemini-3-flash-preview"
+}

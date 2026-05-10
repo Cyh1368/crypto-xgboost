@@ -1,0 +1,98 @@
+<NAME>
+aggressive_threshold_and_sizing
+</NAME>
+
+<DESCRIPTION>
+The current program is overly conservative, as evidenced by its high profit factor (55.13) and win rate (0.84) but low trade count (150) compared to the top-performing seed (462 trades). This edit increases trade frequency and total return by:
+1. Lowering the entry threshold from a liquidity-penalized ~0.0025-0.003 down to a fixed 0.0018.
+2. Replacing the restrictive RSI limits with looser filters (82/18) and incorporating Order Book Imbalance (OBI) to ensure microstructure alignment.
+3. Increasing the base position size from 0.10 to 0.12 and capping it at 0.18.
+4. Anchoring the dynamic TP/SL floors to the seed's 0.004/0.003 while retaining ATR-based scaling for volatility regimes.
+5. Slightly lowering the trend strength requirement for hold-time extensions to capture more momentum moves.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Liquidity-Adjusted Dynamic Threshold
+    # If kyle_lambda is high, price impact/slippage is higher, so we need more conviction.
+    # Base threshold inspired by the top-performing seed (0.002).
+    liquidity_penalty = max(0.0, min(0.001, kyle_lambda * 100.0))
+    base_thresh = 0.0019 + liquidity_penalty
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Long Filter: Avoid entering at extreme RSI overbought or if funding is punitively high
+        if rsi < 75 and funding < 0.0006:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        # Short Filter: Avoid entering at extreme RSI oversold or if funding is punitively negative
+        if rsi > 25 and funding > -0.0006:
+            signal = -1
+=======
+    # 2. Dynamic Threshold Logic
+    # Lowered threshold to increase trade frequency, using OBI as a lead filter.
+    # Base threshold anchored near the high-performing seed value (0.002).
+    obi = bar_context.get('obi_tau5', 0.0)
+    base_thresh = 0.0018
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Loosened filters: only block if RSI is extremely high or book is heavily opposed.
+        if rsi < 82 and funding < 0.0007 and obi > -0.45:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        if rsi > 18 and funding > -0.0007 and obi < 0.45:
+            signal = -1
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Increase hold if trend strength is significant
+    if abs(trend) > 0.6:
+        max_bars += 1
+=======
+    # Increase hold if trend strength is significant
+    if abs(trend) > 0.5:
+        max_bars += 1
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        # Asymmetry: In trending markets, let profits run slightly more
+        if (signal == 1 and trend > 0.3) or (signal == -1 and trend < -0.3):
+            tp_mult, sl_mult = 1.45, 1.05
+        else:
+            tp_mult, sl_mult = 1.35, 1.0
+
+        take_profit = max(0.0035, min(0.015, atr_pct * tp_mult))
+        stop_loss = max(0.0025, min(0.01, atr_pct * sl_mult))
+
+        # 6. Position Sizing
+        # Base size 0.10. Scale by prediction confidence and volatility regime.
+        # vol_ratio > 1 means volatility is expanding (potential momentum).
+        confidence = abs(predicted_return) / 0.002
+        vol_scale = max(0.8, min(1.3, vol_ratio))
+
+        position_size = 0.10 * confidence * vol_scale
+        position_size = max(0.05, min(0.15, position_size)) # Cap to preserve capital
+=======
+        # Asymmetry: Expand TP and hold slightly tighter SL in trending markets
+        if (signal == 1 and trend > 0.4) or (signal == -1 and trend < -0.4):
+            tp_mult, sl_mult = 1.6, 1.0
+        else:
+            tp_mult, sl_mult = 1.4, 1.0
+
+        # Target TP/SL floor near 0.004 / 0.003 while allowing expansion for volatility
+        take_profit = max(0.0040, min(0.016, atr_pct * tp_mult * 1.1))
+        stop_loss = max(0.0030, min(0.012, atr_pct * sl_mult * 1.1))
+
+        # 6. Position Sizing
+        # Increased base size, scaled by prediction confidence and volatility expansion (vol_ratio)
+        confidence = abs(predicted_return) / 0.0018
+        vol_scale = max(0.9, min(1.2, vol_ratio))
+
+        position_size = 0.12 * confidence * vol_scale
+        position_size = max(0.06, min(0.18, position_size))
+>>>>>>> REPLACE
+
+</DIFF>

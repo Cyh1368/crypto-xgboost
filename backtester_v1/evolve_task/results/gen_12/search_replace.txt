@@ -1,0 +1,89 @@
+<NAME>
+simplify_and_increase_frequency
+</NAME>
+
+<DESCRIPTION>
+The performance metrics of the previous programs indicate that simplicity and trade frequency are currently the primary drivers of the combined score. The highest-performing seed (80.50) used a simple threshold of 0.002 with no microstructure filters and fixed exits.
+
+The current program (54.16) has a higher profit factor (20.08 vs 16.55) but significantly fewer trades (252 vs 462) due to restrictive microstructure and funding filters. This edit aims to maximize the combined score by:
+1. Lowering the entry thresholds slightly (0.0019) and relaxing the microstructure/funding filters to increase trade frequency.
+2. Standardizing the position size to 0.11 (slightly higher than the 0.10 seed) to boost total return.
+3. Adopting the fixed 0.004/0.003 take-profit and stop-loss targets from the high-performing seed, as they appear more robust in this timeframe.
+4. Fixing the max_bars to 4 for consistency.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 3. Signal Generation (Thresholds from high-performing seed)
+    LONG_THRESH = 0.0020
+    SHORT_THRESH = -0.0020
+
+    signal = 0
+    # Filter: Ensure microstructure isn't heavily opposing the prediction
+    # Filter: Ensure we aren't buying into extreme funding
+    if predicted_return > LONG_THRESH:
+        if micro_quality > -0.25 and funding < 0.0005:
+            signal = 1
+    elif predicted_return < SHORT_THRESH:
+        if micro_quality < 0.25 and funding > -0.0005:
+            signal = -1
+
+    # 4. Dynamic Position Sizing
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size 0.10 from seed
+        base_size = 0.10
+        # Conviction boost
+        conviction = min(0.05, max(0.0, (abs(predicted_return) - 0.002) * 10.0))
+        # Quality boost
+        quality_adj = 0.02 if (signal * micro_quality) > 0.1 else 0.0
+        # Session adjustments
+        session_adj = 0.01 if is_us else (-0.02 if is_weekend else 0.0)
+
+        position_size = float(max(0.05, min(0.20, base_size + conviction + quality_adj + session_adj)))
+
+    # 5. Volatility-Adjusted Exits
+    # Base TP 0.004, SL 0.003 from seed
+    # Scale by vol_regime but keep it anchored
+    vol_scalar = 0.8 + 0.4 * (vol_regime - 0.5) # Maps 0.5-2.0 to 0.8-1.4
+
+    take_profit = float(0.004 * vol_scalar)
+    stop_loss = float(0.003 * vol_scalar)
+
+    # 6. Time-based Exit
+    # Base 4 bars from seed, adjust slightly for trend
+    max_bars = 4
+    if abs(trend) > 0.2:
+        max_bars = 5
+    if is_weekend or vol_regime > 1.5:
+        max_bars = 3
+=======
+    # 3. Signal Generation (Thresholds slightly more aggressive than seed)
+    LONG_THRESH = 0.0019
+    SHORT_THRESH = -0.0019
+
+    signal = 0
+    # Relaxed filters to increase trade frequency while avoiding toxic flow
+    if predicted_return > LONG_THRESH:
+        if micro_quality > -0.7 and funding < 0.001:
+            signal = 1
+    elif predicted_return < SHORT_THRESH:
+        if micro_quality < 0.7 and funding > -0.001:
+            signal = -1
+
+    # 4. Position Sizing
+    # Standardized size slightly above seed to maximize total return
+    if signal == 0:
+        position_size = 0.0
+    else:
+        position_size = 0.11
+
+    # 5. Fixed Exits from high-performing seed
+    take_profit = 0.004
+    stop_loss = 0.003
+
+    # 6. Time-based Exit
+    max_bars = 4
+>>>>>>> REPLACE
+</DIFF>

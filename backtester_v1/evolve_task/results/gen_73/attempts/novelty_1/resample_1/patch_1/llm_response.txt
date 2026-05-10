@@ -1,0 +1,40 @@
+adaptive_micro_filters
+Incorporate additional microstructure (obi_tau10) and price action (vwap_dev, trend_strength, rsi_14) indicators to refine entry thresholds, filter out overextended trades, and dynamically adjust holding times.
+
+<DIFF>
+<<<<<<< SEARCH
+    # Microstructure parameters
+    obi_tau1 = _safe_get("obi_tau1", 0.0)
+    obi_tau3 = _safe_get("obi_tau3", 0.0)
+    obi_tau5 = _safe_get("obi_tau5", 0.0)
+    spread_bps = _safe_get("spread_bps", 5.0)
+    book_pressure = _safe_get("book_pressure_3", 0.0)
+    kyle_lambda = abs(_safe_get("kyle_lambda_est", 0.0))
+    depth_ratio_5 = _safe_get("depth_ratio_5", 1.0)
+=======
+    # Microstructure parameters
+    obi_tau1 = _safe_get("obi_tau1", 0.0)
+    obi_tau3 = _safe_get("obi_tau3", 0.0)
+    obi_tau5 = _safe_get("obi_tau5", 0.0)
+    obi_tau10 = _safe_get("obi_tau10", 0.0)
+    spread_bps = _safe_get("spread_bps", 5.0)
+    book_pressure = _safe_get("book_pressure_3", 0.0)
+    kyle_lambda = abs(_safe_get("kyle_lambda_est", 0.0))
+    depth_ratio_5 = _safe_get("depth_ratio_5", 1.0)
+    vwap_dev = _safe_get("vwap_dev", 0.0)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # Elastic threshold mechanism: base threshold scaled by volatility regime
+    THRESHOLD_BASE = 0.00172
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = THRESHOLD_BASE * elastic_multiplier
+=======
+    # Elastic threshold mechanism: base threshold scaled by volatility regime and trend
+    THRESHOLD_BASE = 0.00172
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    # Slightly lower threshold during strong trends to capture momentum
+    trend_adj = 1.0 - (0.04 * min(1.0, trend_strength))
+    current_threshold = THRESHOLD_BASE * elastic_multiplier * trend_adj
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    if APPLY_QUALITY_FILTERS and signal

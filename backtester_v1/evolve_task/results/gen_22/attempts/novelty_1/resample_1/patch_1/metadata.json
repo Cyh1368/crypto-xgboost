@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_micro_momentum",
+  "patch_description": "This algorithm implements a regime-adaptive thresholding strategy that modulates entry sensitivity based on the ratio of short-term to medium-term volatility. It uses a base threshold of 0.00175, adjusted by a volatility scalar, to capture high-probability momentum shifts while filtering noise during volatility spikes. To maintain the high trade frequency necessary for a superior Sharpe ratio, it employs ultra-lenient filters for microstructure (OBI), price action (RSI, Trend), and macro (Funding) factors, ensuring trades are only blocked during extreme adverse conditions. Position sizing is tiered (0.13 to 0.15) based on prediction conviction, and exits are fixed at the optimal 0.4%/0.3% targets identified in previous high-performing iterations.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:49:18.698449",
+  "llm_cost": 0.0051115,
+  "llm_model": "gemini-3-flash-preview"
+}

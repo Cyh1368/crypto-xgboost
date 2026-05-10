@@ -1,0 +1,100 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Regime-weighted liquidity strategy focusing on order-book persistence,
+    persistence-based time exits, and asymmetric risk filters.
+    """
+    # 1. Parameter Extraction
+    close = bar_context.get('close', 1.0)
+    atr = bar_context.get('atr_14', 0.001)
+
+    # Microstructure
+    obi_1 = bar_context.get('obi_tau1', 0.0)
+    obi_5 = bar_context.get('obi_tau5', 0.0)
+    obi_10 = bar_context.get('obi_tau10', 0.0)
+    avg_obi = (obi_1 + obi_5 + obi_10) / 3.0
+
+    spread = bar_context.get('spread_bps', 1.0)
+    kyle_lambda = bar_context.get('kyle_lambda_est', 0.0)
+
+    # Contextual Regimes
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+
+    # Sessions
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+
+    # 2. Threshold and Signal Generation
+    # Lowered threshold to increase trade volume, using relaxed microstructure filters.
+    base_thresh = 0.00165
+    signal = 0
+
+    if predicted_return > base_thresh:
+        # Long Filter: Relaxed OBI and VWAP constraints to match high-alpha regime
+        if avg_obi > -0.7 and funding < 0.0014 and spread < 12.0:
+            if vwap_dev < 0.026:
+                signal = 1
+
+    elif predicted_return < -base_thresh:
+        # Short Filter: Ensuring symmetric entry logic for shorts
+        if avg_obi < 0.7 and funding > -0.0014 and spread < 12.0:
+            if vwap_dev > -0.026:
+                signal = -1
+
+    # 3. Position Sizing
+    # Dynamic sizing based on confidence and order book thickness (Kyle's Lambda)
+    if signal != 0:
+        base_size = 0.15
+        # Confidence boost capped at 1.25x
+        conf_boost = min(1.25, abs(predicted_return) / base_thresh)
+        # Liquiditity penalty: kyle_lambda estimates return per volume; higher lambda = thinner book.
+        liquidity_penalty = min(0.35, kyle_lambda * 15000)
+
+        position_size = base_size * conf_boost * (1.0 - liquidity_penalty)
+        position_size = max(0.06, min(0.24, position_size))
+
+        # 4. Target Setting (TP / SL)
+        # Tight R/R (1.4x) focused on short-term predictive edge of XGBoost over 15-45m.
+        tp_base = 0.0042
+        sl_base = 0.0030
+
+        # Trend alignment: slightly wider TP in strong trends
+        if (signal == 1 and trend > 0.45) or (signal == -1 and trend < -0.45):
+            tp_base += 0.0006
+            sl_base -= 0.0002
+
+        take_profit = tp_base
+        stop_loss = sl_base
+
+        # 5. Time-Based Exit Strategy (Max Bars)
+        # Session-specific persistence; US session trades carry longer
+        if is_us:
+            max_bars = 6 if abs(trend) > 0.3 else 5
+        elif is_asia:
+            max_bars = 4 if autocorr > 0.1 else 3
+        else:
+            max_bars = 4
+
+    else:
+        position_size = 0.0
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+
+    return {
+        "signal": int(signal),
+        "position_size": float(round(position_size, 4)),
+        "take_profit": float(round(take_profit, 5)),
+        "stop_loss": float(round(stop_loss, 5)),
+        "max_bars": int(max_bars),
+    }
+# EVOLVE-BLOCK-END

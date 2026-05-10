@@ -1,0 +1,14 @@
+{
+  "generation": 56,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "relaxed_alpha_capture",
+  "patch_description": "The previous iteration was over-filtering, resulting in significantly fewer trades than the high-performing seed model. This modification lowers the entry threshold from 0.002 to 0.0018 and relaxes microstructure filters (OBI, VWAP deviation, and spread) to capture more high-conviction signals. It also increases the base position size to 0.13 and introduces a conditional hold-time extension for the US session when trend strength is significant, aiming to improve total return and Sharpe while leveraging the high observed win rate.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:06:38.560149",
+  "llm_cost": 0.0051955000000000005,
+  "llm_model": "gemini-3-flash-preview"
+}

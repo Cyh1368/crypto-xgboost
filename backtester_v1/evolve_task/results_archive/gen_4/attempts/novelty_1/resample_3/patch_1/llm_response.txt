@@ -1,0 +1,87 @@
+<NAME>
+robust_volatility_adjusted_signal
+</NAME>
+
+<DESCRIPTION>
+The previous program failed with an AttributeError during the import phase, which often indicates a syntax error or an issue with the file structure that prevents the spec loader from correctly identifying the module. 
+
+This fix provides a robust and clean implementation of the `generate_signal` function. Key improvements include:
+1. **Safe Input Handling**: Explicitly handles `None` and `NaN` values for `predicted_return` and all `bar_context` fields using a helper function and `try-except` blocks to prevent runtime errors.
+2. **Dynamic Entry Thresholds**: Adjusts the entry threshold based on the ADX (Average Directional Index). In non-trending markets (low ADX), it requires a higher predicted return to enter a trade, reducing noise.
+3. **RSI Filtering**: Implements RSI-based filters to prevent entering long positions when overbought or short positions when oversold.
+4. **Volatility-Adjusted Sizing**: Calculates position size based on ATR (Average True Range) to maintain a consistent risk profile (targeting 0.5% risk per trade).
+5. **ATR-Based Exits**: Uses ATR-multipliers for take-profit (3.5x ATR) and stop-loss (1.75x ATR), ensuring exits are adaptive to current market volatility.
+6. **Time-Based Exit**: Includes a `max_bars` limit of 6 (1.5 hours) to prevent holding stagnant positions.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+import math
+
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Translates XGBoost 15-min return prediction into a trading decision.
+    Uses volatility-adjusted entry thresholds, position sizing, and stops.
+    """
+    # 1. Safe Input Handling
+    try:
+        if predicted_return is None:
+            pred = 0.0
+        else:
+            pred = float(predicted_return)
+            if math.isnan(pred):
+                pred = 0.0
+    except (ValueError, TypeError):
+        pred = 0.0
+    
+    ctx = bar_context if isinstance(bar_context, dict) else {}
+    
+    # Helper to safely extract float values from context
+    def get_f(key, default):
+        try:
+            v = ctx.get(key)
+            if v is None:
+                return default
+            f_v = float(v)
+            return f_v if not math.isnan(f_v) else default
+        except (ValueError, TypeError):
+            return default
+
+    close = get_f('close', 1.0)
+    if close <= 0: close = 1.0
+    
+    atr = get_f('atr', 0.01 * close)
+    if atr <= 0: atr = 0.01 * close
+    
+    rsi = get_f('rsi', 50.0)
+    adx = get_f('adx', 20.0)
+    
+    atr_pct = atr / close
+    
+    # 2. Dynamic Thresholds
+    # Adjust threshold based on trend strength (ADX)
+    adx_factor = 1.0
+    if adx < 20:
+        adx_factor = 1.4  # Sideways: require higher conviction
+    elif adx > 30:
+        adx_factor = 0.8  # Trending: more aggressive entry
+        
+    long_thresh = 0.0022 * adx_factor
+    short_thresh = -0.0022 * adx_factor
+    
+    # 3. Signal Generation
+    signal = 0
+    if pred > long_thresh:
+        signal = 1
+    elif pred < short_thresh:
+        signal = -1
+        
+    # 4. Filters
+    # RSI filter: avoid buying when overbought (>75) or

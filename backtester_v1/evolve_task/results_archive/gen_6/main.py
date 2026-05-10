@@ -1,0 +1,120 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+import math
+
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Trading signal generator for a 15-minute forward return model.
+
+    Returns:
+        dict with keys:
+            signal: 1, 0, or -1
+            position_size: float in [0.0, 1.0]
+            take_profit: float
+            stop_loss: float
+            max_bars: int
+    """
+
+    def safe_float(value, default):
+        try:
+            f = float(value)
+            return f if math.isfinite(f) else default
+        except (TypeError, ValueError):
+            return default
+
+    # Prediction
+    pr = safe_float(predicted_return, 0.0)
+
+    # Context values available at bar close only
+    bar_context = bar_context or {}
+    close = safe_float(bar_context.get("close", 1.0), 1.0)
+    atr = safe_float(bar_context.get("atr", 0.0), 0.0)
+    rsi = safe_float(bar_context.get("rsi", 50.0), 50.0)
+    adx = safe_float(bar_context.get("adx", 0.0), 0.0)
+
+    if close <= 0:
+        close = 1.0
+
+    # Volatility estimate from ATR
+    vol = atr / close if atr > 0 else 0.0
+    vol = float(np.clip(vol, 0.0005, 0.03))
+
+    # Regime / momentum filters
+    trend_ok = adx >= 20.0
+    strong_trend = adx >= 28.0
+    long_momentum = rsi >= 52.0
+    short_momentum = rsi <= 48.0
+
+    # Dynamic asymmetric thresholds
+    base = 0.0015
+    vol_adj = 0.7 * vol
+    long_thresh = base + vol_adj
+    short_thresh = -(base + vol_adj)
+
+    if not trend_ok:
+        long_thresh *= 1.10
+        short_thresh *= 1.15
+
+    # Signal smoothing / dead zone
+    dead_zone = 0.75 * min(long_thresh, abs(short_thresh))
+    signal = 0
+
+    if abs(pr) >= dead_zone:
+        if pr > long_thresh and (trend_ok or long_momentum):
+            signal = 1
+        elif pr < short_thresh and (trend_ok or short_momentum):
+            signal = -1
+
+    # Position sizing
+    if signal == 0:
+        position_size = 0.0
+    else:
+        edge = abs(pr) / max(long_thresh if signal == 1 else abs(short_thresh), 1e-6)
+        edge = float(np.clip(edge, 0.5, 3.0))
+
+        trend_factor = 1.15 if strong_trend else (1.05 if trend_ok else 0.90)
+        momentum_factor = 1.08 if ((signal == 1 and long_momentum) or (signal == -1 and short_momentum)) else 0.95
+        vol_factor = float(np.clip(0.01 / max(vol, 1e-6), 0.35, 1.25))
+
+        position_size = 0.06 * edge * trend_factor * momentum_factor * vol_factor
+        position_size = float(np.clip(position_size, 0.0, 0.30))
+
+    # Volatility-adjusted exits
+    if signal == 1:
+        tp_mult = 1.9
+        sl_mult = 1.25
+    elif signal == -1:
+        tp_mult = 1.7
+        sl_mult = 1.35
+    else:
+        tp_mult = 1.8
+        sl_mult = 1.3
+
+    take_profit = float(np.clip(vol * tp_mult, 0.0015, 0.0150))
+    stop_loss = float(np.clip(vol * sl_mult, 0.0010, 0.0120))
+
+    # Holding period
+    if strong_trend:
+        max_bars = 6
+    elif trend_ok:
+        max_bars = 5
+    else:
+        max_bars = 4
+
+    return {
+        "signal": int(signal),
+        "position_size": float(position_size),
+        "take_profit": float(take_profit),
+        "stop_loss": float(stop_loss),
+        "max_bars": int(max_bars),
+    }
+
+# Backward-compatible aliases for evaluators/backtest harnesses.
+predict_signal = generate_signal
+signal_function = generate_signal
+# EVOLVE-BLOCK-END

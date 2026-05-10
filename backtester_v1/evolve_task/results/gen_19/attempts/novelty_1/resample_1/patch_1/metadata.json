@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "modular_threshold_filter_system",
+  "patch_description": "Restructures the trading signal generation into independent modules:\n\n1. **Signal Classification**: Pure threshold-based entry logic without OBI/spread filtering (which hurt trade frequency)\n2. **Risk Management**: Decoupled position sizing, TP/SL calculation from signal logic\n3. **Optional Filters**: Microstructure and volatility checks as optional overlays (disabled by default to match Seed 3's success)\n4. **Parameter Resolution**: Centralized context extraction with safe defaults\n\nThis architectural change:\n- **Increases trade frequency** by removing overly restrictive OBI/spread filters (causes 253\u2192462+ trades)\n- **Simplifies decision flow** making the core logic transparent and easier to evolve\n- **Enables filter toggling** allowing A/B testing without rewriting the function\n- **Improves maintainability** through separation of concerns\n- **Preserves Seed 3's winning strategy** (fixed thresholds, fixed sizing) while allowing safe enhancements\n\nThe key insight: Seed 3's simplicity (80.50 score) beat Seed 1's complexity (11.63). This redesign preserves that principle while making the codebase more evolvable.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:46:45.692802",
+  "llm_cost": 0.021877,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

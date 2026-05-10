@@ -1,0 +1,131 @@
+--- a/original.py
++++ b/original.py
+@@ -1,39 +1,110 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+-    Seed trading signal generator.
+-    Translates XGBoost 15-min return prediction into a trading decision.
++    Trading signal generator for a 15-minute forward return model.
++
+     Args:
+-        predicted_return: float, model's predicted 15-min return (e.g. 0.003 = +0.3%)
+-        bar_context: dict with keys: close, high, low, volume, atr, rsi, adx
++        predicted_return: model's predicted 15-min return (e.g. 0.003 = +0.3%)
++        bar_context: dict with available bar-close context such as:
++            close, high, low, volume, atr, rsi, adx
++
+     Returns:
+-        dict with signal, position_size, take_profit, stop_loss, max_bars
++        dict with:
++            signal: 1 (long), 0 (flat), -1 (short)
++            position_size: float in [0.0, 1.0]
++            take_profit: float
++            stop_loss: float
++            max_bars: int
+     """
+-    LONG_THRESH   = 0.002    # enter long if predicted return > 0.2%
+-    SHORT_THRESH  = -0.002   # enter short if predicted return < -0.2%
+-    POSITION_SIZE = 0.10     # 10% of portfolio per trade
+-    TAKE_PROFIT   = 0.004    # exit at +0.4% gain
+-    STOP_LOSS     = 0.003    # exit at -0.3% loss
+-    MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
++    # Safely extract context values without looking ahead.
++    atr = float(bar_context.get("atr", 0.0) or 0.0)
++    rsi = float(bar_context.get("rsi", 50.0) or 50.0)
++    adx = float(bar_context.get("adx", 0.0) or 0.0)
++    close = float(bar_context.get("close", 1.0) or 1.0)
+ 
+-    if predicted_return > LONG_THRESH:
++    # Normalize predicted_return to a finite float.
++    try:
++        pr = float(predicted_return)
++    except Exception:
++        pr = 0.0
++    if not np.isfinite(pr):
++        pr = 0.0
++
++    # Volatility estimate; keep it bounded and stable.
++    vol = atr / close if close > 0 else 0.0
++    vol = float(np.clip(vol, 0.0005, 0.02))  # 5 bps to 2%
++
++    # Trend / regime filters
++    trend_ok = adx >= 18.0
++    momentum_long = rsi >= 53.0
++    momentum_short = rsi <= 47.0
++
++    # Base entry thresholds adapt to volatility and trend strength.
++    base_thresh = 0.0018
++    thresh_adj = 0.6 * vol
++    long_thresh = base_thresh + thresh_adj
++    short_thresh = -(base_thresh + thresh_adj)
++
++    # Asymmetric rules: require stronger confirmation for shorts in weak trends.
++    if not trend_ok:
++        long_thresh *= 1.15
++        short_thresh *= 1.10
++
++    # Signal smoothing / dead zone
++    if abs(pr) < min(long_thresh, abs(short_thresh)) * 0.75:
++        signal = 0
++    elif pr > long_thresh and (trend_ok or momentum_long):
+         signal = 1
+-    elif predicted_return < SHORT_THRESH:
++    elif pr < short_thresh and (trend_ok or momentum_short):
+         signal = -1
+     else:
+         signal = 0
+ 
++    # Position sizing: larger on stronger edge, smaller in higher volatility.
++    edge = abs(pr) / max(long_thresh, abs(short_thresh), 1e-6)
++    edge = float(np.clip(edge, 0.0, 3.0))
++
++    if signal == 0:
++        position_size = 0.0
++    else:
++        trend_factor = 1.15 if trend_ok else 0.85
++        momentum_factor = 1.10 if ((signal == 1 and momentum_long) or (signal == -1 and momentum_short)) else 0.95
++        vol_factor = float(np.clip(0.012 / max(vol, 1e-6), 0.35, 1.25))
++        position_size = 0.06 + 0.10 * edge
++        position_size *= trend_factor * momentum_factor * vol_factor
++        position_size = float(np.clip(position_size, 0.03, 0.25))
++
++    # Volatility-adjusted exits
++    tp_mult = 1.7 if signal == 1 else 1.5
++    sl_mult = 1.2 if signal == 1 else 1.35
++
++    take_profit = float(np.clip(vol * tp_mult, 0.0020, 0.0120))
++    stop_loss = float(np.clip(vol * sl_mult, 0.0015, 0.0100))
++
++    # Slightly longer hold in stronger trends.
++    if adx >= 28.0:
++        max_bars = 6
++    elif adx >= 20.0:
++        max_bars = 5
++    else:
++        max_bars = 4
++
+     return {
+-        "signal":        signal,
+-        "position_size": POSITION_SIZE if signal != 0 else 0.0,
+-        "take_profit":   TAKE_PROFIT,
+-        "stop_loss":     STOP_LOSS,
+-        "max_bars":      MAX_BARS,
++        "signal": signal,
++        "position_size": position_size,
++        "take_profit": take_profit,
++        "stop_loss": stop_loss,
++        "max_bars": max_bars,
+     }
++
++
++# Backward-compatible aliases for validators/backtest harnesses.
++signal_function = generate_signal
++predict_signal = generate_signal
+ # EVOLVE-BLOCK-END

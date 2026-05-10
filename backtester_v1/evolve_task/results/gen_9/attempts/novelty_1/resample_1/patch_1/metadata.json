@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_micro_filter",
+  "patch_description": "This algorithm draws inspiration from the high-performing Seed 3 (which emphasized a clean 20bps threshold and simple risk parameters) but enhances it with microstructure filters and price-action regime detection. \n\nKey insights:\n1. **Threshold Calibration**: The XGBoost model's predictions are most effective around the 19-20bps mark. We use a base threshold of 0.00195 but adjust it based on the `funding_rate` to account for the cost of carry.\n2. **Anti-FOMO Filters**: We use `close_rank_48` and `vwap_dev` to avoid entering longs at the absolute peak of a 12-hour range or when price is overextended from the VWAP, reducing the probability of buying \"blow-off tops.\"\n3. **Microstructure Guardrails**: We incorporate `kyle_lambda_est` and `spread_bps` into the position sizing logic. If liquidity is thin (high Lambda) or the spread is wide, we scale down the position size to mitigate slippage.\n4. **Volatility-Adjusted TP/SL**: While maintaining a Reward/Risk ratio of approximately 1.35 (similar to Seed 3), we scale the absolute distances by the ratio of short-term (`vol_5`) to medium-term (`vol_20`) volatility to adapt to expanding or contracting market regimes.\n5. **Asymmetric Rejection**: We use `wick_ratio_up` and `wick_ratio_down` to detect intra-bar price rejection, cancelling signals that trade directly into a \"wick\" of resistance/support.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:43:33.557523",
+  "llm_cost": 0.0087375,
+  "llm_model": "gemini-3-flash-preview"
+}

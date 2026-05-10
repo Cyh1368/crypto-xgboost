@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "volatility_adjusted_atr_signal",
+  "patch_description": "The previous program failed with an `AttributeError: 'NoneType' object has no attribute 'loader'`, which typically indicates that the backtester's module loader could not find or load the generated Python file. This can happen if the code structure is not robust or if the `EVOLVE-BLOCK` markers are not handled correctly. \n\nI have fixed the program by:\n1.  Ensuring the `EVOLVE-BLOCK` markers are clearly placed.\n2.  Adding `import math` and `import numpy as np` inside the block to ensure all dependencies are available if the block is isolated.\n3.  Implementing a more robust signal generator that uses ATR for volatility-adjusted stops and position sizing, ADX for trend filtering, and RSI for momentum filtering.\n4.  Using `.get()` for `bar_context` access to prevent `KeyError`.\n5.  Ensuring all return values are explicitly cast to the expected types (`int`, `float`).\n6.  Adding asymmetric thresholds for long and short entries to better suit crypto market dynamics.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:23:56.507283",
+  "llm_cost": 0.0025495,
+  "llm_model": "gemini-3-flash-preview"
+}

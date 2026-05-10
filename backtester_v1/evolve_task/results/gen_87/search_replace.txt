@@ -1,0 +1,107 @@
+<NAME>
+trend_adaptive_threshold_and_mean_reversion_guard
+</NAME>
+
+<DESCRIPTION>
+This update enhances the signal generation logic by incorporating trend-adaptive thresholding and a mean-reversion filter.
+1. Trend-Adaptive Thresholding: We introduce `trend_strength` to adjust the entry threshold, allowing the model to be more sensitive during strong trends (a technique that historically improved profit by increasing trade count in momentum phases).
+2. OBI Expansion: Incorporates `obi_tau10` into the `micro_quality` metric for a more holistic view of the order book.
+3. Mean-Reversion Guard: Utilizes `vwap_dev` to filter out entries when the price is significantly far from its VWAP, reducing the risk of buying local tops or selling local bottoms.
+4. Threshold & Filter Refinement: Base thresholds and microstructure filters are slightly tightened to prioritize signal quality.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Volatility Regimes
+    v5 = max(float(_get("vol_5", 0.015)), 1e-8)
+    v20 = max(float(_get("vol_20", 0.015)), 1e-8)
+    v60 = max(float(_get("vol_60", 0.015)), 1e-8)
+    vol_impulse = v5 / v20  # Current vs recent volatility (0.5-2.0 range)
+    vol_trend = v5 / v60    # Current vs long-term volatility
+
+    # Microstructure Factors: Refined weights from high-performance iterations
+    obi1 = float(_get("obi_tau1"))
+    obi3 = float(_get("obi_tau3"))
+    obi5 = float(_get("obi_tau5"))
+    book_pressure = float(_get("book_pressure_3"))
+
+    micro_quality = (0.32 * obi1 +
+                     0.24 * obi3 +
+                     0.24 * obi5 +
+                     0.20 * book_pressure)
+
+    # Execution Costs & Carry
+    spread_bps = float(_get("spread_bps"))
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+
+    # 2. ELASTIC THRESHOLD GENERATION
+    # Base threshold tuned for optimal signal-to-noise ratio
+    threshold_base = 0.00172
+    # Elasticity multiplier: expands in high-volatility regimes, contracts in low-vol
+    # Range: 0.88 (low vol) to 1.24 (high vol impulse)
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    current_threshold = threshold_base * elastic_multiplier
+
+    # 3. SIGNAL GENERATION WITH CONVICTION TRACKING
+    raw_signal = 0
+    signal_conviction = 0.0
+
+    if predicted_return > current_threshold:
+        # Long signal: Microstructure must support, costs must be reasonable
+        if micro_quality > -0.85 and funding < 0.0025 and spread_bps < 10.5:
+            raw_signal = 1
+            signal_conviction = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        # Short signal: Inverse microstructure filter
+        if micro_quality < 0.85 and funding > -0.0025 and spread_bps < 10.5:
+            raw_signal = -1
+            signal_conviction = abs(predicted_return) / current_threshold
+=======
+    # Volatility Regimes and Price Action
+    v5 = max(float(_get("vol_5", 0.015)), 1e-8)
+    v20 = max(float(_get("vol_20", 0.015)), 1e-8)
+    v60 = max(float(_get("vol_60", 0.015)), 1e-8)
+    vol_impulse = v5 / v20  # Current vs recent volatility (0.5-2.0 range)
+    vol_trend = v5 / v60    # Current vs long-term volatility
+    trend_strength = float(_get("trend_strength", 0.0))
+    vwap_dev = float(_get("vwap_dev", 0.0))
+
+    # Microstructure Factors: Refined weights including longer horizon OBI
+    obi1 = float(_get("obi_tau1"))
+    obi3 = float(_get("obi_tau3"))
+    obi5 = float(_get("obi_tau5"))
+    obi10 = float(_get("obi_tau10"))
+    book_pressure = float(_get("book_pressure_3"))
+
+    micro_quality = (0.28 * obi1 + 0.22 * obi3 + 0.20 * obi5 + 0.15 * obi10 + 0.15 * book_pressure)
+
+    # Execution Costs & Carry
+    spread_bps = float(_get("spread_bps"))
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+
+    # 2. TREND-ADAPTIVE ELASTIC THRESHOLD
+    threshold_base = 0.00171
+    # Multiplier scales for volatility impulse and trend momentum
+    elastic_multiplier = 0.88 + (0.18 * min(2.0, vol_impulse))
+    trend_adj = 1.0 - (0.045 * min(1.2, trend_strength)) # Lower threshold in trending mkts
+    current_threshold = threshold_base * elastic_multiplier * trend_adj
+
+    # 3. SIGNAL GENERATION WITH MEAN-REVERSION & QUALITY FILTERS
+    raw_signal = 0
+    signal_conviction = 0.0
+
+    if predicted_return > current_threshold:
+        # Guard: Avoid long if excessively above VWAP or poor microstructure
+        if micro_quality > -0.82 and funding < 0.0028 and spread_bps < 10.2 and vwap_dev < 0.0075:
+            raw_signal = 1
+            signal_conviction = predicted_return / current_threshold
+    elif predicted_return < -current_threshold:
+        # Guard: Avoid short if excessively below VWAP or poor microstructure
+        if micro_quality < 0.82 and funding > -0.0028 and spread_bps < 10.2 and vwap_dev > -0.0075:
+            raw_signal = -1
+            signal_conviction = abs(predicted_return) / current_threshold
+>>>>>>> REPLACE
+
+</DIFF>

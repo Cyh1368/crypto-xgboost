@@ -1,0 +1,14 @@
+{
+  "generation": 77,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "microstructure_regime_tuning",
+  "patch_description": "Optimizing the trade frequency and risk-reward profile by:\n1. Lowering the `base_thresh` to 0.00165 to increase trade participation (targeting ~500+ trades like the top performer).\n2. Relaxing the OBI and VWAP-deviation filters slightly to capture more trending moves while retaining protection against extreme spreads.\n3. Tuning the R/R ratio towards 1.4 (TP 42bps, SL 30bps) to maximize the Sharpe ratio.\n4. Increasing the sensitivity of the liquidity adjustment factor (Kyle's Lambda) to penalize trades in thin order books more effectively.\n5. Simplifying the `max_bars` logic to prioritize session-based persistence over autocorrelation noise.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:13:49.218865",
+  "llm_cost": 0.0075645,
+  "llm_model": "gemini-3-flash-preview"
+}

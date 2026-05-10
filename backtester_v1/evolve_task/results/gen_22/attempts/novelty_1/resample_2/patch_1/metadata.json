@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "microstructural_volatility_equilibrium",
+  "patch_description": "This approach moves away from rigid thresholds and emphasizes the \"Equilibrium\" between model predictions and microstructural state. \n\nKey innovations:\n1.  **Micro-Confirmation Matrix**: Instead of just using the XGBoost prediction, the signal is filtered through a consensus of Order Book Imbalance (OBI), Book Pressure, and Kyle's Lambda. We only entry if the model's alpha is supported by the current state of the order book.\n2.  **Vol-Adjusted Confidence Band**: The entry threshold is dynamically computed as a multiple of the current 5-period realized volatility (vol_5), ensuring we aren't chasing signals that are \"noise\" relative to local price action.\n3.  **Kurtosis-Filtered Stops**: We use the kurtosis of recent returns to identify \"fat-tail\" environments. In high-kurtosis regimes, we tighten stop losses and extend take profits to protect against outliers while allowing for \"black swan\" positive runs.\n4.  **Asymmetric Session Logic**: Different hold times and risk-reward profiles are applied to US vs. Asia sessions, recognizing the higher trending nature of US hours versus the mean-reverting tendency of Asia.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:49:38.249202",
+  "llm_cost": 0.008435,
+  "llm_model": "gemini-3-flash-preview"
+}

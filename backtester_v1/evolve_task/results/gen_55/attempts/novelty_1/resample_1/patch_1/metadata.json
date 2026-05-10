@@ -1,0 +1,14 @@
+{
+  "generation": 55,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_microstructure_asymmetric_sizing",
+  "patch_description": "The current program (score: 61.08) underperforms the best seed (score: 80.50) primarily due to:\n\n1. **Overly restrictive filters**: The funding rate filter (< 0.001 / > -0.001) is too tight and eliminates many valid trades. The best seed uses no funding filter at all.\n\n2. **Fixed position sizing**: Using constant 0.12 ignores volatility and microstructure quality. The best seed uses fixed 0.10, but we can improve by making it adaptive to market conditions.\n\n3. **Suboptimal threshold**: While 0.002 is good, we should test slightly lower (0.0018) to capture more edge while maintaining quality via filters.\n\n4. **Unused high-quality indicators**: The context provides RSI, momentum, autocorrelation, and book pressure that can improve entry quality without over-filtering.\n\n5. **Asymmetric risk parameters**: Current TP/SL (0.004/0.003) is fixed. We can make them adaptive to ATR and volatility for better risk-adjusted returns.\n\n**New approach**:\n- Lower entry threshold to 0.0018 to increase trade frequency (best seed had 462 trades vs current 299)\n- Replace funding filter with RSI extremes filter (proven in prior seeds)\n- Implement volatility-adjusted position sizing (scale down in high vol, up in low vol)\n- Add autocorrelation filter for mean-reversion confirmation\n- Make TP/SL asymmetric and ATR-adjusted\n- Increase max_bars to 5 for better trend capture (proven in prior seed with session logic)\n- Use trend_strength to modulate aggressiveness\n\nThis targets: higher trade count (462 vs 299), maintained win rate (0.78+), and improved Sharpe through better risk management.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:05:39.741356",
+  "llm_cost": 0.016564000000000002,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

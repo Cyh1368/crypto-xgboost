@@ -1,0 +1,85 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    High-frequency signal generator balancing model predictions with microstructure
+    safety filters and session-specific thresholds.
+    """
+    # 1. Context Extraction
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    obi_tau5 = bar_context.get('obi_tau5', 0.0)
+    spread_bps = bar_context.get('spread_bps', 1.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    atr = bar_context.get('atr_14', 0.002)
+    close = bar_context.get('close', 1.0)
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+    kyle_lambda = bar_context.get('kyle_lambda_est', 0.0)
+    book_pressure = bar_context.get('book_pressure_3', 0.0)
+    vol_5 = bar_context.get('vol_5', 0.001)
+    vol_20 = bar_context.get('vol_20', 0.001)
+    wick_up = bar_context.get('wick_ratio_up', 0.0)
+    wick_dn = bar_context.get('wick_ratio_down', 0.0)
+
+    # 2. Entry Thresholds: Session-specific and Liquidity adjusted
+    base_thresh = 0.00182
+    if is_us:
+        base_thresh = 0.00168 # Exploit US session volatility
+    elif is_asia:
+        base_thresh = 0.00205 # Filter harder for Asia's mean-reverting nature
+
+    liq_penalty = min(0.00025, kyle_lambda * 30.0)
+    eff_thresh = base_thresh + liq_penalty
+
+    signal = 0
+    # 3. Filtering Strategy: Enhanced microstructure and price exhaustion checks
+    if predicted_return > eff_thresh:
+        # Long: OBI, Book Pressure, VWAP Dev, and Wicks must align
+        if obi_tau5 > -0.65 and book_pressure > -0.5 and vwap_dev < 0.024 and spread_bps < 9.5:
+            if funding < 0.0018 and wick_up < 0.8:
+                signal = 1
+    elif predicted_return < -eff_thresh:
+        # Short: OBI, Book Pressure, VWAP Dev, and Wicks must align
+        if obi_tau5 < 0.65 and book_pressure < 0.5 and vwap_dev > -0.024 and spread_bps < 9.5:
+            if funding > -0.0018 and wick_dn < 0.8:
+                signal = -1
+
+    # 4. Position Sizing: Confidence-weighted with volatility damping
+    if signal != 0:
+        confidence = abs(predicted_return) / eff_thresh
+        position_size = 0.142 * min(1.25, confidence)
+
+        # Dampen size if short-term volatility is surging significantly
+        vol_ratio = (vol_5 / vol_20) if vol_20 > 0 else 1.0
+        if vol_ratio > 1.25:
+            position_size *= 0.88
+
+        position_size = max(0.10, min(0.18, position_size))
+    else:
+        position_size = 0.0
+
+    # 5. Risk Management: Optimized Reward/Risk
+    take_profit = 0.0042
+    stop_loss = 0.0031
+
+    # 6. Hold Time: Extended for persistence (trending or autocorrelation)
+    if (is_us and abs(trend) > 0.3) or abs(autocorr) > 0.16:
+        max_bars = 5
+    else:
+        max_bars = 4
+
+    return {
+        "signal": int(signal),
+        "position_size": float(round(position_size, 4)),
+        "take_profit": float(take_profit),
+        "stop_loss": float(stop_loss),
+        "max_bars": int(max_bars)
+    }
+# EVOLVE-BLOCK-END

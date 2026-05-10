@@ -1,0 +1,14 @@
+{
+  "generation": 86,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_microstructure_regime_signal",
+  "patch_description": "This novel approach draws inspiration from the prior programs' success with microstructure filters and session-based logic, but implements a fundamentally different paradigm: **regime-aware adaptive thresholding with order flow momentum fusion**.\n\nKey insights from context programs:\n1. The top performer (95.18 score) combined dynamic thresholds with confidence-weighted sizing\n2. Microstructure filters (OBI, spread, pressure) consistently improved risk-adjusted returns\n3. Session-specific behavior and funding rate alignment added significant alpha\n4. Fixed TP/SL ratios (0.004/0.003) proved robust across regimes\n\nNovel approach:\n- **Regime Detection**: Instead of static thresholds, detect market microstructure regime using a composite of OBI, book pressure, and autocorrelation to determine if market is in \"momentum\", \"mean-reversion\", or \"choppy\" mode\n- **Order Flow Momentum Fusion**: Combine predicted return with normalized order book imbalance and book pressure as a unified conviction score, rather than using them as binary filters\n- **Volatility-Regime Adaptive Sizing**: Scale position size not just by confidence but by the interaction between realized volatility regime and trend strength, with asymmetric treatment for long vs short\n- **Dynamic TP/SL with Regime Bias**: Adjust take-profit and stop-loss targets based on detected regime (trending markets get wider TP, choppy markets get tighter SL)\n- **Funding Rate Momentum**: Use funding rate as both a filter AND a sizing modifier, recognizing that extreme funding often precedes reversals\n- **Autocorrelation-Driven Hold Optimization**: Extend max_bars in trending regimes with positive autocorrelation, compress in mean-reverting regimes\n\nThis differs fundamentally from prior approaches by creating a unified \"regime score\" that informs all downstream decisions, rather than treating filters as independent binary gates.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:16:50.943338",
+  "llm_cost": 0.019269,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

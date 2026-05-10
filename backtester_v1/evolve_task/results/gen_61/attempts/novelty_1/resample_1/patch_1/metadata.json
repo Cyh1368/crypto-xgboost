@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "trend_vwap_adaptive_logic",
+  "patch_description": "This update introduces several targeted improvements to the signal generation and risk management layers:\n1.  **Trend-Adaptive Thresholding**: Lowers the entry threshold during periods of high `trend_strength` to capture momentum more effectively, while increasing it when the price is significantly deviated from VWAP (`vwap_dev`) to avoid buying local tops or selling local bottoms.\n2.  **Liquidity-Aware Filtering**: Incorporates `kyle_lambda_est` into the microstructure filter to avoid entries in high-impact/low-liquidity environments, which typically suffer from higher slippage and lower win rates.\n3.  **Asymmetric Exit Strategy**: Implements directional asymmetry in TP/SL levels. Longs are given slightly wider targets and tighter stops, while shorts have tighter targets and wider stops to account for the typical \"slow grind up, fast crash down\" and short-squeeze dynamics of crypto markets.\n4.  **Volatility-Trend Sizing**: Scales the position size based on the `vol_trend` (v5/v60), increasing capital allocation when short-term volatility is expanding relative to the long-term average.\n5.  **Refined Microstructure Thresholds**: Slightly tightens the `micro_quality`, `funding_rate`, and `spread_bps` filters to prioritize trade quality and maintain the high win rate.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:09:14.795482",
+  "llm_cost": 0.0086725,
+  "llm_model": "gemini-3-flash-preview"
+}

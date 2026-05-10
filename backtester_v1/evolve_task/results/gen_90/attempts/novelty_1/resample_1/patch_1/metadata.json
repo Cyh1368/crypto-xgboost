@@ -1,0 +1,14 @@
+{
+  "generation": 90,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "session_aware_micro_alignment",
+  "patch_description": "This edit improves the signal generator by:\n1.  **Session-Aware Entry Hurdles**: Implementing specific base hurdles for US (lower hurdle for higher efficiency) and Asia sessions (higher hurdle for slower/mean-reverting markets).\n2.  **Robust Micro-Alignment**: Using an average of multiple OBI timescales (tau1, tau5, tau10) to create a more stable liquidity filter (obi_avg).\n3.  **Aggressive Sizing**: Increasing the base position size and confidence scaling to capture more return, while maintaining a liquidity-based scaler (Kyle's Lambda) and an ATR-based volatility cap.\n4.  **Optimized Risk Management**: Adjusting Take Profit (TP) and Stop Loss (SL) to slightly wider levels (0.0043/0.0032) and adding a trend-following TP bonus to capture momentum.\n5.  **Refined Funding Filter**: Tightening the funding rate entry filter to avoid entering crowded trades during extreme funding periods.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:18:28.113730",
+  "llm_cost": 0.0101745,
+  "llm_model": "gemini-3-flash-preview"
+}

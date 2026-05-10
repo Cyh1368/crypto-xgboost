@@ -1,0 +1,122 @@
+# Analysis
+
+The error `AttributeError: 'NoneType' object has no attribute 'loader'` in the importlib code suggests that the module specification is failing to load. This typically happens when:
+
+1. The file has syntax errors
+2. The file is missing required structure
+3. The file cannot be imported as a valid Python module
+
+Looking at the provided code, I can identify the issue: **the function `generate_signal` is defined but never tested or validated within the module itself**. However, the more likely root cause is that the validation script expects the module to be importable and executable as a complete unit.
+
+The key issue is that the code only defines a function but doesn't ensure it's properly structured for import. More importantly, looking at the requirements again: the function should handle edge cases and work with actual bar_context data that may have missing or unexpected fields.
+
+The real bugs are:
+1. **No defensive handling of bar_context fields** - the function doesn't validate that required keys exist in bar_context
+2. **Hard-coded magic numbers** - the constants should be more robust
+3. **Missing validation** - the function doesn't handle None or edge cases in predicted_return
+4. **Position sizing doesn't use volatility** - per the requirements, it should be volatility-adjusted via ATR
+
+Let me fix these issues:
+
+<NAME>
+robust_signal_validation_and_context_handling
+</NAME>
+
+<DESCRIPTION>
+The program had multiple issues preventing validation:
+
+1. **Missing input validation**: The function didn't validate that `bar_context` contains required fields (atr, rsi, adx) before using them, and didn't handle None or invalid predicted_return values.
+
+2. **Lack of volatility adjustment**: Per requirements, position sizing should be volatility-adjusted using ATR from bar_context. The original code used a fixed position size.
+
+3. **Missing edge case handling**: No handling for divide-by-zero, missing dict keys, or extreme values.
+
+4. **Stop-loss not volatility-adjusted**: The fixed stop_loss should scale with ATR, not be a constant.
+
+The fix adds:
+- Robust input validation for bar_context fields
+- Volatility-adjusted position sizing (inverse of ATR normalized)
+- Volatility-adjusted stop-loss levels
+- Safe defaults when bar_context fields are missing
+- Proper handling of edge cases
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+import math
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Seed trading signal generator.
+    Translates XGBoost 15-min return prediction into a trading decision.
+    Args:
+        predicted_return: float, model's predicted 15-min return (e.g. 0.003 = +0.3%)
+        bar_context: dict with keys: close, high, low, volume, atr, rsi, adx
+    Returns:
+        dict with signal, position_size, take_profit, stop_loss, max_bars
+    """
+    # Input validation
+    if predicted_return is None:
+        predicted_return = 0.0
+    
+    if bar_context is None:
+        bar_context = {}
+    
+    # Safe extraction of bar_context fields with defaults
+    atr = bar_context.get('atr', 0.001)
+    rsi = bar_context.get('rsi', 50.0)
+    adx = bar_context.get('adx', 20.0)
+    close = bar_context.get('close', 1.0)
+    
+    # Ensure atr is positive and non-zero to avoid division issues
+    if atr is None or atr <= 0:
+        atr = 0.001
+    if close is None or close <= 0:
+        close = 1.0
+    
+    # Convert atr to percentage of close price
+    atr_pct = atr / close if close > 0 else 0.001
+    
+    # Dynamic thresholds based on volatility (ADX strength)
+    # Higher ADX = stronger trend, lower threshold needed
+    adx_factor = max(0.5, min(1.5, adx / 25.0))  # normalize ADX to 0.5-1.5 range
+    
+    LONG_THRESH   = 0.002 / adx_factor      # enter long if predicted return > threshold
+    SHORT_THRESH  = -0.002 / adx_factor     # enter short if predicted return < threshold
+    
+    # Volatility-adjusted position sizing (inverse of ATR)
+    # Higher volatility = smaller position
+    BASE_POSITION_SIZE = 0.10
+    volatility_adjusted_size = BASE_POSITION_SIZE / (1.0 + (atr_pct * 100.0))
+    position_size = max(0.02, min(0.20, volatility_adjusted_size))  # cap between 2% and 20%
+    
+    # Volatility-adjusted take profit and stop loss
+    TAKE_PROFIT   = max(0.002, atr_pct * 2.0)   # at least 2x ATR or 0.2%, whichever larger
+    STOP_LOSS     = max(0.002, atr_pct * 1.5)   # at least 1.5x ATR or 0.2%, whichever larger
+    
+    MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
+
+    # Generate signal
+    if predicted_return > LONG_THRESH:
+        signal = 1
+    elif predicted_return < SHORT_THRESH:
+        signal = -1
+    else:
+        signal = 0
+
+    return {
+        "signal":        signal,
+        "position_size": position_size if signal != 0 else 0.0,
+        "take_profit":   TAKE_PROFIT,
+        "stop_loss":     STOP_LOSS,
+        "max_bars":      MAX_BARS,
+    }
+# EVOLVE-BLOCK-END
+```
+</CODE>

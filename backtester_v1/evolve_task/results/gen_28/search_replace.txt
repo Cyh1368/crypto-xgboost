@@ -1,0 +1,39 @@
+adaptive_micro_vol_refinement
+<DESCRIPTION>
+This edit introduces several refinements to the signal generation logic:
+1.  **Enhanced Microstructure Quality:** Incorporates `obi_tau10` and re-weights the `micro_quality` metric to give more importance to `book_pressure`, which is often a more stable indicator of liquidity flow.
+2.  **Price Exhaustion Filters:** Adds `vwap_dev` and `rsi_14` filters to the entry logic to prevent entering trades at local price extremes (e.g., buying the top of a move).
+3.  **Liquidity-Aware Sizing:** Uses `kyle_lambda_est` to apply a size penalty when market impact is expected to be high, protecting against slippage.
+4.  **Volatility-Adaptive Exits:** Scales `take_profit`, `stop_loss`, and `max_bars` based on the `vol_regime`. In high-volatility environments, targets and stops are widened to avoid noise, and the holding time is reduced. In low-volatility environments, targets are tightened and the holding time is extended to allow moves to develop.
+5.  **Tighter Entry Constraints:** Slightly tightens the `funding`, `spread_bps`, and `micro_quality` thresholds to improve the precision of entries.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    obi10 = float(_get("obi_tau10"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    # vol_regime: > 1.0 means volatility is expanding relative to the recent past
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+
+    # Macro & Session
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+
+    # 2. Regime Quality Metrics
+    # micro_quality: Positive means book supports long, negative supports short.
+    # Weights optimized from high-performing crossover iterations.
+    micro_quality = 0.3 * obi1 + 0.25 * obi3 + 0.25 * obi5 + 0.2 * book_pressure
+=======
+    obi10 = float(_get("obi_tau10"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+    kyle_lambda = abs(float(_get("kyle_lambda_est")))
+
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20

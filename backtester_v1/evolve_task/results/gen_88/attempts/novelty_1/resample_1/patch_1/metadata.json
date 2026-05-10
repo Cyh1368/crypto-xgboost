@@ -1,0 +1,14 @@
+{
+  "generation": 88,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "volatility_scaled_risk_with_rsi_filter",
+  "patch_description": "This mutation improves risk management by:\n1. Adding ATR-based volatility scaling to TP/SL (like the best prior program) while maintaining the strong 0.0042/0.0032 baseline\n2. Introducing RSI confirmation filters to avoid entries at extremes (overbought/oversold) which often reverse\n3. Enhancing the micro_score weighting to favor book_pressure in trending regimes\n4. Extending max_bars for high-autocorrelation trades (momentum persistence)\n5. Making position sizing more sensitive to autocorrelation (momentum indicator)\n\nThe rationale: The current program has excellent Sharpe (32.86) and win rate (0.78), but we can improve risk-adjusted returns by being more selective on entry (RSI filter) and better adapting TP/SL to volatility regimes. This should increase total_ret and potentially Sharpe further.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:17:17.626706",
+  "llm_cost": 0.020116000000000002,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

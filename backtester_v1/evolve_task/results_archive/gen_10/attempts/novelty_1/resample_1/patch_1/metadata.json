@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "safe_signal_fix",
+  "patch_description": "The validation failure was occurring before strategy logic was even evaluated: the evaluator could not import the generated program, resulting in `AttributeError: 'NoneType' object has no attribute 'loader'` from `importlib.util.module_from_spec(...)`. To make the program reliably importable and valid, I preserved the required `EVOLVE-BLOCK` markers, kept the same function signature/output schema, and simplified/strengthened the signal logic to be robust to missing or malformed context values. The updated function uses only in-scope values at bar close, adds guarded feature parsing, asymmetric long/short thresholds, volatility-adjusted sizing and exits, and avoids any lookahead.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:29:06.535694",
+  "llm_cost": 0.0097155,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 60,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "liquidity_and_session_optimization",
+  "patch_description": "This edit optimizes the signal generation by incorporating microstructure safety nets and session-specific hold durations, drawing inspiration from the highest-performing prior configurations. \n\nKey changes:\n1.  **Microstructure Refinement**: Adds `vwap_dev` to filter out entries at overextended price levels, which often lead to mean reversion against the prediction. \n2.  **Liquidity Safety**: Integrates a `funding_rate` and `spread_bps` hurdle to prevent trading in high-cost or high-toxicity environments.\n3.  **Signal Normalization**: Re-anchors the `base_thresh` to 0.0018, a level that historically optimized the trade count and Sharpe ratio balance.\n4.  **Static Risk Profiling**: Moves back to robust fixed TP (0.004) and SL (0.003) targets which have shown superior win-rate stability compared to ATR-scaled targets in high-frequency 15-minute horizons.\n5.  **Dynamic Hold Time**: Implements an extended 5-bar hold for trending US sessions to capture higher volatility follow-through.\n6.  **Sizing Optimization**: Increases position sizing to 0.135 while maintaining a confidence-based scaling mechanism to reward higher-certainty predictions.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:08:13.121202",
+  "llm_cost": 0.0066105,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 45,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "micro_regime_adaptive_sizing",
+  "patch_description": "The proposed strategy improves upon the previous seed by implementing a more sophisticated volatility-adaptive thresholding mechanism and a multi-factor microstructure filter. \n\nKey improvements:\n1.  **Volatility-Regime Thresholding**: Instead of static thresholds, the entry requirement scales with the ratio of short-term (5-bar) to medium-term (20-bar) volatility. This prevents over-trading during low-volatility noise and ensures the predicted return is significant relative to current market conditions.\n2.  **Microstructure Confirmation**: Uses a weighted composite of Order Book Imbalance (OBI) across multiple time horizons (tau 1, 3, 5) and book pressure to confirm the XGBoost model's direction. This filters out signals that lack liquidity support.\n3.  **Asymmetric Risk & Sizing**:\n    *   Increases position size during the US session and when the model shows high conviction (abs return > 0.35%).\n    *   Uses a slightly tighter stop-loss (0.0028) relative to the take-profit (0.004) to improve the Sharpe ratio and Profit Factor, while maintaining a high win rate.\n4.  **Macro & Execution Filters**: Filters entries based on the funding rate (carry cost) and spread (execution cost). It also adds a VWAP deviation check to avoid entering at local price extremes.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:00:57.463469",
+  "llm_cost": 0.008334,
+  "llm_model": "gemini-3-flash-preview"
+}

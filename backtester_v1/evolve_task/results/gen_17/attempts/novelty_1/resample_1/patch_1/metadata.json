@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_fused_threshold",
+  "patch_description": "This version cross-breeds the clean, high-performing threshold logic from the best seed with the richer microstructure, momentum, volatility, funding, and session filters from the more complex variants. The goal is to preserve the strong trade frequency and stability of the simple threshold model while improving precision by:\n- confirming trades with order-book imbalance and book pressure,\n- avoiding toxic spread / weak-liquidity conditions,\n- scaling exits with realized volatility and ATR,\n- tightening behavior near funding events and on weekends,\n- using asymmetric logic so long and short decisions can react differently to regime and flow.\n\nThe implementation stays lightweight, avoids external dependencies beyond numpy/math inside the evolve block, and keeps the exact same input/output contract.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:45:57.229804",
+  "llm_cost": 0.02107725,
+  "llm_model": "gpt-5.4-mini"
+}

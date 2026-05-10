@@ -1,0 +1,45 @@
+{
+  "fitness": 7.776311,
+  "aggregate": {
+    "sharpe_ratio": 7.996216993351475,
+    "total_return_pct": 2.5893333333333337,
+    "max_drawdown_pct": 0.13233333333333333,
+    "win_rate": 0.4940666666666667,
+    "num_trades": 46,
+    "calmar_ratio": 14.518633333333332,
+    "profit_factor": 9.301133333333334,
+    "avg_trade_pnl": 4.85714
+  },
+  "per_ticker": {
+    "BTC_USDT": {
+      "sharpe_ratio": 0.0,
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "win_rate": 0.0,
+      "num_trades": 0,
+      "calmar_ratio": 0.0,
+      "profit_factor": 0.0,
+      "avg_trade_pnl": 0.0
+    },
+    "ETH_USDT": {
+      "sharpe_ratio": 8.723043176915768,
+      "total_return_pct": 2.041,
+      "max_drawdown_pct": 0.08,
+      "win_rate": 0.7619,
+      "num_trades": 21,
+      "calmar_ratio": 25.467,
+      "profit_factor": 22.2099,
+      "avg_trade_pnl": 9.71775
+    },
+    "SOL_USDT": {
+      "sharpe_ratio": 15.265607803138659,
+      "total_return_pct": 5.727,
+      "max_drawdown_pct": 0.317,
+      "win_rate": 0.7203,
+      "num_trades": 118,
+      "calmar_ratio": 18.0889,
+      "profit_factor": 5.6935,
+      "avg_trade_pnl": 4.85367
+    }
+  }
+}

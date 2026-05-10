@@ -1,0 +1,14 @@
+{
+  "generation": 94,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "session_adaptive_hurdles_and_scaling",
+  "patch_description": "This update optimizes the entry hurdles by re-introducing session-specific thresholds (US session lower for high volatility, Asia higher for low volatility) and refining the range-positioning logic using multiplicative factors. It also improves position sizing by cautiously increasing the base exposure and cap, while adding an ATR-based scaling penalty for high-volatility environments to protect capital. Entry filters are strengthened with VWAP deviation limits and tighter funding constraints, and take-profit targets are expanded for trending markets to capture more upside.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:19:44.855636",
+  "llm_cost": 0.008572,
+  "llm_model": "gemini-3-flash-preview"
+}

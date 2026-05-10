@@ -1,0 +1,14 @@
+{
+  "generation": 37,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "tighten_thresholds_and_filters",
+  "patch_description": "The current program's lower entry thresholds and aggressive position sizing led to a significant drop in Sharpe ratio and an increase in Max Drawdown compared to the seed. This edit reverts the base entry thresholds closer to the seed's robust 0.002 level (with minor session adjustments), tightens the microstructure filters (OBI and spread) to improve trade quality, and stabilizes position sizing at 0.11 (scaled slightly by model confidence) to protect capital. It also aligns the take-profit and stop-loss levels with the seed's successful 0.004/0.003 profile.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:55:39.393047",
+  "llm_cost": 0.0067735,
+  "llm_model": "gemini-3-flash-preview"
+}

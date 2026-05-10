@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "robust_vol_asymmetric_v2",
+  "patch_description": "The previous program failed during the module loading process, likely due to a failure to resolve external dependencies or handle transient context values in a self-contained manner during the evaluation's import phase. \n\nThe fix involves:\n1. Moving essential imports (numpy and math) inside the EVOLVE-BLOCK to ensure the code is self-contained.\n2. Replacing potential runtime failures with robust safety checks using a helper function `get_f` and `math.isfinite`.\n3. Retaining and refining the sophisticated volatility-adjusted logic:\n    - Normalizing thresholds and sizing based on ATR (as a percentage of price).\n    - Implementing asymmetric long/short rules (shorts are slightly harder to trigger and have smaller position sizes).\n    - Incorporating signal smoothing if prior predictions exist in the context.\n    - Adjusting take-profit, stop-loss, and trade duration based on trend strength (ADX) and volatility (ATR).\n4. Ensuring all return values are explicitly cast to standard types (int/float) to prevent validation errors.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:28:28.651127",
+  "llm_cost": 0.0034215,
+  "llm_model": "gemini-3-flash-preview"
+}

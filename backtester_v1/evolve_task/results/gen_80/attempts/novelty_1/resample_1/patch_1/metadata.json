@@ -1,0 +1,14 @@
+{
+  "generation": 80,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "microstructure_and_vwap_refinement",
+  "patch_description": "This update refines the signal generation and risk management by:\n1.  **Threshold Optimization**: Slightly lowering the `THRESHOLD_BASE` (0.00172 -> 0.00168) to increase trade frequency, compensating for stricter filters.\n2.  **Enhanced Microstructure Quality**: Incorporating `obi_tau10` and `depth_ratio_5` into the `micro_quality` metric for a more comprehensive view of the order book's state.\n3.  **VWAP Deviation Filter**: Adding a `vwap_dev` constraint to prevent entering long positions at local price extremes (overextended from VWAP) and vice versa for shorts.\n4.  **Sizing & Session Logic**: Increasing the `base_size` and `session_bonus` to capitalize on high-conviction US session liquidity.\n5.  **Dynamic Time-based Exits**: Making `MAX_BARS` more responsive to both low-volatility regimes and high-volatility trend expansions.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:14:55.951170",
+  "llm_cost": 0.008911,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 79,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "session_adaptive_relaxed_crossover",
+  "patch_description": "This program performs a crossover between the high-performing \"relaxed filter\" strategy (90.84 score) and the session-specific threshold logic from the inspiration programs. \n\nKey improvements:\n1.  **Session-Specific Thresholds**: Adapts the `base_thresh` for US (lower for volatility) and Asia (higher for noise filtering) sessions to optimize trade frequency and quality.\n2.  **Relaxed Microstructure Filters**: Adopts the broader filter boundaries (OBI, VWAP deviation, spread, and funding) from the 90.84-score program to maximize alpha capture while maintaining a safety floor.\n3.  **Liquidity Awareness**: Incorporates a subtle liquidity penalty to the entry threshold using Kyle's Lambda.\n4.  **Hybrid Risk Management**: Uses an optimized TP/SL ratio (0.0041/0.0031) derived from the most robust prior results.\n5.  **Adaptive Hold Time**: Combines trend strength and autocorrelation to extend the holding period to 5 bars during high-persistence regimes.\n6.  **Refined Sizing**: Uses a confidence-weighted position size anchored around the successful 0.13-0.14 range.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:14:23.189264",
+  "llm_cost": 0.0073625,
+  "llm_model": "gemini-3-flash-preview"
+}

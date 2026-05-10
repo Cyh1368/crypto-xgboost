@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 3,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "atr_dynamic_signal_logic",
+  "patch_description": "The program failed with an `AttributeError` related to module loading, which often points to systemic extraction or loading failures. This fix addresses both potential execution issues and the fitness issues (low trade count or risk management) common in seed programs. \n\nChanges applied:\n1.  **Robustness**: Relocated `numpy` and `math` imports inside the `generate_signal` block to ensure self-contained execution.\n2.  **Trend Filtering**: Integrated `ADX` to target trending markets (>20) and `RSI` to avoid overstretched entries (overbought/oversold).\n3.  **Volatility-Adjusted Stops**: Replaced static Take Profit and Stop Loss with ATR-based multipliers (3.0x and 1.5x ATR respectively), ensuring exits scale with market volatility.\n4.  **Risk-Adjusted Position Sizing**: Developed a position size formula that reduces exposure during high-volatility regimes (high ATR/Price ratio) to maintain consistent risk.\n5.  **Asymmetric Entry**: Refined the `predicted_return` thresholds to ensure a healthy trade frequency and minimize drawdown.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:28:52.668457",
+  "llm_cost": 0.004009,
+  "llm_model": "gemini-3-flash-preview"
+}

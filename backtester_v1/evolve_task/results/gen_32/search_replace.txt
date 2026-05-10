@@ -1,0 +1,130 @@
+<NAME>
+precision_thresholds_and_tight_risk
+</NAME>
+
+<DESCRIPTION>
+This update aims to push the performance closer to the high-Sharpe 'Seed' strategy by tightening entry thresholds and returning to the more robust risk management parameters (0.4% TP / 0.3% SL).
+
+Key changes:
+1.  **Raised Entry Thresholds**: Reverted focus to high-conviction predictions, using a range from 0.185% to 0.22% depending on the session (US vs. Asia) to improve trade quality and win rate.
+2.  **Stricter Microstructure Filters**: Narrowed the Order Book Imbalance (OBI) requirement (-0.25 to 0.25) and added a `realized_vol_ratio` filter to bypass periods of excessive volatility where XGBoost predictions often degrade.
+3.  **Liquidity Constraint**: Tightened the maximum allowable spread to 5 bps to ensure efficient execution.
+4.  **Optimized Risk/Reward**: Realigned TP/SL to the Seed's 40bps/30bps values which demonstrated superior Sharpe and Drawdown performance in previous iterations.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+
+    # 2. Dynamic Entry Thresholds
+    # Lower threshold slightly compared to seed to increase trade count,
+    # but adjust for session volatility.
+    base_thresh = 0.0018
+    if is_us:
+        base_thresh = 0.00165 # More vol in US, capture more moves
+    elif is_asia:
+        base_thresh = 0.0020  # Mean reversion likely, be pickier
+
+    signal = 0
+    # 3. Filtering Strategy (The "Safety Switches")
+    if predicted_return > base_thresh:
+        # Long filter: Avoid entering if OBI is heavily against us or price is too far above VWAP
+        if obi_tau5 > -0.6 and vwap_dev < 0.012 and spread_bps < 6.5:
+            # Further funding filter: avoid pays too much funding
+            if funding < 0.0005:
+                signal = 1
+
+    elif predicted_return < -base_thresh:
+        # Short filter: Avoid entering if OBI is heavily positive or price is too far below VWAP
+        if obi_tau5 < 0.6 and vwap_dev > -0.012 and spread_bps < 6.5:
+            if funding > -0.0005:
+                signal = -1
+
+    # 4. Position Sizing
+    # Target a slightly higher base size than seed (0.13) scaled by confidence.
+    if signal != 0:
+        confidence = abs(predicted_return) / 0.002
+        position_size = 0.135 * confidence
+        # Cap to prevent over-leverage
+        position_size = max(0.08, min(0.18, position_size))
+
+        # Volatility Sizing Adjustment: Reduce size if ATR is extremely high relative to price
+        atr_pct = (atr / close) if close > 0 else 0.002
+        if atr_pct > 0.008:
+            position_size *= 0.8
+    else:
+        position_size = 0.0
+
+    # 5. Risk Management (Optimized TP/SL)
+    # Using a robust 1.36 reward-to-risk ratio.
+    # Slightly wider than Seed to avoid getting stopped out by spikes.
+    take_profit = 0.0045
+    stop_loss = 0.0033
+
+    # 6. Adaptive Hold Time
+    # Standard exit is 4 bars (Seed's sweet spot).
+    # Extend to 5 if trending or strong positive autocorrelation is detected.
+    if abs(trend) > 0.6 or (is_us and autocorr > 0.1):
+        max_bars = 5
+    else:
+        max_bars = 4
+=======
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+    rv_ratio = bar_context.get('realized_vol_ratio', 1.0)
+
+    # 2. Dynamic Entry Thresholds
+    # Higher thresholds to improve win rate and Sharpe ratio.
+    base_thresh = 0.00195
+    if is_us:
+        base_thresh = 0.00185 # Capture high-volume moves
+    elif is_asia:
+        base_thresh = 0.0022  # More selective during lower volatility
+
+    signal = 0
+    # 3. Filtering Strategy (Stricter Microstructure & Liquidity)
+    # rv_ratio > 1.8 often indicates unstable/reversing regimes.
+    vol_regime_ok = rv_ratio < 1.7
+
+    if predicted_return > base_thresh and vol_regime_ok:
+        # Long filter: Tighter OBI and VWAP constraints
+        if obi_tau5 > -0.25 and vwap_dev < 0.009 and spread_bps < 5.0:
+            if funding < 0.0004:
+                signal = 1
+
+    elif predicted_return < -base_thresh and vol_regime_ok:
+        # Short filter: Avoid entering if OBI is biased for lungs/spread is wide
+        if obi_tau5 < 0.25 and vwap_dev > -0.009 and spread_bps < 5.0:
+            if funding > -0.0004:
+                signal = -1
+
+    # 4. Position Sizing
+    # Weighted by model return relative to 0.2% benchmark.
+    if signal != 0:
+        confidence = abs(predicted_return) / 0.002
+        position_size = 0.11 * confidence
+        # Moderate sizing with caps to control max drawdown
+        position_size = max(0.08, min(0.14, position_size))
+
+        # Reduce size in high-volatility environments relative to price as per ATR
+        atr_pct = (atr / close) if close > 0 else 0.002
+        if atr_pct > 0.007:
+            position_size *= 0.85
+    else:
+        position_size = 0.0
+
+    # 5. Risk Management (Optimized TP/SL)
+    # Returning to robust 4:3 reward-to-risk ratio from successful seed.
+    take_profit = 0.0040
+    stop_loss = 0.0030
+
+    # 6. Adaptive Hold Time
+    if abs(trend) > 0.65 and is_us:
+        max_bars = 5
+    else:
+        max_bars = 4
+>>>>>>> REPLACE
+</DIFF>

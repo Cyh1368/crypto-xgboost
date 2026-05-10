@@ -1,0 +1,67 @@
+<NAME>
+robust_vol_asymmetric_v2
+</NAME>
+
+<DESCRIPTION>
+The previous program failed during the module loading process, likely due to a failure to resolve external dependencies or handle transient context values in a self-contained manner during the evaluation's import phase. 
+
+The fix involves:
+1. Moving essential imports (numpy and math) inside the EVOLVE-BLOCK to ensure the code is self-contained.
+2. Replacing potential runtime failures with robust safety checks using a helper function `get_f` and `math.isfinite`.
+3. Retaining and refining the sophisticated volatility-adjusted logic:
+    - Normalizing thresholds and sizing based on ATR (as a percentage of price).
+    - Implementing asymmetric long/short rules (shorts are slightly harder to trigger and have smaller position sizes).
+    - Incorporating signal smoothing if prior predictions exist in the context.
+    - Adjusting take-profit, stop-loss, and trade duration based on trend strength (ADX) and volatility (ATR).
+4. Ensuring all return values are explicitly cast to standard types (int/float) to prevent validation errors.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+import math
+import numpy as np
+
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Expert trading signal generator incorporating XGBoost predictions,
+    volatility-adjusted entry/exit logic, and asymmetric risk management.
+    """
+    import math
+    import numpy as np
+
+    # Ensure predicted_return is valid
+    if not math.isfinite(predicted_return):
+        predicted_return = 0.0
+
+    # Safeguard context access
+    ctx = bar_context if bar_context is not None else {}
+
+    def get_f(key, default):
+        try:
+            val = ctx.get(key)
+            if val is None:
+                return float(default)
+            fval = float(val)
+            return fval if math.isfinite(fval) else float(default)
+        except:
+            return float(default)
+
+    # Core context values
+    close = get_f("close", 0.0)
+    atr = get_f("atr", 0.0)
+    rsi = get_f("rsi", 50.0)
+    adx = get_f("adx", 0.0)
+
+    # Normalization of volatility (as % of price)
+    atr_pct = (atr / close) if close > 0 else 0.002
+    atr_pct = max(0.0005, min(0.02, atr_pct))
+
+    # Signal smoothing with past predictions if available in bar_context
+    prev_pred = ctx.get("prev_predicted_return") or ctx

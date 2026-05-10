@@ -1,0 +1,61 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    High-frequency signal generator balancing model predictions with microstructure
+    safety filters and session-specific thresholds.
+    """
+    # 1. Context Extraction
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    obi_tau5 = bar_context.get('obi_tau5', 0.0)
+    spread_bps = bar_context.get('spread_bps', 1.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    atr = bar_context.get('atr_14', 0.002)
+    close = bar_context.get('close', 1.0)
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+
+    # 2. Entry Thresholds
+    # Reverting to the robust 0.002 anchor from the top-performing seed.
+    base_thresh = 0.002
+
+    signal = 0
+    # 3. Filtering Strategy
+    # Light microstructure filters to ensure quality without over-filtering high-edge signals.
+    if predicted_return > base_thresh:
+        if obi_tau5 > -0.5 and vwap_dev < 0.015 and spread_bps < 9.0:
+            if funding < 0.001:
+                signal = 1
+    elif predicted_return < -base_thresh:
+        if obi_tau5 < 0.5 and vwap_dev > -0.015 and spread_bps < 9.0:
+            if funding > -0.001:
+                signal = -1
+
+    # 4. Position Sizing
+    # Slightly more aggressive than seed (0.12 vs 0.10) to maximize return while keeping Sharpe high.
+    position_size = 0.12 if signal != 0 else 0.0
+
+    # 5. Risk Management
+    # Reverting to the seed's highly effective 0.004/0.003 parameters.
+    take_profit = 0.004
+    stop_loss = 0.003
+
+    # 6. Hold Time
+    # 4 bars (1 hour) is the optimal holding period for this 15m model.
+    max_bars = 4
+
+    return {
+        "signal": int(signal),
+        "position_size": float(round(position_size, 4)),
+        "take_profit": float(take_profit),
+        "stop_loss": float(stop_loss),
+        "max_bars": int(max_bars)
+    }
+# EVOLVE-BLOCK-END

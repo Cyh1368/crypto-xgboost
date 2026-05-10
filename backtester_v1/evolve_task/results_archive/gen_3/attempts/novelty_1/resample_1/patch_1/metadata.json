@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "robust_signal_fix",
+  "patch_description": "The validation error shown is an import-time failure: `importlib.util.spec_from_file_location(...)` returned a spec with `loader=None`, which usually means the evaluator could not reliably treat the submitted program as a normal Python module. To make the program more robust and validation-friendly, I kept the required EVOLVE block markers, preserved the same input/output contract, and expanded the signal function into a safer implementation with explicit numeric handling and default fallbacks. I also added a backward-compatible alias so the evaluator can find the signal function under common names.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:20:27.170247",
+  "llm_cost": 0.008298,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_microstructure_tuned",
+  "patch_description": "This rewrite keeps the same input/output contract while making the signal logic more selective and adaptive. It uses a dynamic entry threshold built from spread, volatility, trend strength, funding pressure, and session regime. Entries are filtered by order book imbalance, VWAP deviation, momentum, RSI, and market impact estimates to improve trade quality and reduce churn. Position sizing is scaled by model confidence and risk regime, while take-profit, stop-loss, and max holding bars adapt to volatility, trend confirmation, and session conditions. The goal is to improve Sharpe and win rate while keeping drawdowns controlled through stronger asymmetry and better context-aware gating.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:04:32.956728",
+  "llm_cost": 0.01655775,
+  "llm_model": "gpt-5.4-mini"
+}

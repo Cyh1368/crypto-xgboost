@@ -1,0 +1,99 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Combines high-precision thresholding with microstructure filters and 
+    volatility-adjusted exit logic.
+    """
+    import math
+    import numpy as np
+
+    def _get(key, default=0.0):
+        v = bar_context.get(key, default)
+        return default if v is None else v
+
+    # 1. Extract Core Context
+    # Microstructure
+    obi1 = float(_get("obi_tau1"))
+    obi3 = float(_get("obi_tau3"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+    
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    atr = float(_get("atr_14", _get("atr", 0.001)))
+    rsi14 = float(_get("rsi_14", 50.0))
+    trend = float(_get("trend_strength"))
+    
+    # Macro & Time
+    funding = float(_get("funding_rate"))
+    funding_ma = float(_get("funding_8h_ma"))
+    is_us = bool(_get("is_us_session", False))
+    is_weekend = bool(_get("is_weekend", False))
+
+    # 2. Regime & Quality Metrics
+    # micro_quality: positive means book supports long, negative supports short
+    micro_quality = 0.4 * obi1 + 0.3 * obi3 + 0.3 * book_pressure
+    
+    # vol_regime: > 1.0 means volatility is expanding
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+    
+    # 3. Signal Generation (Thresholds from high-performing seed)
+    LONG_THRESH = 0.0020
+    SHORT_THRESH = -0.0020
+    
+    signal = 0
+    # Filter: Ensure microstructure isn't heavily opposing the prediction
+    # Filter: Ensure we aren't buying into extreme funding
+    if predicted_return > LONG_THRESH:
+        if micro_quality > -0.25 and funding < 0.0005:
+            signal = 1
+    elif predicted_return < SHORT_THRESH:
+        if micro_quality < 0.25 and funding > -0.0005:
+            signal = -1
+
+    # 4. Dynamic Position Sizing
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size 0.10 from seed
+        base_size = 0.10
+        # Conviction boost
+        conviction = min(0.05, max(0.0, (abs(predicted_return) - 0.002) * 10.0))
+        # Quality boost
+        quality_adj = 0.02 if (signal * micro_quality) > 0.1 else 0.0
+        # Session adjustments
+        session_adj = 0.01 if is_us else (-0.02 if is_weekend else 0.0)
+        
+        position_size = float(max(0.05, min(0.20, base_size + conviction + quality_adj + session_adj)))
+
+    # 5. Volatility-Adjusted Exits
+    # Base TP 0.004, SL 0.003 from seed
+    # Scale by vol_regime but keep it anchored
+    vol_scalar = 0.8 + 0.4 * (vol_regime - 0.5) # Maps 0.5-2.0 to 0.8-1.4
+    
+    take_profit = float(0.004 * vol_scalar)
+    stop_loss = float(0.003 * vol_scalar)
+    
+    # 6. Time-based Exit
+    # Base 4 bars from seed, adjust slightly for trend
+    max_bars = 4
+    if abs(trend) > 0.2:
+        max_bars = 5
+    if is_weekend or vol_regime > 1.5:
+        max_bars = 3
+
+    return {
+        "signal":        int(signal),
+        "position_size": float(position_size),
+        "take_profit":   float(take_profit),
+        "stop_loss":     float(stop_loss),
+        "max_bars":      int(max_bars),
+    }
+# EVOLVE-BLOCK-END

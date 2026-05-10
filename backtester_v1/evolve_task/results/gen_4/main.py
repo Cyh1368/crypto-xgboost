@@ -1,0 +1,169 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Context-aware asymmetric trading signal generator.
+    """
+    import math
+    import numpy as np
+
+    def _get(key, default=0.0):
+        v = bar_context.get(key, default)
+        return default if v is None else v
+
+    # Core inputs
+    obi1 = float(_get("obi_tau1"))
+    obi3 = float(_get("obi_tau3"))
+    obi5 = float(_get("obi_tau5"))
+    obi10 = float(_get("obi_tau10"))
+    spread_bps = float(_get("spread_bps"))
+    depth5 = float(_get("depth_ratio_5", _get("depth_ratio5", 1.0)))
+    depth10 = float(_get("depth_ratio_10", _get("depth_ratio10", 1.0)))
+    book_pressure = float(_get("book_pressure_3"))
+    kyle_lambda = abs(float(_get("kyle_lambda_est")))
+
+    ret1 = float(_get("ret_1"))
+    ret3 = float(_get("ret_3"))
+    ret6 = float(_get("ret_6"))
+    ret12 = float(_get("ret_12"))
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    vol60 = max(float(_get("vol_60")), 1e-8)
+    rsi14 = float(_get("rsi_14", _get("rsi", 50.0)))
+    rsi6 = float(_get("rsi_6", rsi14))
+    macd_signal = float(_get("macd_signal"))
+    bb_pct = float(_get("bb_pct", 0.5))
+    atr = max(float(_get("atr_14", _get("atr", 0.0))), 1e-8)
+    momentum = float(_get("momentum", _get("momentum_bar")))
+    wick_up = float(_get("wick_ratio_up"))
+    wick_down = float(_get("wick_ratio_down"))
+    vol_ratio5 = float(_get("volume_ratio_5", 1.0))
+    vol_ratio20 = float(_get("volume_ratio_20", 1.0))
+    vwap_dev = float(_get("vwap_dev"))
+    autocorr5 = float(_get("autocorr_5"))
+    skew = float(_get("skew_20"))
+    kurt = float(_get("kurt_20"))
+    trend = float(_get("trend_strength"))
+    funding = float(_get("funding_rate"))
+    funding_ma = float(_get("funding_8h_ma"))
+    minutes_to_funding = float(_get("minutes_to_funding", 999.0))
+    is_asia = bool(_get("is_asia_session", False))
+    is_us = bool(_get("is_us_session", False))
+    is_weekend = bool(_get("is_weekend", False))
+
+    # Regime quality and cost filters
+    micro_obi = 0.35 * obi1 + 0.25 * obi3 + 0.20 * obi5 + 0.20 * obi10
+    micro_quality = 0.55 * micro_obi + 0.25 * book_pressure + 0.20 * (depth5 - 1.0) + 0.15 * (depth10 - 1.0)
+    cost_penalty = 0.012 * spread_bps + 0.35 * kyle_lambda
+    vol_regime = 0.5 * (vol5 / vol20) + 0.5 * (vol20 / vol60)
+    vol_regime = max(0.5, min(2.5, vol_regime))
+    churn_penalty = 0.15 * abs(autocorr5) + 0.10 * max(0.0, kurt - 3.0) + 0.05 * abs(skew)
+
+    # Directional confirmation
+    short_mom = 0.45 * ret1 + 0.30 * ret3 + 0.25 * ret6
+    medium_mom = 0.40 * ret6 + 0.35 * ret12 + 0.25 * trend
+    rsi_bias = (50.0 - rsi14) / 50.0
+    rsi6_bias = (50.0 - rsi6) / 50.0
+    mean_revert_long = (bb_pct < 0.18 and vwap_dev < -0.0015 and rsi14 < 38.0)
+    mean_revert_short = (bb_pct > 0.82 and vwap_dev > 0.0015 and rsi14 > 62.0)
+
+    funding_long_ok = (funding <= funding_ma) or (funding < 0.0)
+    funding_short_ok = (funding >= funding_ma) or (funding > 0.0)
+    near_funding_penalty = 0.20 if minutes_to_funding < 25.0 else 0.0
+    weekend_penalty = 0.20 if is_weekend else 0.0
+    session_boost = 0.12 if is_us else (0.05 if is_asia else 0.0)
+
+    long_score = (
+        predicted_return
+        + 0.40 * micro_quality
+        + 0.25 * medium_mom
+        + 0.12 * rsi_bias
+        + 0.10 * rsi6_bias
+        + 0.10 * macd_signal
+        + 0.10 * trend
+        + 0.08 * max(0.0, -vwap_dev)
+        + 0.06 * max(0.0, 0.5 - bb_pct)
+        + session_boost
+        - cost_penalty
+        - churn_penalty
+        - near_funding_penalty
+        - weekend_penalty
+    )
+
+    short_score = (
+        -predicted_return
+        - 0.40 * micro_quality
+        - 0.25 * medium_mom
+        - 0.12 * rsi_bias
+        - 0.10 * rsi6_bias
+        - 0.10 * macd_signal
+        - 0.10 * trend
+        - 0.08 * max(0.0, vwap_dev)
+        - 0.06 * max(0.0, bb_pct - 0.5)
+        + session_boost
+        - cost_penalty
+        - churn_penalty
+        - near_funding_penalty
+        - weekend_penalty
+    )
+
+    # Asymmetric entry thresholds adapt to regime quality and execution cost
+    base_thresh = 0.0018 + 0.0006 * max(0.0, spread_bps / 10.0) + 0.0007 * max(0.0, kyle_lambda)
+    threshold_adj = 0.0008 * (vol_regime - 1.0) + 0.0006 * max(0.0, churn_penalty)
+    long_thresh = base_thresh + threshold_adj - 0.0006 * micro_quality
+    short_thresh = -(base_thresh + threshold_adj - 0.0004 * micro_quality)
+
+    signal = 0
+    edge = 0.0
+
+    if long_score > long_thresh and (predicted_return > 0.0 or mean_revert_long) and funding_long_ok:
+        signal = 1
+        edge = long_score - long_thresh
+    elif short_score > abs(short_thresh) and (predicted_return < 0.0 or mean_revert_short) and funding_short_ok:
+        signal = -1
+        edge = short_score - abs(short_thresh)
+
+    # Position sizing: stronger edge, tighter costs, and better liquidity => larger size
+    if signal == 0:
+        position_size = 0.0
+    else:
+        quality = max(0.0, min(1.0, 0.5 + 0.18 * micro_quality - 0.10 * cost_penalty - 0.08 * churn_penalty))
+        conviction = max(0.0, min(1.0, edge / 0.004))
+        size = 0.04 + 0.16 * conviction * quality
+        if mean_revert_long or mean_revert_short:
+            size *= 0.85
+        if is_weekend:
+            size *= 0.80
+        position_size = float(max(0.02, min(0.22, size)))
+
+    # Volatility-adjusted exits
+    atr_pct = atr / max(1.0, abs(vwap_dev) + 1.0)
+    tp_mult = 1.6 if signal == 1 else 1.5
+    sl_mult = 1.0 if signal == 1 else 1.05
+    base_move = max(0.0025, min(0.012, 0.0028 + 0.75 * (vol5 / vol20) * 0.002 + 0.5 * atr_pct * 0.01))
+    take_profit = float(base_move * tp_mult)
+    stop_loss = float(base_move * sl_mult)
+
+    max_bars = 5
+    if vol_regime > 1.2 or cost_penalty > 0.03:
+        max_bars = 3
+    elif trend > 0.15 and micro_quality > 0.2:
+        max_bars = 6
+    if mean_revert_long or mean_revert_short:
+        max_bars = min(max_bars, 3)
+    if is_weekend:
+        max_bars = min(max_bars, 3)
+
+    return {
+        "signal":        signal,
+        "position_size": position_size,
+        "take_profit":   take_profit,
+        "stop_loss":     stop_loss,
+        "max_bars":      int(max_bars),
+    }
+# EVOLVE-BLOCK-END

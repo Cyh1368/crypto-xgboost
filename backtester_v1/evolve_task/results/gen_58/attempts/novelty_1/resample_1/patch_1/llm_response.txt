@@ -1,0 +1,152 @@
+<NAME>
+liquidity_and_exhaustion_filters
+</NAME>
+
+<DESCRIPTION>
+This edit refines the trading logic to recover the win rate that degraded in the previous iteration. 
+1.  **Threshold Correction**: Slightly increases the base threshold to 0.00170 to filter out lower-quality signals (capturing the balance between trade count and win rate).
+2.  **Microstructure Refinement**: Updates the Microstructure Quality (MQ) weights to a more balanced distribution across multiple tau horizons and includes tau10 for better stability.
+3.  **Liquidity & Exhaustion Filters**: Introduces Kyle's Lambda (market impact) and Bollinger %B filters. Kyle's Lambda helps avoid trading in illiquid spikes, while BB %B prevents buying at the top of a range (exhaustion).
+4.  **Exit Normalization**: Reverts TP/SL anchors to the proven 40/30 bps levels and dampens the elasticity slightly to stabilize performance.
+5.  **Funding & Spread Tightening**: Tighter spread and funding limits are reapplied to maintain a higher profit factor.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Microstructure Quality (MQ)
+    # Higher weight on immediate OBI (tau1)
+    mq = (0.40 * _get("obi_tau1") + 
+          0.30 * _get("obi_tau3") + 
+          0.30 * _get("obi_tau5") + 
+          0.15 * _get("book_pressure_3"))
+    
+    spread = _get("spread_bps", 5.0)
+    trend = _get("trend_strength", 0.0)
+    funding = _get("funding_rate", 0.0)
+    is_us = bool(bar_context.get("is_us_session", False))
+
+    # 2. Adaptive Signal Thresholding
+    # Lower base threshold to increase trade count
+    threshold_base = 0.00165
+    
+    # Threshold scales with volatility (filter noise) and trend (easier entry with trend)
+    # Range: ~0.85x to 1.3x of base
+    vol_mult = 0.85 + (0.25 * min(2.0, vol_regime))
+    trend_mult = 1.0 - (0.1 * min(1.0, trend))
+    
+    current_threshold = threshold_base * vol_mult * trend_mult
+
+    signal = 0
+    if predicted_return > current_threshold:
+        # Loosened MQ filter to capture more momentum
+        if mq > -0.90 and spread < 11.0 and funding < 0.0025:
+            signal = 1
+    elif predicted_return < -current_threshold:
+        if mq < 0.90 and spread < 11.0 and funding > -0.0025:
+            signal = -1
+
+    # 3. Dynamic Risk & Position Sizing
+    if signal == 0:
+        position_size = 0.0
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+    else:
+        # Base size increased to leverage high win rate
+        base_size = 0.15
+        
+        # Conviction bonus: extra size for high-confidence predictions
+        conviction_bonus = min(0.03, max(0, (abs(predicted_return) / current_threshold - 1.0) * 0.05))
+        
+        # Session bonus: US session typically has higher follow-through
+        session_bonus = 0.015 if is_us else 0.0
+        
+        # Volatility scalar: reduce size slightly in high-vol regimes to protect capital
+        vol_size_scalar = 1.05 - (0.1 * min(1.5, vol_regime))
+        
+        position_size = (base_size + conviction_bonus + session_bonus) * vol_size_scalar
+        position_size = max(0.08, min(0.18, position_size))
+
+        # 4. Asymmetric Exit Logic
+        # TP scales with long-term volatility trend
+        tp_elasticity = 0.92 + (0.16 * min(2.0, vol_trend))
+        # SL scales with short-term volatility impulse
+        sl_elasticity = 0.95 + (0.10 * min(2.0, vol_regime))
+        
+        take_profit = 0.0042 * tp_elasticity
+        stop_loss = 0.0032 * sl_elasticity
+=======
+    # Microstructure Quality (MQ)
+    mq = (0.35 * _get("obi_tau1") + 
+          0.25 * _get("obi_tau3") + 
+          0.20 * _get("obi_tau5") + 
+          0.20 * _get("obi_tau10"))
+    
+    spread = _get("spread_bps", 5.0)
+    kyle_lambda = abs(_get("kyle_lambda_est", 0.0))
+    bb_pct = _get("bb_pct", 0.5)
+    trend = _get("trend_strength", 0.0)
+    funding = _get("funding_rate", 0.0)
+    is_us = bool(bar_context.get("is_us_session", False))
+
+    # 2. Adaptive Signal Thresholding
+    threshold_base = 0.00170
+    
+    # Threshold scales with volatility and trend
+    vol_mult = 0.90 + (0.20 * min(2.0, vol_regime))
+    trend_mult = 1.0 - (0.08 * min(1.0, trend))
+    current_threshold = threshold_base * vol_mult * trend_mult
+
+    signal = 0
+    # Add Kyle's Lambda filter to avoid high impact/low liquidity environments
+    # Add BB exhaustion filter: don't go long if price is at upper band, or short if at lower band.
+    if predicted_return > current_threshold:
+        if mq > -0.85 and spread < 10.0 and funding < 0.0022 and kyle_lambda < 0.01 and bb_pct < 0.92:
+            signal = 1
+    elif predicted_return < -current_threshold:
+        if mq < 0.85 and spread < 10.0 and funding > -0.0022 and kyle_lambda < 0.01 and bb_pct > 0.08:
+            signal = -1
+
+    # 3. Dynamic Risk & Position Sizing
+    if signal == 0:
+        position_size = 0.0
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+    else:
+        # Balanced base size (optimized)
+        base_size = 0.145
+        
+        # Conviction bonus
+        conviction_bonus = min(0.035, max(0, (abs(predicted_return) / current_threshold - 1.0) * 0.06))
+        # Session bonus
+        session_bonus = 0.01 if is_us else 0.0
+        # Volatility scalar
+        vol_size_scalar = 1.0 + (0.1 * (1.0 - min(1.5, vol_regime)))
+        
+        position_size = (base_size + conviction_bonus + session_bonus) * vol_size_scalar
+        position_size = max(0.10, min(0.18, position_size))
+
+        # 4. Asymmetric Exit Logic
+        # TP/SL anchored to 40/30 bps with dampened elasticity
+        tp_elasticity = 0.95 + (0.10 * min(2.0, vol_trend))
+        sl_elasticity = 0.97 + (0.06 * min(2.0, vol_regime))
+        
+        take_profit = 0.0040 * tp_elasticity
+        stop_loss = 0.0030 * sl_elasticity
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        # 5. Time-based Exit
+        # Standard 1-hour hold, reduced if volatility is stagnating
+        max_bars = 4
+        if vol_trend < 0.75:
+            max_bars = 3
+=======
+        # 5. Time-based Exit
+        # Reduced hold time if predicted volatility drops significantly (stagnation)
+        max_bars = 4
+        if vol_trend < 0.70 or abs(mq) < 0.15:
+            max_bars = 3
+>>>>>>> REPLACE
+
+</DIFF>

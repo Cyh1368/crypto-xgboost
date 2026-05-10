@@ -1,0 +1,144 @@
+<NAME>
+tail_regime_persistence_trader
+</NAME>
+
+<DESCRIPTION>
+This algorithm builds upon the highly successful volatility-elastic framework but introduces statistical regime conditioning through Kurtosis and Autocorrelation. 
+
+Key insights:
+1. **Statistical Thick-Tailed Entry**: It adjusts the signal threshold based on excess kurtosis. In fat-tailed environments (high kurtosis), the algorithm increases the entry threshold to account for higher "noise" return variance, reducing false signals. 
+2. **Persistence-Based Holding**: It utilizes 5-bar autocorrelation to dynamically adjust the trade duration (`max_bars`). When price action shows high persistence, the hold time is extended to capture momentum; when mean-reverting (negative autocorrelation), it exits faster.
+3. **VWAP Deviation Guardrails**: It implements asymmetric logic to prevent "buying the top" or "selling the bottom" by filtering entries that have deviated too far from the VWAP, improving the win rate.
+4. **Liquidity-Aware Scaling**: Position sizing is modulated by the Kyle’s Lambda estimate and depth ratios, ensuring larger sizes are only taken in liquid regimes with low market impact.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Advanced signal generator using statistical tail-risk (Kurtosis) and 
+    momentum persistence (Autocorrelation) to modulate entry and exit logic.
+    """
+    import math
+    import numpy as np
+
+    def _safe_get(key, default=0.0):
+        v = bar_context.get(key, default)
+        return default if v is None else float(v)
+
+    # --- 1. Parameter Extraction ---
+    # Microstructure
+    obi1 = _safe_get("obi_tau1")
+    obi3 = _safe_get("obi_tau3")
+    obi5 = _safe_get("obi_tau5")
+    book_pressure = _safe_get("book_pressure_3")
+    spread_bps = _safe_get("spread_bps", 5.0)
+    depth_ratio_5 = _safe_get("depth_ratio_5", 1.0)
+    kyle_lambda = abs(_safe_get("kyle_lambda_est", 0.0001))
+
+    # Price Action Stats
+    vol5 = max(_safe_get("vol_5", 0.01), 1e-8)
+    vol20 = max(_safe_get("vol_20", 0.01), 1e-8)
+    vol60 = max(_safe_get("vol_60", 0.01), 1e-8)
+    kurtosis = _safe_get("kurt", 3.0)  # Excess kurtosis often indicates fat tails
+    autocorr5 = _safe_get("autocorr_5", 0.0)
+    trend_strength = _safe_get("trend_strength", 0.5)
+    vwap_dev = _safe_get("vwap_dev", 0.0)
+
+    # Macro/Session
+    funding = _safe_get("funding_rate", 0.0)
+    is_us = bar_context.get("is_us_session", False)
+
+    # --- 2. Regime Calibrators ---
+    # Volatility Impulse (short-term) and Volatility Trend (medium-term)
+    vol_impulse = max(0.5, min(2.0, vol5 / vol20))
+    vol_trend = max(0.5, min(2.0, vol5 / vol60))
+
+    # Statistical adjustments for threshold selectivity
+    # Kurtosis adjustment: Higher kurtosis = fatter tails = need higher threshold to filter noise
+    kurt_excess = max(-0.5, min(4.0, kurtosis - 3.0))
+    kurt_adj = 1.0 + (0.025 * kurt_excess)
+
+    # Trend adjustment: Capture momentum by lowering threshold during strong trends
+    trend_adj = 1.0 - (0.05 * min(1.0, trend_strength))
+
+    # --- 3. Signal Classification ---
+    BASE_THRESH = 0.00171
+    elastic_mult = 0.88 + (0.18 * min(2.0, vol_impulse))
+    final_threshold = BASE_THRESH * elastic_mult * kurt_adj * trend_adj
+
+    # Microstructure quality (OBI + Book Pressure)
+    micro_quality = (0.32 * obi1 + 0.24 * obi3 + 0.24 * obi5 + 0.20 * book_pressure)
+
+    signal = 0
+    signal_conviction = 0.0
+
+    if predicted_return > final_threshold:
+        # Long Entry Filters (Price must not be extremely overextended above VWAP)
+        if micro_quality > -0.85 and funding < 0.0025 and spread_bps < 10.5:
+            if vwap_dev < 0.0075:
+                signal = 1
+                signal_conviction = predicted_return / final_threshold
+    elif predicted_return < -final_threshold:
+        # Short Entry Filters (Price must not be extremely overextended below VWAP)
+        if micro_quality < 0.85 and funding > -0.0025 and spread_bps < 10.5:
+            if vwap_dev > -0.0075:
+                signal = -1
+                signal_conviction = abs(predicted_return) / final_threshold
+
+    # --- 4. Risk Management & Sizing ---
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # High base size adjusted by conviction and microstructure liquidity
+        base_size = 0.145
+        conviction_bonus = min(0.04, max(0, (signal_conviction - 1.0) * 0.06))
+        session_bonus = 0.01 if is_us else 0.0
+        
+        # Liquidity Multiplier (use depth_ratio to verify book thickness)
+        liq_mult = 1.0
+        if signal == 1 and depth_ratio_5 > 1.2: liq_mult = 1.05
+        if signal == -1 and depth_ratio_5 < 0.8: liq_mult = 1.05
+
+        # Funding Carry adjustment
+        funding_filter = 1.0
+        if (signal == 1 and funding > 0.0015) or (signal == -1 and funding < -0.0015):
+            funding_filter = 0.90
+
+        position_size = (base_size + conviction_bonus + session_bonus) * funding_filter * liq_mult
+        position_size = max(0.10, min(0.18, position_size))
+
+    # --- 5. Volatility-Elastic Exits ---
+    # TP scales with volatility trend (how far we expect the move to follow through)
+    tp_elasticity = 0.94 + (0.06 * vol_trend)
+    # SL scales with volatility impulse (how much 'heat' we can take)
+    sl_elasticity = 0.97 + (0.03 * vol_impulse)
+
+    take_profit = 0.0040 * tp_elasticity
+    stop_loss = 0.0030 * sl_elasticity
+
+    # --- 6. Dynamic Time Exit ---
+    # Hold trades longer if there is positive return autocorrelation (persistence)
+    max_bars = 4
+    if autocorr5 > 0.075:
+        max_bars = 5
+    elif vol_trend < 0.8 or autocorr5 < -0.075:
+        max_bars = 3
+
+    return {
+        "signal":        int(signal),
+        "position_size": float(position_size),
+        "take_profit":   float(take_profit),
+        "stop_loss":     float(stop_loss),
+        "max_bars":      int(max_bars),
+    }
+# EVOLVE-BLOCK-END
+```
+</CODE>

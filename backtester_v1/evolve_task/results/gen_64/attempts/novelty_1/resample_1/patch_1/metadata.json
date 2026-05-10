@@ -1,0 +1,14 @@
+{
+  "generation": 64,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "elastic_volatility_and_conviction_sizing",
+  "patch_description": "This edit improves the signal generation and execution logic by incorporating several high-performance features from the best-performing seeds:\n1.  **Elastic Thresholding**: Replaces the static volatility-adjusted threshold with an elastic multiplier that scales more dynamically with the volatility impulse (vol_5 / vol_20).\n2.  **Refined Microstructure Weights**: Updates the weights for OBI and book pressure to the optimized values (0.32, 0.24, 0.24, 0.20).\n3.  **Conviction-Based Sizing**: Introduces a continuous conviction ratio (predicted_return / threshold) to scale position sizes more granularly, replacing the binary conviction boost.\n4.  **Volatility-Elastic Exits**: Adjusts take-profit and stop-loss levels based on both short-term volatility impulse and long-term volatility trends (vol_5 / vol_60).\n5.  **Dynamic Time Horizon**: Reduces the max_bars from 4 to 3 when volatility is trending downwards, mitigating stagnation risk.\n6.  **Relaxed Filters**: Slightly loosens the spread and funding filters to increase trade frequency while maintaining high quality.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:10:12.720919",
+  "llm_cost": 0.008288,
+  "llm_model": "gemini-3-flash-preview"
+}

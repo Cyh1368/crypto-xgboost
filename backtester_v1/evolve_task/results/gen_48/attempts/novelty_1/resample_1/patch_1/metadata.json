@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "simplify_and_increase_frequency",
+  "patch_description": "The current program's performance (46.27) is significantly lower than the seed program (80.50), primarily due to a lower trade frequency (277 vs 462) and a lower win rate (0.75 vs 0.78). This suggests that the added microstructure filters (VWAP deviation, funding, and tight OBI) are overly restrictive and potentially filtering out high-quality trades.\n\nThis edit proposes:\n1. Lowering the entry threshold to 0.0017 to increase trade frequency.\n2. Relaxing the OBI filter and widening the VWAP deviation filter to allow more momentum-driven trades.\n3. Adding a light RSI filter to avoid entering at extreme exhaustion levels.\n4. Simplifying the TP/SL logic to use seed-inspired base values (0.0042/0.0030) with a dampened volatility adjustment.\n5. Using a stable, fixed position size (0.12) to improve the Sharpe ratio.\n6. Simplifying the max_bars logic to favor the seed's robust 4-bar exit, with a slight extension for US sessions.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:02:41.652515",
+  "llm_cost": 0.006297,
+  "llm_model": "gemini-3-flash-preview"
+}

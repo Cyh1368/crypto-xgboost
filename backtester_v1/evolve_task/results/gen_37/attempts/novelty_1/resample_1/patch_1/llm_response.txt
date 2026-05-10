@@ -1,0 +1,112 @@
+<NAME>
+tighten_thresholds_and_filters
+</NAME>
+
+<DESCRIPTION>
+The current program's lower entry thresholds and aggressive position sizing led to a significant drop in Sharpe ratio and an increase in Max Drawdown compared to the seed. This edit reverts the base entry thresholds closer to the seed's robust 0.002 level (with minor session adjustments), tightens the microstructure filters (OBI and spread) to improve trade quality, and stabilizes position sizing at 0.11 (scaled slightly by model confidence) to protect capital. It also aligns the take-profit and stop-loss levels with the seed's successful 0.004/0.003 profile.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Dynamic Entry Thresholds
+    # Lower threshold slightly compared to seed to increase trade count, 
+    # but adjust for session volatility.
+    base_thresh = 0.0018
+    if is_us:
+        base_thresh = 0.00165 # More vol in US, capture more moves
+    elif is_asia:
+        base_thresh = 0.0020  # Mean reversion likely, be pickier
+
+    signal = 0
+    # 3. Filtering Strategy (The "Safety Switches")
+    if predicted_return > base_thresh:
+        # Long filter: Avoid entering if OBI is heavily against us or price is too far above VWAP
+        if obi_tau5 > -0.6 and vwap_dev < 0.012 and spread_bps < 6.5:
+            # Further funding filter: avoid pays too much funding
+            if funding < 0.0005:
+                signal = 1
+                
+    elif predicted_return < -base_thresh:
+        # Short filter: Avoid entering if OBI is heavily positive or price is too far below VWAP
+        if obi_tau5 < 0.6 and vwap_dev > -0.012 and spread_bps < 6.5:
+            if funding > -0.0005:
+                signal = -1
+
+    # 4. Position Sizing
+    # Target a slightly higher base size than seed (0.13) scaled by confidence.
+    if signal != 0:
+        confidence = abs(predicted_return) / 0.002
+        position_size = 0.135 * confidence
+        # Cap to prevent over-leverage
+        position_size = max(0.08, min(0.18, position_size))
+        
+        # Volatility Sizing Adjustment: Reduce size if ATR is extremely high relative to price
+        atr_pct = (atr / close) if close > 0 else 0.002
+        if atr_pct > 0.008:
+            position_size *= 0.8
+    else:
+        position_size = 0.0
+
+    # 5. Risk Management (Optimized TP/SL)
+    # Using a robust 1.36 reward-to-risk ratio.
+    # Slightly wider than Seed to avoid getting stopped out by spikes.
+    take_profit = 0.0045
+    stop_loss = 0.0033
+    
+    # 6. Adaptive Hold Time
+    # Standard exit is 4 bars (Seed's sweet spot). 
+    # Extend to 5 if trending or strong positive autocorrelation is detected.
+    if abs(trend) > 0.6 or (is_us and autocorr > 0.1):
+        max_bars = 5
+    else:
+        max_bars = 4
+=======
+    # 2. Dynamic Entry Thresholds
+    # Reverting to a more robust threshold similar to the seed (0.002)
+    # while maintaining a slight session-based adjustment.
+    base_thresh = 0.00195
+    if is_us:
+        base_thresh = 0.00190 # Slightly more aggressive in US
+    elif is_asia:
+        base_thresh = 0.00210 # More conservative in Asia
+
+    signal = 0
+    # 3. Filtering Strategy (The "Safety Switches")
+    # Tightened filters to improve win rate and reduce drawdown.
+    if predicted_return > base_thresh:
+        # Long filter: Require better OBI support and reasonable VWAP deviation
+        if obi_tau5 > -0.25 and vwap_dev < 0.009 and spread_bps < 5.0:
+            if funding < 0.0004:
+                signal = 1
+    elif predicted_return < -base_thresh:
+        # Short filter: Require better OBI support and reasonable VWAP deviation
+        if obi_tau5 < 0.25 and vwap_dev > -0.009 and spread_bps < 5.0:
+            if funding > -0.0004:
+                signal = -1
+
+    # 4. Position Sizing
+    # Stabilized base size at 0.11 to protect Sharpe and Max DD.
+    if signal != 0:
+        confidence = abs(predicted_return) / 0.002
+        position_size = 0.11 * max(0.9, min(1.15, confidence))
+        
+        # Volatility Sizing Adjustment: Reduce size if ATR is high relative to price
+        atr_pct = (atr / close) if close > 0 else 0.002
+        if atr_pct > 0.0075:
+            position_size *= 0.85
+    else:
+        position_size = 0.0
+
+    # 5. Risk Management (Optimized TP/SL)
+    # Reverting to Seed's 0.004/0.003 ratio which showed superior stability.
+    take_profit = 0.0040
+    stop_loss = 0.0030
+    
+    # 6. Adaptive Hold Time
+    # Standard exit is 4 bars. Extend only if trend is strongly confirming the signal.
+    if (signal * trend) > 0.5:
+        max_bars = 5
+    else:
+        max_bars = 4
+>>>>>>> REPLACE
+</DIFF>

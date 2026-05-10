@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_context_filter",
+  "patch_description": "This edit replaces the fixed-threshold, fixed-size logic with a context-aware asymmetric signal engine. It uses predicted_return as the base edge, then tightens or loosens entry criteria using microstructure quality (spread, OBI, book pressure, Kyle lambda), volatility regime (ATR, vol ratios, bb_pct), trend confirmation, funding pressure, and session timing. Position size is scaled by edge quality and penalized in noisy/high-cost regimes. Take-profit, stop-loss, and max_bars are adapted to volatility and expected regime persistence. This should improve Sharpe and Calmar by reducing trades in adverse conditions while keeping larger exposure when multiple signals align.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:42:03.985995",
+  "llm_cost": 0.01446975,
+  "llm_model": "gpt-5.4-mini"
+}

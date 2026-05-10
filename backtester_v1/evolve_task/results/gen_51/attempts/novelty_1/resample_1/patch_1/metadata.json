@@ -1,0 +1,14 @@
+{
+  "generation": 51,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "reanchor_to_seed_simplicity",
+  "patch_description": "The current program's performance (48.01) is significantly lower than the seed program's performance (80.50). The seed's strength lies in its simplicity: a clean 0.002 threshold, fixed 0.004/0.003 TP/SL, and a consistent 10% position size. The current program's \"refined\" filters (RSI, funding, trend-based TP/SL) are too restrictive, cutting the trade count from 462 to 291 and reducing the Sharpe ratio.\n\nThis edit re-anchors the logic to the seed's core parameters while adding two light microstructure filters (OBI and spread) to improve the win rate. By using a slightly more sensitive threshold (0.0019) and loose filters, we aim to maintain a high trade frequency while benefiting from better entry quality.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:05:14.920077",
+  "llm_cost": 0.0068915,
+  "llm_model": "gemini-3-flash-preview"
+}

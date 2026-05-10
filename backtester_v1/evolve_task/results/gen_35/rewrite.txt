@@ -1,0 +1,95 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Combines session-specific volatility filters, microstructure-based entry hurdles, 
+    and adaptive ATR risk management.
+    """
+    # 1. Parameter Extraction
+    close = bar_context.get('close', 1.0)
+    atr = bar_context.get('atr_14', 0.002)
+    obi = bar_context.get('obi_tau5', 0.0)
+    vol_ratio = bar_context.get('realized_vol_ratio', 1.0)
+    kyle_lambda = bar_context.get('kyle_lambda_est', 0.0)
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    
+    # 2. Dynamic Threshold Logic
+    # Balancing the high-performing Seed (0.002) with liquidity-based penalties
+    base_thresh = 0.0019
+    if is_us:
+        base_thresh = 0.00175  # Lower threshold for high-vol session
+    elif is_asia:
+        base_thresh = 0.0021   # Higher threshold for lower-vol mean-reverting session
+    
+    # Add a penalty for poor liquidity (estimated impact via Kyle's Lambda)
+    liquidity_impact = max(0.0, min(0.0003, kyle_lambda * 35.0))
+    entry_hurdle = base_thresh + liquidity_impact
+
+    # 3. Execution Signal Logic with Microstructure Filters
+    signal = 0
+    if predicted_return > entry_hurdle:
+        # Long filter: check OBI momentum, VWAP extension, and Funding costs
+        if obi > -0.5 and vwap_dev < 0.01 and funding < 0.0006:
+            signal = 1
+    elif predicted_return < -entry_hurdle:
+        # Short filter: check OBI momentum, VWAP extension, and Funding costs
+        if obi < 0.5 and vwap_dev > -0.01 and funding > -0.0006:
+            signal = -1
+
+    # 4. Adaptive Position Sizing
+    # Scaled by confidence (relative to thresh) and the current market volatility ratio
+    if signal != 0:
+        confidence_mult = abs(predicted_return) / entry_hurdle
+        # vol_ratio > 1 means recent vol is higher than long term
+        vol_adj = max(0.8, min(1.2, 1.0 / vol_ratio)) if vol_ratio > 0 else 1.0
+        
+        position_size = 0.125 * confidence_mult * vol_adj
+        position_size = max(0.07, min(0.19, position_size))
+    else:
+        position_size = 0.0
+
+    # 5. Volatility-Adjusted Risk Targets (TP/SL)
+    # Anchored near the robust 0.004 / 0.003 seed parameters
+    if signal != 0:
+        atr_pct = (atr / close) if close > 0 else 0.003
+        
+        # Base multipliers
+        tp_mult = 1.42 
+        sl_mult = 1.05
+        
+        # Expand take-profit during trending markets
+        if (signal == 1 and trend > 0.3) or (signal == -1 and trend < -0.3):
+            tp_mult *= 1.15
+            sl_mult *= 0.95 # Slightly tighter stop in clear trend
+            
+        take_profit = max(0.0038, min(0.012, atr_pct * tp_mult))
+        stop_loss = max(0.0028, min(0.008, atr_pct * sl_mult))
+    else:
+        take_profit = 0.0
+        stop_loss = 0.0
+
+    # 6. Optimized Hold Time
+    # Default 4 bars (standard for 15m), extending to 5 for high persistence/autocorr
+    if abs(autocorr) > 0.15 or abs(trend) > 0.5:
+        max_bars = 5
+    else:
+        max_bars = 4
+
+    return {
+        "signal": int(signal),
+        "position_size": float(round(position_size, 4)),
+        "take_profit": float(round(take_profit, 5)),
+        "stop_loss": float(round(stop_loss, 5)),
+        "max_bars": int(max_bars),
+    }
+# EVOLVE-BLOCK-END

@@ -1,0 +1,105 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Seed trading signal generator.
+    Args:
+        predicted_return: float, model's predicted 15-min return (e.g. 0.003 = +0.3%)
+        bar_context: dict with keys:
+            - OHLCV: open, high, low, close, volume
+            - Microstructure: obi_tau1, obi_tau3, obi_tau5, obi_tau10, spread_bps,
+                              depth_ratio_5, depth_ratio_10, mid_price_move,
+                              book_pressure_3, kyle_lambda_est
+            - Price Action: ret_1, ret_3, ret_6, ret_12, ret_48, vol_5, vol_20, vol_60,
+                            rsi_14, rsi_6, macd_signal, bb_pct, atr_14, momentum_bar,
+                            wick_ratio_up, wick_ratio_down, volume_ratio_5, volume_ratio_20,
+                            vwap_dev, autocorr_5, skew_20, kurt_20, realized_vol_ratio,
+                            trend_strength, close_rank_48, gap_open, overnight_ret
+            - Macro: funding_rate, funding_8h_ma
+            - Time: hour_sin, hour_cos, dow_sin, dow_cos, is_asia_session,
+                    is_us_session, is_weekend, minutes_to_funding
+            - Aliases: atr (atr_14), rsi (rsi_14)
+    Returns:
+        dict with signal, position_size, take_profit, stop_loss, max_bars
+    """
+    # Base thresholds
+    BASE_LONG_THRESH   = 0.002
+    BASE_SHORT_THRESH  = -0.002
+    BASE_POSITION_SIZE = 0.10 # 10% of portfolio per trade
+
+    # Session-aware threshold adjustment
+    is_us_session = bar_context.get("is_us_session", False)
+    is_asia_session = bar_context.get("is_asia_session", False)
+
+    if is_us_session:
+        # US session: higher volume/volatility, require stronger signal
+        LONG_THRESH = BASE_LONG_THRESH * 1.2
+        SHORT_THRESH = BASE_SHORT_THRESH * 1.2
+    elif is_asia_session:
+        # Asia session: lower volume, be more lenient
+        LONG_THRESH = BASE_LONG_THRESH * 0.8
+        SHORT_THRESH = BASE_SHORT_THRESH * 0.8
+    else:
+        LONG_THRESH = BASE_LONG_THRESH
+        SHORT_THRESH = BASE_SHORT_THRESH
+
+    # Funding rate adjustment
+    funding_rate = bar_context.get("funding_rate", 0.0)
+    funding_8h_ma = bar_context.get("funding_8h_ma", 0.0)
+
+    # Reduce position size if funding rate is extreme (>0.1% or <-0.1%)
+    funding_scalar = 1.0
+    if abs(funding_rate) > 0.001:
+        funding_scalar = max(0.5, 1.0 - abs(funding_rate) * 100.0)
+    BASE_TAKE_PROFIT   = 0.004 # exit at +0.4% gain
+    BASE_STOP_LOSS     = 0.003 # exit at -0.3% loss
+
+    # Asymmetric targets based on signal strength and trend
+    trend_strength = bar_context.get("trend_strength", 0.0)
+    signal_strength = abs(predicted_return)
+
+    # Scale take profit based on signal strength and trend
+    tp_multiplier = 1.0 + (signal_strength / 0.01) * 0.3 + max(0.0, trend_strength) * 0.2
+    tp_multiplier = max(0.8, min(2.0, tp_multiplier))
+    take_profit = BASE_TAKE_PROFIT * tp_multiplier
+    MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
+
+    # Volatility adjustment
+    vol_20 = bar_context.get("vol_20", 0.02)
+    vol_median = 0.015  # approximate median volatility
+    vol_scalar = vol_median / max(vol_20, 0.001)  # inverse: high vol -> lower position
+    vol_scalar = max(0.3, min(2.0, vol_scalar))  # clamp between 0.3x and 2.0x
+
+    position_size = BASE_POSITION_SIZE * vol_scalar * funding_scalar
+    stop_loss = BASE_STOP_LOSS * (1.0 + (vol_20 / vol_median - 1.0) * 0.5)  # vol-adjusted stop
+    take_profit = BASE_TAKE_PROFIT
+
+    # Microstructure filters
+    obi_tau5 = bar_context.get("obi_tau5", 0.0)
+    spread_bps = bar_context.get("spread_bps", 5.0)
+
+    # Entry filters: require OBI confirmation and reasonable spread
+    long_obi_filter = obi_tau5 > 0.05  # positive order imbalance
+    short_obi_filter = obi_tau5 < -0.05  # negative order imbalance
+    spread_filter = spread_bps < 10.0  # reasonable liquidity
+
+    if predicted_return > LONG_THRESH and long_obi_filter and spread_filter:
+        signal = 1
+    elif predicted_return < SHORT_THRESH and short_obi_filter and spread_filter:
+        signal = -1
+    else:
+        signal = 0
+
+    return {
+        "signal":        signal,
+        "position_size": position_size if signal != 0 else 0.0,
+        "take_profit":   take_profit,
+        "stop_loss":     stop_loss,
+        "max_bars":      MAX_BARS,
+    }
+# EVOLVE-BLOCK-END

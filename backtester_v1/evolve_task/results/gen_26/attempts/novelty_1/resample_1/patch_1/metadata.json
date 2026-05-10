@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "micro_regime_precision",
+  "patch_description": "This algorithm draws inspiration from the high-performing threshold-based strategies (Prior Program 2 & 3) while introducing a more granular liquidity and cost-aware filtering mechanism. \n\nKey insights:\n1. **Volatility-Scaled Thresholds**: Instead of a fixed threshold, we use a base of 0.00175 (optimized to capture higher trade frequency than the current program) scaled by a 15-min/1-hour volatility ratio.\n2. **Liquidity Bias (Microstructure)**: We combine OBI across multiple time horizons (tau 1, 3, 5) with Book Pressure to create a `liquidity_bias`. This ensures that we only enter when the limit order book depth supports the predicted direction, reducing slippage and adverse selection.\n3. **Execution Cost & Impact Filters**: We incorporate `spread_bps` and `kyle_lambda_est` (market impact) to filter out trades in illiquid environments where transaction costs would eat the alpha.\n4. **VWAP & RSI Guardrails**: We add mean-reversion filters using `vwap_dev` and `rsi_14` to prevent entering \"long\" at the peak of an overextended move or \"short\" at the bottom of a cascade.\n5. **Asymmetric Sizing**: Position sizing is anchored at 0.14 (higher than the current 0.10) with boosts for the US session and high-conviction predictions, while penalizing weekend trading and high-funding regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:50:44.229821",
+  "llm_cost": 0.0082095,
+  "llm_model": "gemini-3-flash-preview"
+}

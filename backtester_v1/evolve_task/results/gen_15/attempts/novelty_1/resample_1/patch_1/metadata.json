@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "liquidity_regime_adaptive_sizing",
+  "patch_description": "This algorithm draws inspiration from the high trade-frequency success of the 80.50 score seed while implementing a more sophisticated regime-sensing layer. \n\nKey insights:\n1. **Liquidity-Adjusted Thresholds**: Instead of a fixed prediction threshold, I use `kyle_lambda_est` to estimate price impact; when liquidity is thin (high lambda), the model requires a higher confidence score to enter, reducing slippage risk.\n2. **Autocorrelation-Driven Hold Times**: Instead of fixed duration, I use `autocorr_5`. High autocorrelation suggests trend persistence, favoring a longer hold (`max_bars`), while negative autocorrelation indicates mean reversion, favoring a quicker exit.\n3. **Volatility-Normalized Sizing**: Using `realized_vol_ratio` (short-term vs long-term volatility) to scale exposure. When short-term volatility is expanding relative to the trend, we increase size to capture the breakout, provided it aligns with the prediction.\n4. **Asymmetric Risk Management**: I implement a slight TP/SL asymmetry based on `trend_strength` and `funding_rate` to account for the \"cost of carry\" and momentum bias in crypto markets.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:45:18.640618",
+  "llm_cost": 0.0074695,
+  "llm_model": "gemini-3-flash-preview"
+}

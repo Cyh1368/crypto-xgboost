@@ -1,0 +1,14 @@
+{
+  "generation": 92,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "trend_adaptive_thresholds_and_micro_refinement",
+  "patch_description": "This update introduces several refinements to improve signal quality and capture more profitable momentum trades:\n1.  **Trend-Adaptive Thresholds**: Lowers the entry threshold during strong trends (using `trend_strength`) to capture momentum earlier, similar to the high-performing 98.52 version but with a more aggressive 5% adjustment.\n2.  **Enhanced Microstructure Quality**: Incorporates `obi_tau10` into the `micro_quality` metric to provide a more stable view of order book imbalance across multiple time horizons.\n3.  **Exhaustion & Mean-Reversion Filters**: Adds loose filters using `rsi_14` and `vwap_dev` to avoid entering long at extreme overbought levels or entering short at extreme oversold levels.\n4.  **Dynamic Time Exits**: Extends the `max_bars` limit when volatility is trending up or when the price is significantly deviated from VWAP, allowing more time for the predicted move or mean reversion to materialize.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:19:04.587066",
+  "llm_cost": 0.0082095,
+  "llm_model": "gemini-3-flash-preview"
+}

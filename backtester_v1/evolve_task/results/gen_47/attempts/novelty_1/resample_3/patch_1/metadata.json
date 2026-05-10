@@ -1,0 +1,14 @@
+{
+  "generation": 47,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "aggressive_threshold_with_microstructure_filters",
+  "patch_description": "This edit aims to maximize the combined score by increasing trade frequency while maintaining a high win rate. \n\nKey changes:\n1.  **Lowered Entry Threshold**: Reduced the base threshold from 0.0020 to 0.0017 to capture more of the XGBoost model's predicted alpha, targeting the high trade count seen in the top-performing seed.\n2.  **Funding-Adjusted Thresholds**: Introduced a subtle bias to the entry thresholds based on the funding rate to account for carry costs/benefits.\n3.  **Relaxed Microstructure Filters**: Replaced the restrictive `obi_tau5` filter with a more stable and relaxed `obi_tau10` filter (-0.85/0.85) to ensure we don't filter out profitable momentum trades.\n4.  **RSI Guardrails**: Added RSI (14) filters to prevent entering longs at extreme overbought levels (>80) or shorts at extreme oversold levels (<20).\n5.  **Optimized Position Sizing & Risk**: Increased base position size to 0.12 to capitalize on the high win rate, while adding a volatility-based cap to protect capital during spikes.\n6.  **Standardized Hold Time**: Set `max_bars` to 4, matching the most successful seed's configuration.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:04:03.695190",
+  "llm_cost": 0.0066035,
+  "llm_model": "gemini-3-flash-preview"
+}

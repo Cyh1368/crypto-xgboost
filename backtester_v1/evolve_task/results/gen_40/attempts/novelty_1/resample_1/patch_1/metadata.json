@@ -1,0 +1,14 @@
+{
+  "generation": 40,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_thresholds_and_microstructure_filters",
+  "patch_description": "This edit improves the signal generation logic by re-introducing volatility-adaptive thresholds and microstructure filters, which were proven effective in high-performing previous iterations. \n\nKey changes:\n1.  **Adaptive Thresholding**: Instead of a fixed 0.002 threshold, we use a base threshold of 0.0018 scaled by a volatility regime factor (vol_5 / vol_20). This allows the model to be more sensitive in low-volatility environments and more selective in high-volatility ones.\n2.  **Microstructure Quality**: We implement a `micro_quality` metric that combines multiple Order Book Imbalance (OBI) horizons (tau1, 3, 5) and book pressure. This ensures that the trade direction is supported by the underlying order book flow.\n3.  **Optimized Position Sizing**: We increase the base position size to 0.13 and add a conviction boost for high-confidence predictions (predicted_return > 0.0036) and a session boost for US liquidity.\n4.  **Refined Exits**: We maintain the robust 0.004/0.003 TP/SL targets but allow for a slightly longer holding period (5 bars) during strong trends and a shorter one (3 bars) during weekends.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:59:05.927377",
+  "llm_cost": 0.0052604999999999996,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 70,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "filter_relaxation_and_asymmetric_risk",
+  "patch_description": "Optimizing the signal generator for a higher combined score by:\n1. Lowering the entry threshold (0.0018 -> 0.0017) and relaxing microstructure filters (OBI, spread, VWAP deviation) to increase trade frequency, aiming closer to the 530+ trades seen in high-performing seeds.\n2. Introducing a wick exhaustion filter (wick_ratio_up/down) to avoid entering trades at local price extremes where reversal likelihood is higher.\n3. Enhancements to the dynamic hold time (max_bars) by incorporating autocorrelation and lower trend thresholds.\n4. Stabilizing position sizing (moving away from 0.19 max size to a more centered 0.14-0.16) and slightly tightening the stop loss (0.0030 -> 0.0029) to improve the Sharpe ratio and reduce max drawdown.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:11:53.226189",
+  "llm_cost": 0.0058295,
+  "llm_model": "gemini-3-flash-preview"
+}

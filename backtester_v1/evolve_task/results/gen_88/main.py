@@ -1,0 +1,95 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    High-frequency signal generator with volatility-scaled risk management,
+    RSI confirmation filters, and autocorrelation-enhanced position sizing.
+    """
+    # 1. Context Extraction
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    obi_tau5 = bar_context.get('obi_tau5', 0.0)
+    pressure = bar_context.get('book_pressure_3', 0.0)
+    spread_bps = bar_context.get('spread_bps', 1.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    funding = bar_context.get('funding_rate', 0.0)
+    kyle_lambda = bar_context.get('kyle_lambda_est', 0.0)
+    atr = bar_context.get('atr_14', 0.002)
+    close = bar_context.get('close', 1.0)
+    rsi = bar_context.get('rsi_14', 50.0)
+    vol_ratio = bar_context.get('realized_vol_ratio', 1.0)
+
+    # 2. Dynamic Entry Thresholds
+    base_thresh = 0.0018
+    if is_us:
+        base_thresh = 0.00172
+    elif is_asia:
+        base_thresh = 0.00205
+
+    # Add liquidity penalty to threshold
+    effective_thresh = base_thresh + min(0.0002, kyle_lambda * 25.0)
+
+    # 3. Micro-Alignment and Signal Logic with RSI Confirmation
+    # Weight book_pressure more heavily in trending regimes
+    pressure_weight = 0.6 if abs(trend) > 0.35 else 0.4
+    micro_score = obi_tau5 * (1.0 - pressure_weight) + (pressure / 100.0) * pressure_weight
+
+    signal = 0
+    if predicted_return > effective_thresh:
+        # Long: Avoid overbought RSI (>70) and require micro alignment
+        if micro_score > -0.6 and vwap_dev < 0.025 and spread_bps < 10.0:
+            if funding < 0.0015 and rsi < 75.0:
+                signal = 1
+    elif predicted_return < -effective_thresh:
+        # Short: Avoid oversold RSI (<30) and require micro alignment
+        if micro_score < 0.6 and vwap_dev > -0.025 and spread_bps < 10.0:
+            if funding > -0.0015 and rsi > 25.0:
+                signal = -1
+
+    # 4. Adaptive Sizing and Risk Management
+    if signal != 0:
+        # Confidence-weighted sizing with autocorrelation boost
+        confidence = abs(predicted_return) / effective_thresh
+        # Higher autocorrelation = stronger momentum persistence = larger position
+        autocorr_boost = 1.0 + (abs(autocorr) * 0.15) if abs(autocorr) > 0.1 else 1.0
+        position_size = 0.14 * min(1.25, confidence) * autocorr_boost
+        position_size = max(0.10, min(0.19, position_size))
+
+        # Volatility-scaled TP/SL with funding alignment bonus
+        atr_pct = (atr / close) if close > 0 else 0.002
+        vol_adj = max(0.85, min(1.2, vol_ratio))
+
+        take_profit = 0.0042 * vol_adj
+        stop_loss = 0.0032 * vol_adj
+
+        if (signal == 1 and funding < 0) or (signal == -1 and funding > 0):
+            take_profit += 0.0004 * vol_adj
+
+        # Dynamic Hold Time: Extend for high autocorrelation (momentum persistence)
+        if abs(autocorr) > 0.20:
+            max_bars = 6
+        elif is_us or abs(trend) > 0.35 or abs(autocorr) > 0.15:
+            max_bars = 5
+        else:
+            max_bars = 4
+    else:
+        position_size = 0.0
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+
+    return {
+        "signal": int(signal),
+        "position_size": float(round(position_size, 4)),
+        "take_profit": float(round(take_profit, 5)),
+        "stop_loss": float(round(stop_loss, 5)),
+        "max_bars": int(max_bars)
+    }
+# EVOLVE-BLOCK-END

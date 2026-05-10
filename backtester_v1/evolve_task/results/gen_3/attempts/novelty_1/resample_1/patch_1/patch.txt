@@ -1,0 +1,126 @@
+--- a/original.py
++++ b/original.py
+@@ -1,51 +1,88 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+     """
+-    Seed trading signal generator.
+-    Args:
+-        predicted_return: float, model's predicted 15-min return (e.g. 0.003 = +0.3%)
+-        bar_context: dict with keys:
+-            - OHLCV: open, high, low, close, volume
+-            - Microstructure: obi_tau1, obi_tau3, obi_tau5, obi_tau10, spread_bps,
+-                              depth_ratio_5, depth_ratio_10, mid_price_move,
+-                              book_pressure_3, kyle_lambda_est
+-            - Price Action: ret_1, ret_3, ret_6, ret_12, ret_48, vol_5, vol_20, vol_60,
+-                            rsi_14, rsi_6, macd_signal, bb_pct, atr_14, momentum_bar,
+-                            wick_ratio_up, wick_ratio_down, volume_ratio_5, volume_ratio_20,
+-                            vwap_dev, autocorr_5, skew_20, kurt_20, realized_vol_ratio,
+-                            trend_strength, close_rank_48, gap_open, overnight_ret
+-            - Macro: funding_rate, funding_8h_ma
+-            - Time: hour_sin, hour_cos, dow_sin, dow_cos, is_asia_session,
+-                    is_us_session, is_weekend, minutes_to_funding
+-            - Aliases: atr (atr_14), rsi (rsi_14)
+-    Returns:
+-        dict with signal, position_size, take_profit, stop_loss, max_bars
++    Advanced signal generator using microstructure filtering and dynamic volatility scaling.
+     """
+-    LONG_THRESH   = 0.002    # enter long if predicted return > 0.2%
+-    SHORT_THRESH  = -0.002   # enter short if predicted return < -0.2%
+-    POSITION_SIZE = 0.10     # 10% of portfolio per trade
+-    TAKE_PROFIT   = 0.004    # exit at +0.4% gain
+-    STOP_LOSS     = 0.003    # exit at -0.3% loss
+-    MAX_BARS      = 4        # time-based exit after 4 bars (1 hour)
++    # 1. Extract Core Context
++    atr = bar_context.get('atr_14', bar_context.get('atr', 0.001))
++    close = bar_context.get('close', 1.0)
++    vol_norm = bar_context.get('vol_20', 0.002)
++    trend_strength = bar_context.get('trend_strength', 0.5)
++    obi = bar_context.get('obi_tau5', 0.0)
++    spread = bar_context.get('spread_bps', 1.0)
++    vwap_dev = bar_context.get('vwap_dev', 0.0)
++    
++    # 2. Dynamic Thresholding
++    # Lower the entry bar if trend strength is high, but raise it if spread is wide
++    base_threshold = 0.0018 
++    if trend_strength > 0.6:
++        base_threshold *= 0.85
++    
++    # 3. Signal Determination with Microstructure Filters
++    signal = 0
++    if predicted_return > base_threshold:
++        # Long Filter: OBI should not be heavily negative, and not overextended above VWAP
++        if obi > -0.2 and vwap_dev < 0.015 and spread < 8.0:
++            signal = 1
++    elif predicted_return < -base_threshold:
++        # Short Filter: OBI should not be heavily positive, and not overextended below VWAP
++        if obi < 0.2 and vwap_dev > -0.015 and spread < 8.0:
++            signal = -1
+ 
+-    if predicted_return > LONG_THRESH:
+-        signal = 1
+-    elif predicted_return < SHORT_THRESH:
+-        signal = -1
++    # 4. Risk Management (Volatility-Based)
++    # Scale TP/SL by ATR to adapt to market regime
++    # Ensure a minimum stop to avoid noise, and a maximum to prevent blowouts
++    atr_pct = atr / close
++    
++    if signal != 0:
++        # Asymmetric TP/SL based on trend
++        if signal == 1:
++            # In longs, if trend is up, aim higher
++            tp_mult = 2.2 if trend_strength > 0.5 else 1.8
++            sl_mult = 1.4 if trend_strength > 0.5 else 1.6
++        else:
++            # In shorts, markets often drop faster
++            tp_mult = 2.0 if trend_strength > 0.5 else 1.6
++            sl_mult = 1.5 if trend_strength > 0.5 else 1.7
++            
++        stop_loss = clip_value(atr_pct * sl_mult, 0.0015, 0.012)
++        take_profit = clip_value(atr_pct * tp_mult, 0.0025, 0.025)
++        
++        # 5. Position Sizing (Confidence & Volatility Weighted)
++        # Higher confidence (predicted_return) and lower volatility increases size
++        confidence = abs(predicted_return) / base_threshold
++        vol_adj = 0.002 / (vol_norm + 1e-6)
++        position_size = clip_value(0.1 * confidence * vol_adj, 0.05, 0.25)
++        
++        # 6. Time-Based Exit (Session Dependent)
++        # US sessions have more follow-through; Asia sessions mean-revert faster
++        if bar_context.get('is_us_session', False):
++            max_bars = 6
++        elif bar_context.get('is_asia_session', False):
++            max_bars = 3
++        else:
++            max_bars = 4
+     else:
+-        signal = 0
++        position_size = 0.0
++        take_profit = 0.0
++        stop_loss = 0.0
++        max_bars = 0
+ 
+     return {
+-        "signal":        signal,
+-        "position_size": POSITION_SIZE if signal != 0 else 0.0,
+-        "take_profit":   TAKE_PROFIT,
+-        "stop_loss":     STOP_LOSS,
+-        "max_bars":      MAX_BARS,
++        "signal": int(signal),
++        "position_size": float(position_size),
++        "take_profit": float(take_profit),
++        "stop_loss": float(stop_loss),
++        "max_bars": int(max_bars),
+     }
++
++def clip_value(val, min_val, max_val):
++    return max(min_val, min(max_val, val))
++
+ # EVOLVE-BLOCK-END

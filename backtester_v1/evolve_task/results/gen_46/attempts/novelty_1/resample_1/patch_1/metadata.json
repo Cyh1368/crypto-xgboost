@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "micro_and_vwap_refinement",
+  "patch_description": "Optimizes the trade entry and sizing logic by incorporating deeper microstructure (OBI-10), liquidity impact (Kyle Lambda), and trend-aligned filtering (VWAP deviation).\n\nKey improvements:\n1.  **Refined Microstructure Weighting**: Includes OBI-10 to capture deeper book imbalances and slightly increases the weight of book pressure.\n2.  **Adaptive Thresholding**: Lowered the base return threshold from 0.0018 to 0.0017 and relaxed it further by 15% when microstructure is strongly aligned with the trade direction. This increases trade frequency for the highest-conviction setups.\n3.  **VWAP Guard**: Introduced a VWAP deviation filter (90 bps) to prevent entries into extreme parabolic moves that are prone to mean reversion.\n4.  **Sizing Adjustments**: Increased base position size slightly (0.13 to 0.14) and added a volatility-regime penalty to reduce exposure during periods of extreme instability.\n5.  **Dynamic Time Horizon**: Allowed trending trades to stay open for 5 bars (vs 4) to capture more persistence when trend strength is high.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:01:40.299718",
+  "llm_cost": 0.008125,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 78,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "micro_alignment_range_filter",
+  "patch_description": "This algorithm improves upon previous iterations by implementing a \"Micro-Alignment\" filter and a \"Range-Relative\" entry hurdle. \n\nKey insights:\n1. **Micro-Alignment**: Instead of relying solely on OBI, we combine `obi_tau5` with `book_pressure_3`. This ensures that both the mid-depth imbalance and the immediate near-touch pressure support the model's prediction.\n2. **Range-Relative Hurdle**: We use `close_rank_48` and `bb_pct` to adjust the entry threshold. If the price is at the extreme upper end of its recent range (`close_rank_48 > 0.85`), the hurdle for a long trade is increased to filter out low-probability \"buying the top\" scenarios, even if the model is bullish.\n3. **Liquidity-Scaled Sizing**: Using `kyle_lambda_est` to estimate price impact, we scale down the position size during periods of low liquidity to preserve the Sharpe ratio.\n4. **Funding-Asymmetric Risk**: Take-profit and stop-loss levels are slightly adjusted based on the `funding_rate`. When the trade direction aligns with receiving funding, we allow for a slightly wider take-profit to capture the \"carry\" benefit.\n5. **Volatility-Adjusted Hold Time**: We extend the `max_bars` during US sessions or when `autocorr_5` is positive, suggesting momentum persistence.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:14:14.947023",
+  "llm_cost": 0.007174,
+  "llm_model": "gemini-3-flash-preview"
+}

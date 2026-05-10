@@ -1,0 +1,110 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Algorithmic approach based on Microstructural Equilibrium and 
+    Volatility-Adaptive Risk Windows.
+    """
+    
+    # 1. Feature Extraction with Defaults
+    close = bar_context.get('close', 1.0)
+    vol_5 = bar_context.get('vol_5', 0.0025)
+    vol_20 = bar_context.get('vol_20', 0.0025)
+    atr = bar_context.get('atr_14', 0.002)
+    obi = bar_context.get('obi_tau5', 0.0)
+    pressure = bar_context.get('book_pressure_3', 0.0)
+    kyle_lambda = bar_context.get('kyle_lambda_est', 0.0)
+    kurtosis = bar_context.get('kurt_20', 3.0)
+    trend = bar_context.get('trend_strength', 0.0)
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    
+    is_us = bar_context.get('is_us_session', False)
+    is_asia = bar_context.get('is_asia_session', False)
+    funding = bar_context.get('funding_rate', 0.0)
+    spread = bar_context.get('spread_bps', 1.0)
+
+    # 2. Dynamic Threshold Calibration
+    # We require higher conviction if volatility is expanding or spreads are wide.
+    vol_factor = max(1.0, vol_5 / (vol_20 + 1e-9))
+    liquidity_mult = 1.0 + (spread / 10.0)
+    base_threshold = 0.0017 * vol_factor * liquidity_mult
+    
+    # 3. Micro-Structural Agreement Logic
+    # Alignment between XGBoost (alpha) and the Order Book (market friction)
+    signal = 0
+    if predicted_return > base_threshold:
+        # Long confirmation: OBI should be positive or Book Pressure supportive
+        if (obi > -0.05 or pressure > 0) and funding < 0.0005:
+            signal = 1
+    elif predicted_return < -base_threshold:
+        # Short confirmation: OBI should be negative or Book Pressure supportive
+        if (obi < 0.05 or pressure < 0) and funding > -0.0005:
+            signal = -1
+
+    # 4. Adaptive Position Sizing (Z-Score of Prediction)
+    # Scaled by the inverse of Kyle's Lambda (lower liquidity = smaller size)
+    if signal != 0:
+        # Normalize predicted return against volatility to get a "confidence" score
+        confidence = abs(predicted_return) / (vol_5 + 1e-9)
+        
+        # Scale back in high slippage / high lambda environments
+        liquidity_scaling = 1.0 / (1.0 + (kyle_lambda * 200))
+        
+        # Base size 0.12, capped to manage risk
+        position_size = 0.12 * (confidence / 0.8) * liquidity_scaling
+        position_size = max(0.06, min(0.18, position_size))
+    else:
+        position_size = 0.0
+
+    # 5. Risk Management: Asymmetric & Regime-Dependent
+    # High Kurtosis = Tighter SL, Wider TP (Fat tails)
+    # Low Kurtosis = Normalized TP/SL (Normal distribution)
+    if signal != 0:
+        kurt_adj = min(1.3, max(0.8, kurtosis / 3.0))
+        
+        # Anchored to approximately 40bps TP / 30bps SL as found in high-performance seeds
+        tp_base = 0.0041
+        sl_base = 0.0030
+        
+        # In Asia (mean-reverting), use tighter targets; in US (trending), wider
+        session_mult = 1.15 if is_us else (0.85 if is_asia else 1.0)
+        
+        # ATR scaling for volatility normalization
+        atr_scale = (atr / close) / 0.002 if close > 0 else 1.0
+        
+        # Resulting TP/SL
+        take_profit = tp_base * session_mult * atr_scale * kurt_adj
+        stop_loss = sl_base * session_mult * atr_scale / kurt_adj
+        
+        # Safety bounds
+        take_profit = max(0.003, min(0.02, take_profit))
+        stop_loss = max(0.002, min(0.015, stop_loss))
+        
+        # 6. Optimized Duration
+        # Trend strength and autocorrelation determine the hold time.
+        if abs(trend) > 0.5 or (signal == 1 and autocorr > 0.1) or (signal == -1 and autocorr > 0.1):
+            max_bars = 5 # Let trending moves play out
+        else:
+            max_bars = 4 # Default to 1 hour
+            
+        # Asia session generally has shorter cycle times
+        if is_asia and max_bars > 4:
+            max_bars = 4
+    else:
+        take_profit = 0.0
+        stop_loss = 0.0
+        max_bars = 0
+
+    return {
+        "signal": int(signal),
+        "position_size": float(round(position_size, 4)),
+        "take_profit": float(round(take_profit, 5)),
+        "stop_loss": float(round(stop_loss, 5)),
+        "max_bars": int(max_bars),
+    }
+# EVOLVE-BLOCK-END

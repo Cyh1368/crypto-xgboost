@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "contextual_asymmetry_filter",
+  "patch_description": "This edit upgrades the current fixed-threshold approach into a context-aware, asymmetric entry engine that uses the richer feature set already available in `bar_context`.\n\nMain improvements:\n- Adds microstructure confirmation from multiple OBI horizons, spread, depth, book pressure, and Kyle lambda.\n- Uses price-action regime features to distinguish trend continuation from exhaustion/mean reversion.\n- Introduces volatility-adjusted thresholds so the model is more selective during noisy regimes and more responsive during stable ones.\n- Adds funding/session guards to avoid low-quality trades around carry pressure and illiquid periods.\n- Uses asymmetric long/short sizing based on signal quality instead of a flat fixed size.\n- Adapts take-profit, stop-loss, and max-hold time to volatility and regime, with tighter risk in choppy conditions and slightly wider targets when flow and trend agree.\n\nThe goal is to improve win rate and profit factor while preserving enough trade frequency to avoid over-filtering.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:56:02.489853",
+  "llm_cost": 0.0267225,
+  "llm_model": "gpt-5.4-mini"
+}

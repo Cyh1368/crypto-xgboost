@@ -1,0 +1,46 @@
+<NAME>
+loosen_filters_and_anchor_thresholds
+</NAME>
+
+<DESCRIPTION>
+The current program's performance (66.99) is significantly lower than the best seed (80.50), primarily due to a lower trade count (340 vs 462) and lower win rate (0.74 vs 0.78). This suggests that the microstructure filters (OBI, VWAP deviation, and spread) are too restrictive, killing potentially profitable trades that the model already accounted for.
+
+This edit:
+1. Anchors the base threshold to 0.002 (matching the best seed) but keeps a slight trend-based discount.
+2. Incorporates a subtle funding rate adjustment to the entry thresholds to account for carry costs.
+3. Significantly loosens the OBI, VWAP deviation, and spread filters to increase trade frequency.
+4. Stabilizes the position sizing logic by using a square-root volatility adjustment and anchoring the base size to 0.11.
+5. Refines the ATR-based TP/SL multipliers to target a risk/reward ratio closer to the successful 0.004/0.003 fixed targets.
+6. Standardizes the max hold time to 4-5 bars, aligning with the most successful session-based logic.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Dynamic Thresholding
+    # Lower the entry bar if trend strength is high, but raise it if spread is wide
+    base_threshold = 0.0018
+    if trend_strength > 0.6:
+        base_threshold *= 0.85
+
+    # 3. Signal Determination with Microstructure Filters
+    signal = 0
+    if predicted_return > base_threshold:
+        # Long Filter: OBI should not be heavily negative, and not overextended above VWAP
+        if obi > -0.2 and vwap_dev < 0.015 and spread < 8.0:
+            signal = 1
+    elif predicted_return < -base_threshold:
+        # Short Filter: OBI should not be heavily positive, and not overextended below VWAP
+        if obi < 0.2 and vwap_dev > -0.015 and spread < 8.0:
+            signal = -1
+
+    # 4. Risk Management (Volatility-Based)
+    # Scale TP/SL by ATR to adapt to market regime
+    # Ensure a minimum stop to avoid noise, and a maximum to prevent blowouts
+    atr_pct = atr / close
+
+    if signal != 0:
+        # Asymmetric TP/SL based on trend
+        if signal == 1:
+            # In longs, if trend is up, aim higher
+            tp_mult = 2.2 if trend_strength > 0.5 else 1.8
+            sl_mult = 1.4 if trend_strength

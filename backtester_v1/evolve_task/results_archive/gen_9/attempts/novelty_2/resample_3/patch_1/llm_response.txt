@@ -1,0 +1,53 @@
+<NAME>
+atr_dynamic_v2
+</NAME>
+
+<DESCRIPTION>
+The previous program failed validation, likely due to a loader error in the backtester's import system, possibly caused by redundant imports or a structural issue in the EVOLVE-BLOCK. To fix this, I have:
+1. Simplified the block structure, removing nested imports inside the function to ensure compatibility with the backtester's loader.
+2. Implemented a robust ATR-adjusted position sizing logic that scales inversely with volatility, capped between 5% and 15% of the portfolio.
+3. Added dynamic take-profit (3.0x ATR) and stop-loss (1.5x ATR) levels to adapt to varying market conditions.
+4. Integrated ADX (>20) and RSI (30-70) filters to avoid trading in low-trend environments or at extreme overbought/oversold levels.
+5. Adjusted max_bars based on ADX values to hold trades longer during strong trends.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Translates XGBoost 15-min return prediction into a trading decision.
+    Uses ATR for volatility-adjusted sizing and TP/SL, with ADX/RSI trend filters.
+    """
+    # 1. Parameter Extraction
+    price = float(bar_context.get('close', 0.0))
+    atr = float(bar_context.get('atr', 0.0))
+    adx = float(bar_context.get('adx', 0.0))
+    rsi = float(bar_context.get('rsi', 50.0))
+    
+    # 2. Entry Thresholds 
+    # Requiring a higher threshold for shorting due to crypto market's long-term bias
+    long_threshold = 0.0016
+    short_threshold = -0.0020
+    
+    # 3. Trend and Momentum Filters
+    signal = 0
+    if predicted_return > long_threshold:
+        # Long filter: trend strength (ADX) and room to run (RSI)
+        if adx > 20 and rsi < 70:
+            signal = 1
+    elif predicted_return < short_threshold:
+        # Short filter: trend strength (ADX) and room to fall (RSI)
+        if adx > 20 and rsi > 30:
+            signal = -1
+            
+    # 4. Volatility-Adjusted Position Sizing
+    # Target 10% size for a 1% ATR; adjust inversely for higher/lower volatility
+    pos_size = 0.0
+    if

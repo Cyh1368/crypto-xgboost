@@ -1,0 +1,64 @@
+==========Running program evaluation 1/3...==========
+==========Run 1/3 completed in 4.54 seconds==========
+==========Running program evaluation 2/3...==========
+==========Run 2/3 completed in 3.13 seconds==========
+==========Running program evaluation 3/3...==========
+==========Run 3/3 completed in 2.80 seconds==========
+Correctness and error status saved to /home/chengyou1368/crypto-xgboost/backtester_v1/evolve_task/results/gen_97/results/correct.json
+Metrics saved to /home/chengyou1368/crypto-xgboost/backtester_v1/evolve_task/results/gen_97/results/metrics.json
+{
+  "metrics": {
+    "combined_score": 12.020063,
+    "public": {
+      "sharpe": 8.325,
+      "total_ret": 4.48,
+      "max_dd": 0.28,
+      "win_rate": 0.4702,
+      "num_trades": 94,
+      "profit_factor": 5.153
+    },
+    "private": {
+      "per_ticker": {
+        "BTC_USDT": {
+          "sharpe_ratio": 0.0,
+          "total_return_pct": 0.0,
+          "max_drawdown_pct": 0.0,
+          "win_rate": 0.0,
+          "num_trades": 0,
+          "calmar_ratio": 0.0,
+          "profit_factor": 0.0,
+          "avg_trade_pnl": 0.0
+        },
+        "ETH_USDT": {
+          "sharpe_ratio": 15.268191567081983,
+          "total_return_pct": 8.529,
+          "max_drawdown_pct": 0.121,
+          "win_rate": 0.7923,
+          "num_trades": 130,
+          "calmar_ratio": 70.7509,
+          "profit_factor": 12.4702,
+          "avg_trade_pnl": 6.56085
+        },
+        "SOL_USDT": {
+          "sharpe_ratio": 9.70690540589058,
+          "total_return_pct": 4.896,
+          "max_drawdown_pct": 0.711,
+          "win_rate": 0.6184,
+          "num_trades": 152,
+          "calmar_ratio": 6.8841,
+          "profit_factor": 2.9874,
+          "avg_trade_pnl": 3.22121
+        }
+      }
+    },
+    "execution_time_mean": 3.4889328703338833,
+    "execution_time_std": 0.7523969535914562,
+    "num_valid_runs": 2,
+    "num_invalid_runs": 1,
+    "all_validation_errors": [
+      "Too few trades"
+    ]
+  },
+  "correct": false,
+  "error": "Validation failed: Too few trades"
+}

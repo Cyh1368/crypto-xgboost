@@ -1,0 +1,178 @@
+# Analysis
+
+Looking at the performance progression:
+- **Baseline (simple)**: 80.50 (32.89 Sharpe, 15.29% return, 0.78 win rate, 462 trades)
+- **Current best**: 87.56 (33.16 Sharpe, 21.28% return, 0.78 win rate, 468 trades)
+
+The current program achieves excellent Sharpe (33.16) and win rate (0.78), but I notice:
+
+1. **Max drawdown increased to 0.31** (from 0.25 in baseline) - this suggests we're taking larger losses or longer drawdown periods
+2. **Return improved significantly to 21.28%** - but at the cost of higher drawdown
+3. **Profit factor excellent at 18.54** - very few losing trades
+
+The key insight: **We're being too aggressive with position sizing and not adjusting stops based on signal quality and microstructure conditions.**
+
+## Proposed Improvements
+
+I'll implement three targeted changes:
+
+1. **Dynamic stop-loss based on volatility and microstructure quality** - tighter stops in high-vol/poor-quality environments
+2. **Asymmetric position sizing** - larger positions for high-conviction signals with good microstructure, smaller for marginal signals
+3. **RSI-based entry filter** - avoid overbought/oversold extremes which have lower edge
+4. **Funding rate adjustment to position size** - reduce size when funding is extreme (indicating crowded trades)
+
+<DIFF>
+<<<<<<< SEARCH
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    atr = float(_get("atr_14", _get("atr", 0.001)))
+    rsi14 = float(_get("rsi_14", 50.0))
+    trend = float(_get("trend_strength"))
+=======
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-8)
+    vol20 = max(float(_get("vol_20")), 1e-8)
+    vol60 = max(float(_get("vol_60")), 1e-8)
+    atr = float(_get("atr_14", _get("atr", 0.001)))
+    rsi14 = float(_get("rsi_14", 50.0))
+    rsi6 = float(_get("rsi_6", 50.0))
+    trend = float(_get("trend_strength"))
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Regime & Quality Metrics
+    # micro_quality: positive means book supports long, negative supports short
+    micro_quality = 0.3 * obi1 + 0.25 * obi3 + 0.25 * obi5 + 0.2 * book_pressure
+
+    # vol_regime: > 1.0 means volatility is expanding
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+=======
+    # 2. Regime & Quality Metrics
+    # micro_quality: positive means book supports long, negative supports short
+    micro_quality = 0.3 * obi1 + 0.25 * obi3 + 0.25 * obi5 + 0.2 * book_pressure
+
+    # vol_regime: > 1.0 means volatility is expanding
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+
+    # vol_expansion: measure if volatility is spiking (vol5 > vol60)
+    vol_expansion = vol5 / max(vol60, 1e-8)
+
+    # signal_conviction: how strong is the predicted return relative to recent volatility
+    signal_conviction = abs(predicted_return) / max(vol5, 0.001)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 3. Signal Generation
+    # Threshold scales with volatility regime to capture more trades in low-vol and filter noise in high-vol
+    LONG_THRESH = 0.0018 * (0.9 + 0.2 * vol_regime)
+    SHORT_THRESH = -0.0018 * (0.9 + 0.2 * vol_regime)
+
+    signal = 0
+    # Lenient filters to increase trade frequency while avoiding extreme toxic flow or high costs
+    if predicted_return > LONG_THRESH:
+        if micro_quality > -0.8 and funding < 0.002 and spread_bps < 10.0:
+            signal = 1
+    elif predicted_return < SHORT_THRESH:
+        if micro_quality < 0.8 and funding > -0.002 and spread_bps < 10.0:
+            signal = -1
+=======
+    # 3. Signal Generation
+    # Threshold scales with volatility regime to capture more trades in low-vol and filter noise in high-vol
+    LONG_THRESH = 0.0018 * (0.9 + 0.2 * vol_regime)
+    SHORT_THRESH = -0.0018 * (0.9 + 0.2 * vol_regime)
+
+    signal = 0
+    # Lenient filters to increase trade frequency while avoiding extreme toxic flow or high costs
+    # Add RSI filter: avoid extreme overbought (>75) and oversold (<25) on fast RSI
+    rsi_long_ok = rsi6 < 75.0
+    rsi_short_ok = rsi6 > 25.0
+
+    if predicted_return > LONG_THRESH:
+        if micro_quality > -0.8 and funding < 0.002 and spread_bps < 10.0 and rsi_long_ok:
+            signal = 1
+    elif predicted_return < SHORT_THRESH:
+        if micro_quality < 0.8 and funding > -0.002 and spread_bps < 10.0 and rsi_short_ok:
+            signal = -1
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 4. Position Sizing
+    # Base size 0.12, with a boost for high-conviction signals
+    if signal == 0:
+        position_size = 0.0
+    else:
+        position_size = 0.12
+        if abs(predicted_return) > 0.0035:
+            position_size = 0.14
+
+    # 5. Fixed Exits from high-performing seed
+    take_profit = 0.004
+    stop_loss = 0.003
+
+    # 6. Time-based Exit
+    max_bars = 4
+=======
+    # 4. Position Sizing
+    # Dynamic sizing based on signal conviction and microstructure quality
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base position size
+        base_size = 0.11
+
+        # Conviction multiplier: higher conviction signals get larger positions
+        conviction_mult = 1.0 + min(0.3, signal_conviction * 2.0)
+
+        # Micro quality multiplier: better microstructure = larger position
+        quality_mult = 1.0 + (micro_quality / 2.0) * (0.2 if signal == 1 else -0.2)
+        quality_mult = max(0.7, min(1.3, quality_mult))
+
+        # Funding adjustment: reduce size if funding is extreme
+        funding_mult = 1.0
+        if abs(funding) > 0.0008:
+            funding_mult = max(0.6, 1.0 - abs(funding) * 500.0)
+
+        position_size = base_size * conviction_mult * quality_mult * funding_mult
+        position_size = max(0.06, min(0.16, position_size))  # clamp between 6% and 16%
+
+    # 5. Dynamic Exits
+    # Tighter stops in high volatility or poor microstructure
+    base_stop = 0.003
+    vol_stop_mult = 1.0 + (vol_expansion - 1.0) * 0.3  # expand stop if vol spiking
+    micro_stop_mult = 1.0 - (abs(micro_quality) / 2.0) * 0.2  # tighter stop if poor quality
+
+    stop_loss = base_stop * vol_stop_mult * micro_stop_mult
+    stop_loss = max(0.0015, min(0.005, stop_loss))  # clamp between 0.15% and 0.5%
+
+    take_profit = 0.004
+
+    # 6. Time-based Exit
+    max_bars = 4
+>>>>>>> REPLACE
+</DIFF>
+
+## Rationale
+
+1. **RSI Filter (6-period)**: Fast RSI extremes (>75 or <25) indicate overbought/oversold conditions with lower edge. This should reduce false signals and improve win rate without sacrificing too many trades.
+
+2. **Signal Conviction Metric**: Measures predicted return relative to recent volatility. High conviction signals (where predicted return is large relative to vol) deserve larger positions.
+
+3. **Dynamic Stop Loss**:
+   - Expands stops when volatility is spiking (vol5 > vol60) to avoid whipsaws
+   - Tightens stops when microstructure is poor to limit losses in toxic flow
+   - This should reduce max drawdown while maintaining win rate
+
+4. **Improved Position Sizing**:
+   - Bases on conviction, not just absolute return magnitude
+   - Incorporates microstructure quality (better book = larger position)
+   - Reduces size when funding is extreme (crowded trades)
+   - Clamped range (6%-16%) prevents extreme positions
+
+These changes target the **0.31 max drawdown** issue by being more defensive in poor conditions while maintaining aggression in high-quality setups.

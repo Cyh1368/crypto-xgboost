@@ -1,0 +1,105 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Refined signal generator that balances high-frequency model alpha with 
+    granular liquidity and price-rejection filters.
+    """
+    
+    # 1. Parameter Extraction
+    obi = bar_context.get('obi_tau5', 0.0)
+    spread = bar_context.get('spread_bps', 1.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    wick_up = bar_context.get('wick_ratio_up', 0.0)
+    wick_dn = bar_context.get('wick_ratio_down', 0.0)
+    vol_20 = bar_context.get('vol_20', 0.003)
+    is_us_session = bar_context.get('is_us_session', False)
+    kyle_lambda = bar_context.get('kyle_lambda_est', 0.0)
+    autocorr = bar_context.get('autocorr_5', 0.0)
+    
+    # 2. Optimized Thresholds
+    # Anchored near the seed's 0.002, slightly lowered to capture 
+    # more high-conviction opportunities.
+    long_thresh = 0.00192
+    short_thresh = -0.00192
+    
+    # 3. Microstructure Filters
+    # We use loose filters to maintain trade frequency while avoiding toxic liquidity.
+    signal = 0
+    if predicted_return > long_thresh:
+        # Avoid buying if:
+        # - Order book is heavily skewed against us (OBI < -0.4)
+        # - Spread is wider than 8.5 bps (high cost)
+        # - Price is overextended (>2% above VWAP)
+        # - Price just left a large upper wick (local rejection)
+        if (obi > -0.4 and 
+            spread < 8.5 and 
+            vwap_dev < 0.02 and 
+            wick_up < 0.75):
+            signal = 1
+            
+    elif predicted_return < short_thresh:
+        # Avoid selling if:
+        # - Order book is heavily skewed against us (OBI > 0.4)
+        # - Spread is wider than 8.5 bps
+        # - Price is overextended (>2% below VWAP)
+        # - Price just left a large lower wick (local rejection)
+        if (obi < 0.4 and 
+            spread < 8.5 and 
+            vwap_dev > -0.02 and 
+            wick_dn < 0.75):
+            signal = -1
+
+    # 4. Dynamic Position Sizing (Liquidity & Confidence Adjusted)
+    # Baseline 12% size, adjusted for signal strength.
+    if signal != 0:
+        confidence_factor = min(1.3, max(0.8, abs(predicted_return) / 0.002))
+        
+        # Penalize position size if market impact (Kyle's Lambda) or volatility is high
+        liquidity_penalty = 1.0
+        if kyle_lambda > 0.0005:
+            liquidity_penalty *= 0.85
+        if vol_20 > 0.008:
+            liquidity_penalty *= 0.8
+            
+        position_size = 0.12 * confidence_factor * liquidity_penalty
+        # Clamp to avoid excessive concentration or negligible size
+        position_size = max(0.06, min(0.18, position_size))
+    else:
+        position_size = 0.0
+
+    # 5. Risk Management (Take Profit & Stop Loss)
+    # Using a 1.4x profit-to-stop ratio to optimize for Calmar/Sharpe.
+    take_profit = 0.0042
+    stop_loss = 0.0030
+    
+    # Minor adjustment for high volatility environments to reduce stop-running noise
+    if vol_20 > 0.005:
+        take_profit += 0.0004
+        stop_loss += 0.0002
+    
+    # Trending confirmation: tighten stops if autocorrelation is high
+    if abs(autocorr) > 0.35:
+        stop_loss *= 0.95
+        take_profit *= 1.1
+
+    # 6. Optimized Hold Time
+    # US sessions exhibit more continuation; Asia sessions tend toward mean reversion.
+    if is_us_session:
+        max_bars = 5
+    else:
+        max_bars = 4
+
+    return {
+        "signal": int(signal),
+        "position_size": float(position_size),
+        "take_profit": float(take_profit),
+        "stop_loss": float(stop_loss),
+        "max_bars": int(max_bars)
+    }
+# EVOLVE-BLOCK-END

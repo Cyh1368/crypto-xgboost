@@ -1,0 +1,14 @@
+{
+  "generation": 97,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "regime_fusion_filters",
+  "patch_description": "This edit upgrades the signal from a pure threshold-and-microstructure approach into a lightweight regime-aware selector.\n\nThe main improvement is adding a small set of orthogonal filters that are common sources of edge in short-horizon crypto:\n- trend confirmation via `trend_strength`, `macd_signal`, `autocorr_5`, and recent returns,\n- exhaustion/mean-reversion avoidance via `rsi_14`, `bb_pct`, and `vwap_dev`,\n- execution quality via `depth_ratio_5`, `kyle_lambda_est`, and `spread_bps`,\n- carry-risk timing via `funding_rate`, `funding_8h_ma`, and `minutes_to_funding`.\n\nIt keeps the original threshold structure and sizing logic intact, but makes entries more selective when the market is noisy or crowded, while allowing asymmetric long/short behavior when momentum and order flow align. Stops and take-profit are also made slightly more adaptive to ATR and microstructure friction, which should help preserve win rate while improving profitability per trade.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:20:13.867094",
+  "llm_cost": 0.01390725,
+  "llm_model": "gpt-5.4-mini"
+}

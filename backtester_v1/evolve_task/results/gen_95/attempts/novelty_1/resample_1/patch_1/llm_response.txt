@@ -1,0 +1,105 @@
+<NAME>
+volatility_scaled_asymmetric_targets
+</NAME>
+
+<DESCRIPTION>
+Optimized the signal generator by introducing:
+1. Volatility-scaled take-profit and stop-loss targets using the 5-bar vs 20-bar realized volatility ratio to adapt to changing market regimes.
+2. Slightly tighter entry thresholds for US and Asia sessions and intensified liquidity penalties incorporating spread sensitivity.
+3. Tightened VWAP deviation filters to avoid overextended entries.
+4. Increased position sizing baseline to 0.145 to capitalize on the high win rate, while maintaining strict risk bounds.
+5. Adjusted the maximum holding period to include an earlier exit for Asia sessions with low autocorrelation, promoting faster capital rotation in choppy markets.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Dynamic Entry Thresholds
+    base_thresh = 0.0018
+    if is_us:
+        base_thresh = 0.00172
+    elif is_asia:
+        base_thresh = 0.00205
+
+    # Add liquidity penalty to threshold
+    effective_thresh = base_thresh + min(0.0002, kyle_lambda * 25.0)
+
+    # 3. Micro-Alignment and Signal Logic
+    micro_score = (obi_tau5 + (pressure / 100.0)) / 2.0
+    signal = 0
+    if predicted_return > effective_thresh:
+        if micro_score > -0.6 and vwap_dev < 0.025 and spread_bps < 10.0:
+            if funding < 0.0015:
+                signal = 1
+    elif predicted_return < -effective_thresh:
+        if micro_score < 0.6 and vwap_dev > -0.025 and spread_bps < 10.0:
+            if funding > -0.0015:
+                signal = -1
+
+    # 4. Adaptive Sizing and Risk Management
+    if signal != 0:
+        # Confidence-weighted sizing
+        confidence = abs(predicted_return) / effective_thresh
+        position_size = 0.14 * min(1.25, confidence)
+        position_size = max(0.10, min(0.18, position_size))
+
+        # Optimized TP/SL with funding alignment bonus
+        take_profit = 0.0042
+        stop_loss = 0.0032
+        if (signal == 1 and funding < 0) or (signal == -1 and funding > 0):
+            take_profit += 0.0004
+
+        # Dynamic Hold Time
+        max_bars = 5 if (is_us or abs(trend) > 0.35 or abs(autocorr) > 0.15) else 4
+=======
+    # 2. Dynamic Entry Thresholds
+    base_thresh = 0.00178
+    if is_us:
+        base_thresh = 0.0017
+    elif is_asia:
+        base_thresh = 0.00208
+
+    # Add liquidity and spread penalty to threshold
+    effective_thresh = base_thresh + min(0.00025, kyle_lambda * 30.0) + (spread_bps * 0.000008)
+
+    # 3. Micro-Alignment and Signal Logic
+    micro_score = (obi_tau5 + (pressure / 100.0)) / 2.0
+    signal = 0
+    if predicted_return > effective_thresh:
+        if micro_score > -0.55 and vwap_dev < 0.022 and spread_bps < 9.5:
+            if funding < 0.0016:
+                signal = 1
+    elif predicted_return < -effective_thresh:
+        if micro_score < 0.55 and vwap_dev > -0.022 and spread_bps < 9.5:
+            if funding > -0.0016:
+                signal = -1
+
+    # 4. Adaptive Sizing and Risk Management
+    if signal != 0:
+        # Confidence-weighted sizing anchored higher to exploit high win rate
+        confidence = abs(predicted_return) / effective_thresh
+        position_size = 0.145 * min(1.2, confidence)
+        position_size = max(0.10, min(0.19, position_size))
+
+        # Volatility-adjusted TP/SL targets
+        vol_5 = bar_context.get('vol_5', 0.002)
+        vol_20 = bar_context.get('vol_20', 0.002)
+        vol_ratio = (vol_5 / vol_20) if vol_20 > 0 else 1.0
+        vol_scale = max(0.88, min(1.15, vol_ratio))
+
+        take_profit = 0.00425 * vol_scale
+        stop_loss = 0.0032 * vol_scale
+
+        # Funding alignment bonus for TP
+        if (signal == 1 and funding < 0) or (signal == -1 and funding > 0):
+            take_profit += 0.00045
+
+        # 5. Dynamic Hold Time
+        # Faster exit in non-trending or mean-reverting Asia environments
+        if is_us or abs(trend) > 0.4 or abs(autocorr) > 0.18:
+            max_bars = 5
+        elif is_asia and abs(autocorr) < 0.05:
+            max_bars = 3
+        else:
+            max_bars = 4
+>>>>>>> REPLACE
+</DIFF>

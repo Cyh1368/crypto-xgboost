@@ -1,0 +1,14 @@
+{
+  "generation": 93,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "micro_regime_funding_optimization",
+  "patch_description": "This update optimizes the signal generation by:\n1. Refining session-based thresholds to improve trade frequency in the Asia and Mid-session windows.\n2. Introducing a 'micro_score' that balances OBI and Book Pressure for more robust entry filtering.\n3. Increasing the base position size to 0.15 while maintaining confidence weighting and ATR-based volatility scaling.\n4. Implementing an asymmetric TP/SL strategy that rewards trades aligned with funding rate earnings (earning the rebate) and expands targets during strong trend regimes.\n5. Adapting hold times based on session persistence and trend strength.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:18:59.633849",
+  "llm_cost": 0.0076975,
+  "llm_model": "gemini-3-flash-preview"
+}

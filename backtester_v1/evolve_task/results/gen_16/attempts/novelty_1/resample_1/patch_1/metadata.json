@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "vol_adaptive_thresholds_and_lenient_filters",
+  "patch_description": "The current program's performance (66.00) is significantly lower than the best seed (80.50) primarily due to a lower trade frequency (323 vs 462). This edit aims to increase trade frequency while maintaining high precision by:\n1.  Lowering the base threshold from 0.0019 to 0.0018 and making it adaptive to the volatility regime (vol5/vol20).\n2.  Expanding the microstructure quality metric to include `obi_tau5` for a more robust view of the order book.\n3.  Relaxing the microstructure and funding filters to be more lenient, ensuring we don't block high-probability trades unless the book is heavily against us.\n4.  Increasing the base position size to 0.12 (from 0.11) and adding a dynamic boost for high-conviction signals (predicted return > 0.35%) to maximize total return.\n5.  Adding a spread filter (10 bps) to avoid trading in low-liquidity environments.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:46:13.108810",
+  "llm_cost": 0.0068839999999999995,
+  "llm_model": "gemini-3-flash-preview"
+}

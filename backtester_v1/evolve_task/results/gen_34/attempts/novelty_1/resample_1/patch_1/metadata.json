@@ -1,0 +1,14 @@
+{
+  "generation": 34,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "robust_seed_reversion_with_filters",
+  "patch_description": "The current program's dynamic thresholding and volatility-adjusted exits increased the drawdown significantly (0.36 vs. the seed's 0.25), resulting in a lower combined score despite a higher total return. This edit reverts the core logic to the robust parameters of the highest-performing seed (0.002 threshold, 0.004/0.003 TP/SL, and 0.10 position size) while adding high-value microstructure filters (VWAP deviation, funding rate, and stricter OBI) to improve the win rate and reduce drawdown further.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:54:39.832645",
+  "llm_cost": 0.0065935,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "fix_none_handling_and_robustness",
+  "patch_description": "The bug was likely caused by a combination of factors:\n1. Potential `TypeError` at runtime: The code did not handle cases where `adx` or `rsi` might be `None` in the `bar_context` dictionary (e.g., `{'adx': None}`). While `bar_context.get('adx', 20.0)` handles missing keys, it returns `None` if the key exists but its value is `None`. This would cause a crash during the `adx / 25.0` calculation.\n2. The `AttributeError: 'NoneType' object has no attribute 'loader'` in the evaluator suggests the module failed to load. This can sometimes happen if the script has a syntax error or if the evaluator's parser is sensitive to the structure of the code (like blank lines or complex docstrings).\n\nThe fix involves:\n- Implementing robust `None` and zero-value checks for all `bar_context` variables.\n- Simplifying the code structure by removing unnecessary blank lines and ensuring all types are explicitly cast to `float` or `int` where appropriate.\n- Ensuring the return dictionary keys and structure exactly match the expected format.\n- Adding `import math` inside the block to ensure mathematical functions are available, as per the instructions.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:21:42.383975",
+  "llm_cost": 0.003029,
+  "llm_model": "gemini-3-flash-preview"
+}

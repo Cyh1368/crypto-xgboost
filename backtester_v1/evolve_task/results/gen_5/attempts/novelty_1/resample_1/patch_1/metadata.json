@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_microstructure_alpha",
+  "patch_description": "The previous seed program demonstrated high efficiency with fixed thresholds, but can be improved by adding sensitivity to microstructure and session-based volatility. \n\nKey improvements:\n1. **Microstructure Confirmation**: Filters entry using `obi_tau5` (Order Book Imbalance) and `book_pressure_3` to ensure that the liquidity profile supports the predicted return direction.\n2. **Dynamic Thresholding**: The entry threshold is slightly lowered to 0.0018 (from 0.002) to increase opportunity, but it's dynamically adjusted by `is_us_session` (higher threshold due to volatility) and `funding_rate` (avoiding high-cost trades).\n3. **ATR-Anchored Exit**: Instead of a purely static exit, TP and SL are anchored to the successful 0.004/0.003 ratio but adjusted by `vol_20` to ensure they are realistic relative to current market conditions.\n4. **Position Sizing**: Scales position size (0.05 to 0.15) based on `predicted_return` magnitude and `trend_strength` to maximize capital efficiency on high-conviction setups.\n5. **Session-Responsive Exit**: `max_bars` is dynamically scaled (2-5 bars) relying on `autocorr_5` and `rsi_14` to exit faster from potentially mean-reverting or overextended states.",
+  "error_msg": null,
+  "timestamp": "2026-05-09T23:42:35.156308",
+  "llm_cost": 0.0065785,
+  "llm_model": "gemini-3-flash-preview"
+}

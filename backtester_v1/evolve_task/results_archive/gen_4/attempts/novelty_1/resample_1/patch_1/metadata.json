@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "vol_adjusted_rsi_filter_v2",
+  "patch_description": "The bug likely stemmed from a structural or environment-related issue when loading the function, possibly exacerbated by the simplicity of the original code or misuse of constants. I have implemented a more robust, 'evolved' version that:\n1.  **Volatility-Adjusted Thresholds:** Uses ATR to normalize the prediction thresholds, making the model more conservative during high volatility.\n2.  **RSI/ADX Filters:** Added trend filters (ADX) and overbought/oversold guards (RSI) to prevent entering trades in unfavorable momentum conditions.\n3.  **Dynamic Sizing and Exits:** Replaced fixed stops with ATR-based distances for take-profit and stop-loss, and scaled position size based on prediction confidence.\n4.  **Robustness:** Added defensive dictionary lookups with defaults and explicit type casting for return values (float/int) to ensure the evaluator receives the expected data types. Re-included imports within the block to ensure function isolation.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-09T23:21:37.152249",
+  "llm_cost": 0.0025615000000000004,
+  "llm_model": "gemini-3-flash-preview"
+}

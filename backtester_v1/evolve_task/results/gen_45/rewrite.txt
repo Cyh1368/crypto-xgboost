@@ -1,0 +1,110 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Advanced signal generator using volatility-adaptive thresholds, 
+    microstructure confirmation, and session-aware sizing.
+    """
+    import math
+    import numpy as np
+
+    def _get(key, default=0.0):
+        v = bar_context.get(key, default)
+        return default if v is None else v
+
+    # 1. Feature Extraction
+    # Microstructure
+    obi1 = float(_get("obi_tau1"))
+    obi3 = float(_get("obi_tau3"))
+    obi5 = float(_get("obi_tau5"))
+    book_pressure = float(_get("book_pressure_3"))
+    spread_bps = float(_get("spread_bps"))
+    
+    # Price Action & Volatility
+    vol5 = max(float(_get("vol_5")), 1e-9)
+    vol20 = max(float(_get("vol_20")), 1e-9)
+    vol_regime = max(0.5, min(2.0, vol5 / vol20))
+    
+    vwap_dev = float(_get("vwap_dev"))
+    trend_strength = float(_get("trend_strength"))
+    rsi6 = float(_get("rsi_6", 50.0))
+
+    # Macro & Time
+    funding = float(_get("funding_rate"))
+    is_us = bool(_get("is_us_session", False))
+    is_asia = bool(_get("is_asia_session", False))
+    
+    # 2. Composite Quality Metrics
+    # micro_quality: Positive favors longs, negative favors shorts.
+    micro_quality = (0.4 * obi1 + 0.2 * obi3 + 0.2 * obi5 + 0.2 * book_pressure)
+    
+    # 3. Dynamic Thresholding
+    # Adjust thresholds based on the current volatility regime.
+    BASE_THRESH = 0.00175
+    # If vol is expanding (vol_regime > 1), we require a higher predicted return.
+    thresh_scalar = 0.9 + 0.25 * (vol_regime - 0.5)
+    long_thresh = BASE_THRESH * thresh_scalar
+    short_thresh = -BASE_THRESH * thresh_scalar
+
+    # 4. Signal Generation with Multi-Factor Filters
+    signal = 0
+    
+    # Long Entry Logic
+    if predicted_return > long_thresh:
+        # Micro confirmation, funding carry check, and spread filter
+        if micro_quality > -0.3 and funding < 0.0005 and spread_bps < 9.0:
+            # Mean-reversion filter: avoid buying if price is too far above VWAP or RSI is overbought
+            if vwap_dev < 0.003 and rsi6 < 85:
+                signal = 1
+                
+    # Short Entry Logic
+    elif predicted_return < short_thresh:
+        # Micro confirmation, funding carry check, and spread filter
+        if micro_quality < 0.3 and funding > -0.0005 and spread_bps < 9.0:
+            # Mean-reversion filter: avoid selling if price is too far below VWAP or RSI is oversold
+            if vwap_dev > -0.003 and rsi6 > 15:
+                signal = -1
+
+    # 5. Dynamic Position Sizing
+    if signal == 0:
+        position_size = 0.0
+    else:
+        # Base size calibrated for high win rate
+        base_size = 0.14
+        
+        # Conviction boost for strong model predictions
+        conviction_boost = 0.02 if abs(predicted_return) > 0.0035 else 0.0
+        
+        # Session boost: US session often has higher follow-through
+        session_boost = 0.015 if is_us else (0.005 if not is_asia else 0.0)
+        
+        # Trend boost: Increase size if market is showing strong directional strength
+        trend_boost = 0.01 if trend_strength > 0.3 else 0.0
+        
+        position_size = base_size + conviction_boost + session_boost + trend_boost
+        position_size = min(0.19, max(0.10, position_size))
+
+    # 6. Risk Management Parameters
+    # Asymmetric TP/SL to optimize Profit Factor and Sharpe
+    take_profit = 0.0041
+    stop_loss = 0.0028
+    
+    # Time-based exit: 4 bars (60 mins) is the standard for this 15-min model.
+    # Reduce max_bars in extremely high volatility regimes to lock in gains/losses faster.
+    max_bars = 4
+    if vol_regime > 1.5:
+        max_bars = 3
+
+    return {
+        "signal":        int(signal),
+        "position_size": float(position_size),
+        "take_profit":   float(take_profit),
+        "stop_loss":     float(stop_loss),
+        "max_bars":      int(max_bars),
+    }
+# EVOLVE-BLOCK-END

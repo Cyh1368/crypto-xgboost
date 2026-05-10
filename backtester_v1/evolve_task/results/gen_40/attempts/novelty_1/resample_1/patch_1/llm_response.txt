@@ -1,0 +1,46 @@
+```xml
+<NAME>
+adaptive_thresholds_and_microstructure_filters
+</NAME>
+
+<DESCRIPTION>
+This edit improves the signal generation logic by re-introducing volatility-adaptive thresholds and microstructure filters, which were proven effective in high-performing previous iterations. 
+
+Key changes:
+1.  **Adaptive Thresholding**: Instead of a fixed 0.002 threshold, we use a base threshold of 0.0018 scaled by a volatility regime factor (vol_5 / vol_20). This allows the model to be more sensitive in low-volatility environments and more selective in high-volatility ones.
+2.  **Microstructure Quality**: We implement a `micro_quality` metric that combines multiple Order Book Imbalance (OBI) horizons (tau1, 3, 5) and book pressure. This ensures that the trade direction is supported by the underlying order book flow.
+3.  **Optimized Position Sizing**: We increase the base position size to 0.13 and add a conviction boost for high-confidence predictions (predicted_return > 0.0036) and a session boost for US liquidity.
+4.  **Refined Exits**: We maintain the robust 0.004/0.003 TP/SL targets but allow for a slightly longer holding period (5 bars) during strong trends and a shorter one (3 bars) during weekends.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Microstructure parameters
+    obi_tau5 = _safe_get("obi_tau5", 0.0)
+    spread_bps = _safe_get("spread_bps", 5.0)
+    book_pressure = _safe_get("book_pressure_3", 0.0)
+=======
+    # Microstructure parameters
+    obi_tau1 = _safe_get("obi_tau1", 0.0)
+    obi_tau3 = _safe_get("obi_tau3", 0.0)
+    obi_tau5 = _safe_get("obi_tau5", 0.0)
+    spread_bps = _safe_get("spread_bps", 5.0)
+    book_pressure = _safe_get("book_pressure_3", 0.0)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ============================================================================
+    # COMPONENT 2: SIGNAL CLASSIFICATION
+    # Seed 3 proved: simple fixed thresholds outperform complex adaptive logic
+    # ============================================================================
+    BASE_LONG_THRESH = 0.002
+    BASE_SHORT_THRESH = -0.002
+    
+    # No adaptive thresholds based on session (Seed 3 didn't use this and scored best)
+    signal = 0
+    if predicted_return > BASE_LONG_THRESH:
+        signal = 1
+    elif predicted_return < BASE_SHORT_THRESH:
+        signal = -1
+    
+    #

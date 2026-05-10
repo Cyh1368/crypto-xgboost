@@ -1,0 +1,56 @@
+<NAME>
+robust_atr_rsi_logic
+</NAME>
+
+<DESCRIPTION>
+The previous program failed with an `AttributeError: 'NoneType' object has no attribute 'loader'`, which typically indicates a structural issue in the module loading process, often caused by syntax errors or missing dependencies when the backtester attempts to import the signal function. 
+
+I have fixed this by:
+1. Ensuring all necessary imports (`numpy` and `math`) are included inside the `EVOLVE-BLOCK` to guarantee they are available regardless of how the code is extracted.
+2. Adding robust handling for `NaN` values and potential division-by-zero scenarios in `bar_context` (e.g., `close` price or `atr`).
+3. Implementing a more sophisticated trading logic that uses `atr` for volatility-adjusted stops, `rsi` and `adx` for trend filtering, and dynamic position sizing based on the strength of the `predicted_return`.
+4. Ensuring all return values are explicitly cast to the expected types (`int` for signal, `float` for sizes and stops).
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Enhanced trading signal generator using volatility-adjusted stops and trend filters.
+    """
+    import numpy as np
+    import math
+
+    # 1. Extract context with safety
+    close = bar_context.get('close', 0.0)
+    atr = bar_context.get('atr', 0.0)
+    rsi = bar_context.get('rsi', 50.0)
+    adx = bar_context.get('adx', 0.0)
+    
+    # Handle NaN values to prevent logic failures
+    if np.isnan(predicted_return): predicted_return = 0.0
+    if np.isnan(close): close = 0.0
+    if np.isnan(atr): atr = 0.0
+    if np.isnan(rsi): rsi = 50.0
+    if np.isnan(adx): adx = 0.0
+
+    # 2. Thresholds
+    # Use a base threshold of 0.15% for entry
+    base_threshold = 0.0015
+    
+    # 3. Signal logic with trend filters
+    signal = 0
+    if close > 0:
+        if predicted_return > base_threshold:
+            # Filter: Only long if RSI is not overbought and ADX shows some trend strength
+            if rsi < 65 and adx > 20:
+                signal = 1
+        elif predicted_return < -base_threshold:
+            # Filter: Only short if RSI is not oversold and ADX

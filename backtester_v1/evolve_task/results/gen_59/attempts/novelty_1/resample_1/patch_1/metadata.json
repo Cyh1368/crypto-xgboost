@@ -1,0 +1,14 @@
+{
+  "generation": 59,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "volatility_elastic_scoring_and_sizing",
+  "patch_description": "This edit implements a more sophisticated signal and execution layer inspired by the highest-performing previous iteration. \nKey improvements include:\n1.  **Elastic Thresholding**: Replaces the linear volatility scaling with an elastic multiplier (0.88 to 1.24) based on the volatility impulse (v5/v20), allowing for more trades in stable regimes and tighter filtering during spikes.\n2.  **Refined Microstructure Weighting**: Adjusts OBI and book pressure weights to prioritize immediate order book imbalance (obi_tau1).\n3.  **Conviction-Based Sizing**: Increases the base position size to 0.145 and adds a dynamic bonus based on how much the prediction exceeds the threshold.\n4.  **Volatility-Adaptive Exits**: Implements elastic take-profit and stop-loss levels that expand or contract based on volatility trends, maintaining win-rate stability across different market regimes.\n5.  **Stagnation Exit**: Reduces the maximum holding time (max_bars) from 4 to 3 if volatility is trending downwards, avoiding trades that lose momentum.",
+  "error_msg": null,
+  "timestamp": "2026-05-10T00:08:13.895310",
+  "llm_cost": 0.008487999999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

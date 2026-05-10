@@ -1,0 +1,112 @@
+<NAME>
+microstructure_filtered_entries
+</NAME>
+
+<DESCRIPTION>
+The current program has a very high win rate (0.84) but low trade frequency (150 trades), which limits its total return and Sharpe ratio compared to the top-performing seed (462 trades, 32.89 Sharpe).
+
+This edit proposes three main improvements:
+1.  **Lower Entry Thresholds**: Reduces the base threshold from 0.0019+penalty to a fixed 0.0018 to increase trade frequency, closer to the successful seed's 0.002.
+2.  **Microstructure Filtering**: Replaces the RSI-based filters with Order Book Imbalance (OBI) and VWAP deviation. OBI is a more reactive lead indicator for 15-minute returns, and VWAP deviation prevents entering at overextended prices.
+3.  **Volatility-Adaptive Risk**: Replaces the purely ATR-based TP/SL with a hybrid approach—anchoring to the seed's successful 0.004/0.003 ratio but adjusting it with a dampened volatility factor (based on ATR) to handle different market regimes.
+4.  **Simplified Hold Time**: Standardizes the holding period to 4-5 bars, which proved most effective in the highest-scoring versions.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # 2. Liquidity-Adjusted Dynamic Threshold
+    # If kyle_lambda is high, price impact/slippage is higher, so we need more conviction.
+    # Base threshold inspired by the top-performing seed (0.002).
+    liquidity_penalty = max(0.0, min(0.001, kyle_lambda * 100.0))
+    base_thresh = 0.0019 + liquidity_penalty
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Long Filter: Avoid entering at extreme RSI overbought or if funding is punitively high
+        if rsi < 75 and funding < 0.0006:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        # Short Filter: Avoid entering at extreme RSI oversold or if funding is punitively negative
+        if rsi > 25 and funding > -0.0006:
+            signal = -1
+=======
+    # 2. Microstructure-Enhanced Thresholds
+    # Lower base threshold to increase trade frequency, filtered by order book imbalance.
+    obi3 = bar_context.get('obi_tau3', 0.0)
+    vwap_dev = bar_context.get('vwap_dev', 0.0)
+    base_thresh = 0.0018
+
+    # 3. Execution Signal Logic
+    signal = 0
+    if predicted_return > base_thresh:
+        # Long Filter: OBI should not be heavily against us, and avoid extreme VWAP deviation
+        if obi3 > -0.45 and vwap_dev < 0.01 and funding < 0.0008:
+            signal = 1
+    elif predicted_return < -base_thresh:
+        # Short Filter: OBI should not be heavily against us, and avoid extreme VWAP deviation
+        if obi3 < 0.45 and vwap_dev > -0.01 and funding > -0.0008:
+            signal = -1
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # 4. Adaptive Hold Time (Max Bars)
+    # Autocorrelation gauges if we are in a trending or mean-reverting regime.
+    if is_us:
+        # US Session generally trends more
+        max_bars = 5 if autocorr > 0.0 else 4
+    elif is_asia:
+        # Asia Session often mean-reverts
+        max_bars = 4 if autocorr > 0.1 else 3
+    else:
+        max_bars = 4
+
+    # Increase hold if trend strength is significant
+    if abs(trend) > 0.6:
+        max_bars += 1
+=======
+    # 4. Adaptive Hold Time (Max Bars)
+    # Standard exit is 4 bars. Extend if trending or US session momentum is detected.
+    max_bars = 4
+    if abs(trend) > 0.5 or (is_us and autocorr > 0.0):
+        max_bars = 5
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # 5. Dynamic Risk Targets (TP/SL)
+    # Anchored to the successful 0.004/0.003 ratio (1.33 R/R)
+    # Adjusted slightly by ATR and trend alignment.
+    if signal != 0:
+        # Base TP/SL relative to ATR or fixed baseline
+        atr_pct = (atr / close) if close > 0 else 0.003
+
+        # Asymmetry: In trending markets, let profits run slightly more
+        if (signal == 1 and trend > 0.3) or (signal == -1 and trend < -0.3):
+            tp_mult, sl_mult = 1.45, 1.05
+        else:
+            tp_mult, sl_mult = 1.35, 1.0
+
+        take_profit = max(0.0035, min(0.015, atr_pct * tp_mult))
+        stop_loss = max(0.0025, min(0.01, atr_pct * sl_mult))
+
+        # 6. Position Sizing
+        # Base size 0.10. Scale by prediction confidence and volatility regime.
+        # vol_ratio > 1 means volatility is expanding (potential momentum).
+        confidence = abs(predicted_return) / 0.002
+        vol_scale = max(0.8, min(1.3, vol_ratio))
+
+        position_size = 0.10 * confidence * vol_scale
+        position_size = max(0.05, min(0.15, position_size)) # Cap to preserve capital
+=======
+    # 5. Risk Targets (TP/SL)
+    # Using a robust base ratio with a dampened volatility adjustment.
+    if signal != 0:
+        atr_pct = (atr / close) if close > 0 else 0.0025
+        vol_mod = max(0.75, min(1.35, (atr_pct / 0.0025) ** 0.6))
+        take_profit = 0.0041 * vol_mod
+        stop_loss = 0.0031 * vol_mod
+
+        # 6. Position Sizing
+        # Base size 0.12, scaled by prediction confidence.
+        confidence = abs(predicted_return) / 0.002
+        position_size = 0.12 * confidence
+        position_size = max(0.08, min(0.18, position_size))
+>>>>>>> REPLACE

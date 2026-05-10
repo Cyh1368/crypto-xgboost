@@ -1,0 +1,110 @@
+--- a/original.py
++++ b/original.py
+@@ -1,106 +1,12 @@
+ import random
+ import numpy as np
+ 
+ random.seed(42)
+ np.random.seed(42)
+ 
+ # EVOLVE-BLOCK-START
+ import numpy as np
+ import math
+ 
+-def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+-    """
+-    Refined trading signal generator for 15-minute forward returns.
+-    Uses volatility-adjusted thresholds, trend filters (ADX, RSI), 
+-    and ATR-based position sizing and exits.
+-    """
+-    # 1. Capture and standardize input prediction
+-    try:
+-        pr = float(predicted_return)
+-        if not math.isfinite(pr):
+-            pr = 0.0
+-    except (TypeError, ValueError):
+-        pr = 0.0
+-
+-    # 2. Safely extract context values (bar_context keys: close, high, low, volume, atr, rsi, adx)
+-    def get_val(key, default):
+-        val = bar_context.get(key)
+-        if val is None:
+-            return default
+-        try:
+-            f = float(val)
+-            return f if math.isfinite(f) else default
+-        except (TypeError, ValueError):
+-            return default
+-
+-    close_price = get_val('close', 1.0)
+-    atr_val     = get_val('atr', 0.0)
+-    rsi_val     = get_val('rsi', 50.0)
+-    adx_val     = get_val('adx', 20.0)
+-
+-    # 3. Derive Volatility and Dynamic Thresholds
+-    # vol_pct: bar volatility as a scale of price
+-    vol_pct = (atr_val / close_price) if close_price > 0 and atr_val > 0 else 0.004
+-    vol_pct = max(0.0005, min(vol_pct, 0.05))
+-
+-    # Threshold scales with volatility: more volatile/noisy markets require more conviction
+-    # Trend Strength (ADX): if ADX > 25, slightly lower entry threshold as the trend is clearer
+-    base_threshold = 0.0016 + (vol_pct * 0.25)
+-    if adx_val > 25:
+-        base_threshold *= 0.85
+-
+-    # 4. Signal Determination
+-    signal = 0
+-    if pr > base_threshold:
+-        # RSI Filter: avoid buying when extremely overbought on 15m basis
+-        if rsi_val < 72:
+-            signal = 1
+-    elif pr < -base_threshold:
+-        # RSI Filter: avoid selling when extremely oversold
+-        if rsi_val > 28:
+-            signal = -1
+-
+-    # 5. Position Sizing
+-    # Using inverse-volatility logic to keep portfolio risk consistent
+-    if signal == 0:
+-        position_size = 0.0
+-    else:
+-        # Conviction factor: how much the prediction exceeds the threshold (capped at 3x)
+-        conviction = max(0.5, min(3.0, abs(pr) / (base_threshold if base_threshold > 0 else 0.001)))
+-        # Normalize size using a reference bar volatility of 0.5%
+-        vol_multiplier = 0.005 / vol_pct
+-        position_size = 0.12 * conviction * vol_multiplier
+-        position_size = max(0.02, min(position_size, 0.5))
+-
+-    # 6. Risk Management (Exits)
+-    # TP/SL based on ATR to adapt to changing volume/volatility regimes
+-    tp_mult = 2.4 if signal == 1 else 2.1
+-    sl_mult = 1.6 if signal == 1 else 1.8
+-
+-    take_profit = vol_pct * tp_mult
+-    stop_loss = vol_pct * sl_mult
+-
+-    # Clamp the TP/SL values to prevent outliers
+-    take_profit = float(max(0.0015, min(take_profit, 0.06)))
+-    stop_loss = float(max(0.001, min(stop_loss, 0.04)))
+-
+-    # 7. Holding Period
+-    # Exit trade after X bars if TP/SL hasn't hit. Stronger trend (ADX) allows longer hold.
+-    max_bars = 4
+-    if adx_val > 30:
+-        max_bars = 6
+-    elif adx_val > 22:
+-        max_bars = 5
+-
+-    return {
+-        "signal": int(signal),
+-        "position_size": float(position_size),
+-        "take_profit": float(take_profit),
+-        "stop_loss": float(stop_loss),
+-        "max_bars": int(max_bars)
+-    }
+-
+-# Provide aliases for external evaluation systems
+-predict_signal = generate_signal
+-signal_function = generate_signal
++def generate_signal(...):
+ # EVOLVE-BLOCK-END

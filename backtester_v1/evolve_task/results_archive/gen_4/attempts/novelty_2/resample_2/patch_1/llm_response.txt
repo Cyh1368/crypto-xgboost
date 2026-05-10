@@ -1,0 +1,61 @@
+<NAME>
+robust_volatility_signal
+</NAME>
+
+<DESCRIPTION>
+The bug was likely related to the signal function being too basic or the evaluator's failure to properly import the module, which can sometimes be triggered by missing imports inside the extracted block or incorrect return types. This fix improves the signal logic by incorporating volatility-adjusted thresholds (using ATR), trend filtering (using ADX and RSI), and dynamic position sizing. It also ensures all necessary imports are inside the EVOLVE-BLOCK and that return types are explicitly cast to Python primitives to avoid any compatibility issues with the backtester.
+</DESCRIPTION>
+
+<CODE>
+```python
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+import numpy as np
+import math
+
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Evolved trading signal generator.
+    Translates XGBoost 15-min return prediction into a trading decision.
+    Uses ATR for volatility-adjusted stops and thresholds, RSI and ADX for filtering.
+    """
+    # 1. Extract context with defaults
+    close = bar_context.get('close', 0.0)
+    atr = bar_context.get('atr', 0.0)
+    rsi = bar_context.get('rsi', 50.0)
+    adx = bar_context.get('adx', 0.0)
+    
+    # Handle edge case of missing data
+    if close <= 0:
+        return {
+            "signal": 0,
+            "position_size": 0.0,
+            "take_profit": 0.02,
+            "stop_loss": 0.01,
+            "max_bars": 6,
+        }
+
+    # 2. Dynamic Entry Thresholds
+    # Adjust thresholds based on volatility (ATR as % of price)
+    vol_ratio = (atr / close) if close > 0 else 0.002
+    # Base threshold is 0.15% or 80% of current volatility
+    long_thresh = max(0.0015, vol_ratio * 0.8)
+    short_thresh = -max(0.0015, vol_ratio * 0.8)
+
+    # 3. Signal Generation with RSI and ADX Filters
+    signal = 0
+    if predicted_return > long_thresh:
+        # Avoid buying if already overbought or if there's no trend
+        if rsi < 70 and adx > 15:
+            signal = 1
+    elif predicted_return < short_thresh:
+        # Avoid selling if already oversold or if there's no trend
+        if rsi > 30 and adx > 15:
+            signal = -1
+
+    # 4

@@ -1,0 +1,292 @@
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# EVOLVE-BLOCK-START
+def generate_signal(predicted_return: float, bar_context: dict) -> dict:
+    """
+    Ensemble regime-adaptive trading signal generator.
+    Classifies market regime and applies regime-specific logic.
+    """
+    
+    def _get(key, default=0.0):
+        v = bar_context.get(key, default)
+        return default if v is None else v
+    
+    # ===== EXTRACT ALL CONTEXT =====
+    # Microstructure
+    obi_tau1 = float(_get("obi_tau1", 0.0))
+    obi_tau5 = float(_get("obi_tau5", 0.0))
+    spread_bps = float(_get("spread_bps", 5.0))
+    depth_ratio_5 = float(_get("depth_ratio_5", _get("depth_ratio5", 1.0)))
+    depth_ratio_10 = float(_get("depth_ratio_10", _get("depth_ratio10", 1.0)))
+    book_pressure = float(_get("book_pressure_3", 0.0))
+    kyle_lambda = abs(float(_get("kyle_lambda_est", 0.0)))
+    
+    # Price Action
+    ret_1 = float(_get("ret_1", 0.0))
+    ret_3 = float(_get("ret_3", 0.0))
+    ret_6 = float(_get("ret_6", 0.0))
+    ret_12 = float(_get("ret_12", 0.0))
+    vol_5 = max(float(_get("vol_5", 0.015)), 1e-8)
+    vol_20 = max(float(_get("vol_20", 0.015)), 1e-8)
+    vol_60 = max(float(_get("vol_60", 0.015)), 1e-8)
+    rsi_14 = float(_get("rsi_14", _get("rsi", 50.0)))
+    rsi_6 = float(_get("rsi_6", rsi_14))
+    macd_signal = float(_get("macd_signal", 0.0))
+    bb_pct = float(_get("bb_pct", 0.5))
+    atr_14 = max(float(_get("atr_14", _get("atr", 0.001))), 1e-8)
+    momentum = float(_get("momentum", _get("momentum_bar", 0.0)))
+    vwap_dev = float(_get("vwap_dev", 0.0))
+    autocorr_5 = float(_get("autocorr_5", 0.0))
+    skew_20 = float(_get("skew_20", 0.0))
+    kurt_20 = float(_get("kurt_20", 3.0))
+    trend_strength = float(_get("trend_strength", 0.0))
+    
+    # Macro
+    funding_rate = float(_get("funding_rate", 0.0))
+    funding_8h_ma = float(_get("funding_8h_ma", 0.0))
+    
+    # Time
+    is_asia_session = bool(_get("is_asia_session", False))
+    is_us_session = bool(_get("is_us_session", False))
+    is_weekend = bool(_get("is_weekend", False))
+    minutes_to_funding = float(_get("minutes_to_funding", 999.0))
+    hour_sin = float(_get("hour_sin", 0.0))
+    hour_cos = float(_get("hour_cos", 0.0))
+    
+    # ===== REGIME CLASSIFICATION =====
+    # Compute regime indicators
+    vol_ratio_short_medium = vol_5 / vol_20
+    vol_ratio_medium_long = vol_20 / vol_60
+    vol_expansion = max(vol_ratio_short_medium, vol_ratio_medium_long)
+    
+    # Trend and mean-reversion signals
+    recent_momentum = 0.5 * ret_1 + 0.3 * ret_3 + 0.2 * ret_6
+    medium_momentum = 0.4 * ret_6 + 0.6 * ret_12
+    
+    # Churn/noise indicator
+    churn = abs(autocorr_5) + max(0.0, kurt_20 - 3.0) * 0.1 + abs(skew_20) * 0.05
+    
+    # Regime scoring (0-1 scale)
+    is_trending = trend_strength > 0.12 and abs(medium_momentum) > 0.0008
+    is_high_vol = vol_expansion > 1.15
+    is_mean_revert = (bb_pct < 0.25 or bb_pct > 0.75) and churn < 0.3
+    is_choppy = churn > 0.4 and vol_expansion > 1.1
+    
+    # Assign regime
+    if is_trending and is_high_vol:
+        regime = "trending_high_vol"
+        regime_score = 0.9
+    elif is_mean_revert and not is_high_vol:
+        regime = "mean_revert_low_vol"
+        regime_score = 0.85
+    elif is_choppy:
+        regime = "choppy_high_vol"
+        regime_score = 0.4
+    else:
+        regime = "quiet_low_vol"
+        regime_score = 0.6
+    
+    # ===== LIQUIDITY SCORE =====
+    # Combine spread, depth, and kyle_lambda into liquidity metric
+    spread_score = max(0.0, 1.0 - spread_bps / 15.0)  # 0 at 15bps, 1 at 0bps
+    depth_score = (depth_ratio_5 + depth_ratio_10) / 4.0  # normalized
+    kyle_score = max(0.0, 1.0 - kyle_lambda * 50.0)  # 0 at 0.02, 1 at 0
+    liquidity_score = 0.4 * spread_score + 0.35 * depth_score + 0.25 * kyle_score
+    liquidity_score = max(0.0, min(1.0, liquidity_score))
+    
+    # ===== MICROSTRUCTURE CONFIRMATION =====
+    # OBI-based directional bias
+    obi_long_signal = obi_tau1 > 0.03 or obi_tau5 > 0.02
+    obi_short_signal = obi_tau1 < -0.03 or obi_tau5 < -0.02
+    book_pressure_long = book_pressure > 0.05
+    book_pressure_short = book_pressure < -0.05
+    
+    micro_long_score = 0.6 * float(obi_long_signal) + 0.4 * float(book_pressure_long)
+    micro_short_score = 0.6 * float(obi_short_signal) + 0.4 * float(book_pressure_short)
+    
+    # ===== MOMENTUM CONFIRMATION =====
+    rsi_long_signal = rsi_14 < 45.0 and rsi_6 < 40.0  # oversold
+    rsi_short_signal = rsi_14 > 55.0 and rsi_6 > 60.0  # overbought
+    macd_long_signal = macd_signal > 0.0
+    macd_short_signal = macd_signal < 0.0
+    
+    momentum_long_score = 0.5 * float(rsi_long_signal) + 0.5 * float(macd_long_signal)
+    momentum_short_score = 0.5 * float(rsi_short_signal) + 0.5 * float(macd_short_signal)
+    
+    # ===== MACRO FILTERS =====
+    funding_long_ok = funding_rate <= funding_8h_ma or funding_rate < 0.0
+    funding_short_ok = funding_rate >= funding_8h_ma or funding_rate > 0.0
+    near_funding = minutes_to_funding < 20.0
+    
+    # ===== REGIME-SPECIFIC THRESHOLDS AND LOGIC =====
+    signal = 0
+    position_size = 0.0
+    take_profit = 0.004
+    stop_loss = 0.003
+    max_bars = 4
+    
+    if regime == "trending_high_vol":
+        # Aggressive in trending markets with high vol
+        long_thresh = 0.0015
+        short_thresh = -0.0015
+        base_pos_size = 0.12
+        tp_mult = 1.8
+        sl_mult = 1.2
+        max_bars = 6
+        
+        long_score = (
+            predicted_return +
+            0.25 * micro_long_score +
+            0.20 * momentum_long_score +
+            0.15 * max(0.0, medium_momentum / 0.002) +
+            0.15 * trend_strength +
+            0.10 * liquidity_score +
+            0.05 * float(is_us_session)
+        )
+        short_score = (
+            -predicted_return +
+            0.25 * micro_short_score +
+            0.20 * momentum_short_score +
+            0.15 * max(0.0, -medium_momentum / 0.002) +
+            0.15 * trend_strength +
+            0.10 * liquidity_score +
+            0.05 * float(is_us_session)
+        )
+        
+        if long_score > long_thresh and funding_long_ok and not near_funding:
+            signal = 1
+        elif short_score > abs(short_thresh) and funding_short_ok and not near_funding:
+            signal = -1
+    
+    elif regime == "mean_revert_low_vol":
+        # Conservative, mean-reversion focused
+        long_thresh = 0.0008
+        short_thresh = -0.0008
+        base_pos_size = 0.08
+        tp_mult = 1.2
+        sl_mult = 0.8
+        max_bars = 3
+        
+        # Require extreme BB and RSI for mean revert
+        bb_long = bb_pct < 0.20
+        bb_short = bb_pct > 0.80
+        
+        long_score = (
+            predicted_return +
+            0.30 * float(bb_long) +
+            0.25 * momentum_long_score +
+            0.20 * micro_long_score +
+            0.15 * liquidity_score +
+            0.10 * max(0.0, -vwap_dev / 0.002)
+        )
+        short_score = (
+            -predicted_return +
+            0.30 * float(bb_short) +
+            0.25 * momentum_short_score +
+            0.20 * micro_short_score +
+            0.15 * liquidity_score +
+            0.10 * max(0.0, vwap_dev / 0.002)
+        )
+        
+        if long_score > long_thresh and funding_long_ok:
+            signal = 1
+        elif short_score > abs(short_thresh) and funding_short_ok:
+            signal = -1
+    
+    elif regime == "choppy_high_vol":
+        # Very selective, high bar for entry
+        long_thresh = 0.0025
+        short_thresh = -0.0025
+        base_pos_size = 0.05
+        tp_mult = 1.0
+        sl_mult = 1.5
+        max_bars = 2
+        
+        long_score = (
+            predicted_return +
+            0.35 * micro_long_score +
+            0.30 * momentum_long_score +
+            0.20 * liquidity_score +
+            0.15 * float(is_us_session)
+        )
+        short_score = (
+            -predicted_return +
+            0.35 * micro_short_score +
+            0.30 * momentum_short_score +
+            0.20 * liquidity_score +
+            0.15 * float(is_us_session)
+        )
+        
+        if long_score > long_thresh and liquidity_score > 0.5 and funding_long_ok:
+            signal = 1
+        elif short_score > abs(short_thresh) and liquidity_score > 0.5 and funding_short_ok:
+            signal = -1
+    
+    else:  # quiet_low_vol
+        # Moderate selectivity
+        long_thresh = 0.0012
+        short_thresh = -0.0012
+        base_pos_size = 0.09
+        tp_mult = 1.3
+        sl_mult = 1.0
+        max_bars = 5
+        
+        long_score = (
+            predicted_return +
+            0.25 * micro_long_score +
+            0.25 * momentum_long_score +
+            0.20 * liquidity_score +
+            0.15 * max(0.0, recent_momentum / 0.001) +
+            0.15 * float(is_us_session)
+        )
+        short_score = (
+            -predicted_return +
+            0.25 * micro_short_score +
+            0.25 * momentum_short_score +
+            0.20 * liquidity_score +
+            0.15 * max(0.0, -recent_momentum / 0.001) +
+            0.15 * float(is_us_session)
+        )
+        
+        if long_score > long_thresh and funding_long_ok:
+            signal = 1
+        elif short_score > abs(short_thresh) and funding_short_ok:
+            signal = -1
+    
+    # ===== POSITION SIZING =====
+    if signal != 0:
+        # Volatility adjustment
+        vol_scalar = 0.015 / max(vol_20, 0.001)
+        vol_scalar = max(0.4, min(2.0, vol_scalar))
+        
+        # Funding adjustment
+        funding_scalar = 1.0
+        if abs(funding_rate) > 0.001:
+            funding_scalar = max(0.5, 1.0 - abs(funding_rate) * 80.0)
+        
+        # Liquidity adjustment
+        liquidity_scalar = 0.5 + 0.5 * liquidity_score
+        
+        # Weekend penalty
+        weekend_scalar = 0.7 if is_weekend else 1.0
+        
+        # Combine all scalars
+        position_size = base_pos_size * vol_scalar * funding_scalar * liquidity_scalar * weekend_scalar
+        position_size = max(0.02, min(0.25, position_size))
+        
+        # ===== EXIT PARAMETERS =====
+        take_profit = 0.004 * tp_mult
+        stop_loss = 0.003 * sl_mult
+    
+    return {
+        "signal":        signal,
+        "position_size": position_size,
+        "take_profit":   take_profit,
+        "stop_loss":     stop_loss,
+        "max_bars":      int(max_bars),
+    }
+# EVOLVE-BLOCK-END
