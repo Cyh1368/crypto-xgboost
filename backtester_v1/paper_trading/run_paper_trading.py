@@ -222,8 +222,13 @@ class PaperTrader:
             state['stop_loss'] = out['stop_loss']
             state['max_bars'] = out['max_bars']
             
-            # Sizing: Proportional to total equity allocation ($10 base)
-            notional = state['equity'] * out['position_size'] * 6.6
+            # Sizing: Strictly following Shinka logic (fraction of TOTAL portfolio)
+            total_portfolio_equity = sum(s['equity'] + s['unrealized_pnl'] for s in self.states.values())
+            notional = total_portfolio_equity * out['position_size']
+            
+            # Optional: Hard cap at $20 (2x leverage on the $10 allocation) per coin
+            notional = min(notional, 20.0)
+            
             entry_fee = notional * FEE_RATE
             
             state['equity'] -= entry_fee
