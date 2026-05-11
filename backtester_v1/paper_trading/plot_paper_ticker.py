@@ -75,7 +75,12 @@ def plot_paper_ticker_advanced(symbol):
         unrealized = 0.0
         if pos != 0 and current_qty > 0:
             unrealized = current_qty * (price_now - current_entry_price) * pos
-            sizes.append((current_qty * price_now / total_equity_map.get(ts, 1000.0)) * 10 * pos) # scaled to 100%
+            # Total Portfolio = 10 * Symbol Equity
+            # Symbol Equity = INITIAL_COIN_EQUITY + realized_pnl + unrealized
+            sym_equity = INITIAL_COIN_EQUITY + realized_pnl[i] + unrealized
+            notional = current_qty * price_now
+            size_pct = (notional / (sym_equity * 10.0)) * 100.0
+            sizes.append(size_pct * pos)
         else:
             sizes.append(0.0)
             if pos == 0:
@@ -108,7 +113,7 @@ def plot_paper_ticker_advanced(symbol):
 
     # 3. Position Sizing
     ax3.bar(df['timestamp'], sizes, width=0.005, color=['green' if s > 0 else 'red' for s in sizes], alpha=0.7)
-    ax3.set_ylabel('Position Size (%)')
+    ax3.set_ylabel('Size (% of Total Portfolio)')
     ax3.set_title('Position Sizing Over Time')
     ax3.axhline(0, color='black', linewidth=0.8, linestyle='--')
     ax3.grid(True, alpha=0.3)

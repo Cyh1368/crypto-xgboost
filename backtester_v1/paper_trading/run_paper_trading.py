@@ -222,12 +222,11 @@ class PaperTrader:
             state['stop_loss'] = out['stop_loss']
             state['max_bars'] = out['max_bars']
             
-            # Sizing: Strictly following Shinka logic (fraction of TOTAL portfolio)
-            total_portfolio_equity = sum(s['equity'] + s['unrealized_pnl'] for s in self.states.values())
-            notional = total_portfolio_equity * out['position_size']
-            
-            # Optional: Hard cap at $20 (2x leverage on the $10 allocation) per coin
-            notional = min(notional, 20.0)
+            # Sizing: Identical to backtester.py
+            notional = state['equity'] * out['position_size']
+            # Cap by leverage (Original Backtester MAX_LEVERAGE = 3.0)
+            max_notional = state['equity'] * 3.0
+            notional = min(notional, max_notional)
             
             entry_fee = notional * FEE_RATE
             

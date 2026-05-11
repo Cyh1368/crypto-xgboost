@@ -1,4 +1,4 @@
-import os
+`import os
 import pandas as pd
 import joblib
 import sys
@@ -50,7 +50,7 @@ def plot_advanced_ticker_results(state, ohlcv_df, features_df, model, calibratio
     
     # Set overall title
     initial_equity = state.equity_curve[0]
-    fig.suptitle(f"{symbol}, initial portfolio = ${initial_equity:,.0f}, Sharpe = {sharpe:.2f}", fontsize=20, fontweight='bold')
+    fig.suptitle(f"{symbol}, initial portfolio = $100 ($10 per coin), Sharpe = {sharpe:.2f}", fontsize=20, fontweight='bold')
     
     # Subplot 1: PnL
     pnl = np.array(state.equity_curve) - initial_equity
@@ -81,31 +81,28 @@ def plot_advanced_ticker_results(state, ohlcv_df, features_df, model, calibratio
     ax2.grid(True, alpha=0.3)
 
     # Subplot 3: Position Sizing (Bar Chart)
-    # Re-calculate size as percentage of equity
+    # size = (Notional / Total Portfolio Equity) * 100
+    # Total Portfolio = 10 * Symbol Equity
     sizes = []
-    current_trade_idx = 0
-    for ts, pos in zip(state.timestamps, state.positions):
+    for ts, pos, eq in zip(state.timestamps, state.positions, state.equity_curve):
         if pos == 0:
             sizes.append(0.0)
         else:
-            # Find the active trade for this timestamp
-            # This is simplified; assumes timestamps in state match trades
             active_trade = None
             for t in state.trades:
                 if t.entry_ts <= ts < t.exit_ts:
                     active_trade = t
                     break
-            
             if active_trade:
-                # size = (notional / equity) * direction
-                # but we can get it from qty_btc * entry_price / equity_at_entry
-                size_pct = (active_trade.qty_btc * active_trade.entry_price) / initial_equity # approximation or search equity curve
+                notional = active_trade.qty_btc * active_trade.entry_price
+                total_portfolio = eq * 10.0
+                size_pct = (notional / total_portfolio) * 100.0
                 sizes.append(size_pct * pos)
             else:
                 sizes.append(0.0)
 
     ax3.bar(state.timestamps, sizes, width=0.01, color=['green' if s > 0 else 'red' for s in sizes], alpha=0.7)
-    ax3.set_ylabel('Position Size (%)')
+    ax3.set_ylabel('Size (% of Total Portfolio)')
     ax3.set_title(f'Strategy Position Sizing Over Time')
     ax3.axhline(0, color='black', linewidth=0.8, linestyle='--')
     ax3.grid(True, alpha=0.3)
@@ -211,7 +208,7 @@ def main():
             
         # Run Backtest
         # We need to manually set BPS_TO_RATIO etc if they changed, but they are constants in backtester.py
-        state = run_backtest(ohlcv, features, model, calibration_factor=calibration_factor)
+        state = run_backtest(ohlcv, features, model, initial_equity=10.0, calibration_factor=calibration_factor)
 
         metrics = compute_metrics(state)
         
