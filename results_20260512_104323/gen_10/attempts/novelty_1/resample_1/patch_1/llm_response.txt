@@ -1,0 +1,54 @@
+NAME>
+regime_invariant_zscore_boost
+</NAME>
+
+<DESCRIPTION>
+The primary problem is slope collapse (val_slope=0.006 vs train_slope=0.074), indicating the model learns regime-specific absolute patterns that fail in the validation period. 
+
+This approach solves the problem by:
+1.  **Strict Regime Invariance:** Every feature is transformed into a rolling z-score or a relative ratio (e.g., price position in range, efficiency ratio). This ensures that a "large move" or "high volatility" is defined relative to the *recent* market character (last 10-60 bars) rather than absolute historical levels.
+2.  **Short-Horizon Focus:** Lookbacks are capped at 60 bars (15 hours) to ensure the model adapts quickly to regime shifts.
+3.  **Robust Regularization:** Increased `min_child_weight` (30) and `reg_lambda` (2.0) force the model to learn patterns that are consistent across large samples, preventing it from fitting to noise in the training set.
+4.  **Interaction Terms:** Multiplicative terms like `momentum * volatility_regime` are explicitly provided to help the model distinguish between trend-following and mean-reverting environments.
+5.  **Target Robustness:** Clipping targets at the 97th percentile and using a conservative learning rate (0.04) prevents outliers from distorting the predictive slope.
+</DESCRIPTION>
+
+<CODE>
+```python
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 450,
+    "max_depth": 3,
+    "min_child_weight": 30,
+    "reg_alpha": 0.1,
+    "reg_lambda": 2.0,
+    "gamma": 0.1,
+    "subsample": 0.75,
+    "colsample_bytree": 0.75,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.04,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+
+CLIP_PERCENTILE = 97
+MIN_PRED_STD_RATIO = 0.18
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix using strictly regime-invariant transformations.
+    Focuses on

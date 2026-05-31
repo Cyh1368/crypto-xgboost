@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_short_window_features",
+  "patch_description": "This edit targets the core failure mode: the model\u2019s slope collapses out of sample, especially in the validation regime, which indicates the current features are too anchored to one market regime. I replace several longer-horizon, absolute-level features with shorter-window and rolling z-score / trend-of-regime features that are more invariant across volatility shifts.\n\nKey ideas:\n- Use more short lookbacks (5-20 bars) so the features decay faster and adapt to regime changes.\n- Normalize momentum, range, and volume using rolling z-scores instead of raw levels.\n- Add trend-of-regime features like volatility slope, efficiency slope, and autocorrelation slope.\n- Add one explicit interaction: momentum \u00d7 volatility regime, but using a shorter momentum window.\n- Keep the total feature count comfortably below 80 and use only past data.\n\nThis should help restore predictive slope on validation while also reducing train-to-val overfitting.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:57:56.343140",
+  "llm_cost": 0.02315025,
+  "llm_model": "gpt-5.4-mini"
+}

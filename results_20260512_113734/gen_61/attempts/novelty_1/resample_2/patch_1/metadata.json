@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb_crossover",
+  "patch_description": "This crossover keeps the strongest parts of the prior programs while emphasizing the main failure mode: regime fragility and prediction collapse. The feature set is rebuilt around shorter lookbacks, rolling z-scores, and \u201cchange in market character\u201d signals such as volatility trend, efficiency trend, and regime shifts. I also keep a compact set of interactions like momentum \u00d7 volatility regime, which often generalize better than raw signals alone.\n\nOn the model side, I make XGBoost slightly more expressive than the most over-regularized versions, while still retaining enough constraint to avoid overfitting. The target clipping is loosened a bit to preserve amplitude, and winsorization is applied after feature construction to reduce tail dominance without destroying signal.\n\nThe result is a compact, regime-aware feature crossover designed to improve val slope, val correlation, and prediction variance without exceeding the feature budget or using any lookahead.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:28:38.727914",
+  "llm_cost": 0.04122675,
+  "llm_model": "gpt-5.4-mini"
+}

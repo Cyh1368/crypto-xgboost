@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "reduce_regularization_add_interactions",
+  "patch_description": "The primary issue is extreme regularization preventing the model from expressing any signal (pred_std_ratio=0.0063). The collapse penalty dominates the score. I will:\n\n1. Drastically reduce regularization (reg_alpha \u2192 0.001, reg_lambda \u2192 0.1) to allow signal learning\n2. Increase learning_rate to 0.1 for faster convergence with fewer estimators\n3. Reduce n_estimators to 200 to avoid overfitting with looser regularization\n4. Adjust min_child_weight to 3 to allow finer splits capturing signal\n5. Add interaction features: ret_momentum (momentum of recent returns), volatility-weighted returns, cross-regime features\n6. Add decay-weighted momentum features that emphasize recent bars more\n7. Use less aggressive target clipping (98th percentile instead of 99th)\n\nThis addresses the core constraint violation: regularization is so tight it's killing expressivity. The target accuracy of 0.52 is achievable - we just need the model to use the signal.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:19:46.964676",
+  "llm_cost": 0.013314,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

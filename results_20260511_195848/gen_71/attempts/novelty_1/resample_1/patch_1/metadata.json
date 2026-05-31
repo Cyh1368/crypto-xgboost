@@ -1,0 +1,14 @@
+{
+  "generation": 71,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_feature_shift_and_increase_model_expressivity",
+  "patch_description": "The main issue causing the model to collapse predictions toward the mean (very low pred_std_ratio) is excessive regularization and insufficient model expressivity. The current model uses moderate regularization and moderate tree depth but still collapses. Additionally, the feature engineering applies shifts to all features, which is correct to avoid lookahead, but the time-based features use a frequency string '15min' which is correct, but the orderbook features are shifted after applying df.apply, which can cause misalignment or NaNs.\n\nTo fix:\n\n1. Increase model expressivity by increasing max_depth and reducing regularization (reg_lambda), and increasing n_estimators slightly, while keeping early stopping.\n2. Fix feature engineering to shift orderbook features before applying the lambda to avoid misalignment and ensure no lookahead.\n3. Add a few interaction features to increase signal without increasing feature count too much.\n4. Keep all features shifted by 1 to avoid lookahead, but ensure the shifting is consistent and no NaNs are introduced unnecessarily.\n5. Add normalization to features to help model training.\n\nThese changes address the collapse warning by increasing model capacity and ensuring features are properly aligned without lookahead.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:09:15.978160",
+  "llm_cost": 0.007010400000000001,
+  "llm_model": "gpt-4.1-mini"
+}

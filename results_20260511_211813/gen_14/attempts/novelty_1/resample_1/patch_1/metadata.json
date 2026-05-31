@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "modular_regime_expressive",
+  "patch_description": "The structural redesign focuses on a modularized feature engineering pipeline and increased model expressivity to combat \"prediction collapse.\" \n\nKey changes:\n1.  **Feature Categorization**: Features are organized into logical blocks (Micro-Price Structure, Multi-scale Momentum, Volatility Regimes, and Volume Dynamics) to ensure a balanced signal-to-noise ratio while staying under the 80-feature limit.\n2.  **Expressivity Tuning**: The `min_child_weight` is significantly reduced (from 10 to 2) and the `learning_rate` is increased. This allows the XGBoost model to capture more granular patterns in the 15-minute data rather than defaulting to the mean prediction.\n3.  **New Micro-Structure Features**: Added candle body/wick ratios and price location within rolling ranges to capture short-term mean reversion and breakout signals.\n4.  **Regime Conditioning**: Introduced a volatility regime indicator and volume-weighted momentum to help the model distinguish between trending and sideways markets.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:21:02.715995",
+  "llm_cost": 0.011969500000000001,
+  "llm_model": "gemini-3-flash-preview"
+}

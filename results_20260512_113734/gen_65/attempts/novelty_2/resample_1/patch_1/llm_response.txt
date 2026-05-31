@@ -1,0 +1,203 @@
+<NAME>
+shorter_regime_shift_features
+</NAME>
+
+<DESCRIPTION>
+This edit targets the core failure mode: the model is still learning patterns that vanish in the newest regime, so the validation slope collapses despite acceptable directional accuracy.
+
+I’m proposing two coordinated changes:
+
+1. Feature engineering:
+   - add longer-window rolling z-scores for returns to make the signal more regime-invariant
+   - add explicit regime-shift features that measure divergence between short-, medium-, and longer-horizon normalized return behavior
+   - add short-horizon volatility/efficiency trend features to capture changes in market character rather than just absolute levels
+   - remove low-value time-of-day Fourier features to keep the feature count under the 80 limit and reduce regime-specific leakage
+
+2. Hyperparameters:
+   - slightly increase model expressivity with a modestly deeper tree and lower child weight
+   - reduce regularization a bit so the model can use the new regime-shift features
+   - keep estimator count and learning rate conservative enough to avoid exploding overfit
+
+The goal is to lift validation slope and prediction spread while preserving the current directional edge.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 520,
+    "max_depth": 3,
+    "min_child_weight": 6,
+    "reg_alpha": 0.15,
+    "reg_lambda": 1.2,
+    "subsample": 0.85,
+    "colsample_bytree": 0.75,
+    "learning_rate": 0.06,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 45,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 460,
+    "max_depth": 4,
+    "min_child_weight": 4,
+    "reg_alpha": 0.06,
+    "reg_lambda": 0.8,
+    "subsample": 0.9,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # Rolling z-scores for regime invariance
+    for w in [10, 20, 40]:
+        mu = ret1.rolling(w).mean()
+        sd = ret1.rolling(w).std()
+        feat[f"ret_z_{w}"] = (ret1 - mu) / (sd + eps)
+
+    # Short-term volatility and volatility trend
+    vol_5 = log_ret.rolling(5).std()
+    vol_10 = log_ret.rolling(10).std()
+    vol_20 = log_ret.rolling(20).std()
+    vol_40 = log_ret.rolling(40).std()
+
+    feat["vol_5"] = vol_5
+    feat["vol_10"] = vol_10
+    feat["vol_20"] = vol_20
+    feat["vol_40"] = vol_40
+    feat["vol_trend_10_20"] = (vol_10 - vol_20) / (vol_20 + eps)
+    feat["vol_trend_20_40"] = (vol_20 - vol_40) / (vol_40 + eps)
+    feat["vol_rank_60"] = vol_20.rolling(60).rank(pct=True)
+
+    # Short lookback momentum / acceleration
+    ret_3 = close.pct_change(3)
+    ret_5 = close.pct_change(5)
+    ret_8 = close.pct_change(8)
+    feat["ret_3"] = ret_3
+    feat["ret_5"] = ret_5
+    feat["ret_8"] = ret_8
+    feat["ret_accel_3"] = ret1.diff(3)
+    feat["ret_accel_6"] = ret1.diff(6)
+
+    # Trend consistency / efficiency
+    diff_abs = close.diff().abs()
+    feat["efficiency_10"] = (close - close.shift(10)).abs() / (diff_abs.rolling(10).sum() + eps)
+    feat["efficiency_20"] = (close - close.shift(20)).abs() / (diff_abs.rolling(20).sum() + eps)
+    feat["eff_trend"] = feat["efficiency_10"] - feat["efficiency_20"]
+
+    # Autocorrelation regime shift proxies
+    feat["autocorr_5"] = ret1.rolling(5).corr(ret1.shift(1))
+    feat["autocorr_10"] = ret1.rolling(10).corr(ret1.shift(1))
+    feat["autocorr_trend"] = feat["autocorr_5"] - feat["autocorr_10"]
+=======
+    # Rolling z-scores for regime invariance
+    for w in [5, 10, 20, 40, 60]:
+        mu = ret1.rolling(w).mean()
+        sd = ret1.rolling(w).std()
+        feat[f"ret_z_{w}"] = (ret1 - mu) / (sd + eps)
+
+    # Explicit regime-shift contrasts between short, medium, and longer windows
+    feat["regime_shift_5_20"] = feat["ret_z_5"] - feat["ret_z_20"]
+    feat["regime_shift_10_40"] = feat["ret_z_10"] - feat["ret_z_40"]
+    feat["regime_shift_20_60"] = feat["ret_z_20"] - feat["ret_z_60"]
+
+    # Short-term volatility and volatility trend
+    vol_5 = log_ret.rolling(5).std()
+    vol_10 = log_ret.rolling(10).std()
+    vol_20 = log_ret.rolling(20).std()
+    vol_40 = log_ret.rolling(40).std()
+
+    feat["vol_5"] = vol_5
+    feat["vol_10"] = vol_10
+    feat["vol_20"] = vol_20
+    feat["vol_40"] = vol_40
+    feat["vol_trend_5_10"] = (vol_5 - vol_10) / (vol_10 + eps)
+    feat["vol_trend_10_20"] = (vol_10 - vol_20) / (vol_20 + eps)
+    feat["vol_trend_20_40"] = (vol_20 - vol_40) / (vol_40 + eps)
+    feat["vol_rank_60"] = vol_20.rolling(60).rank(pct=True)
+
+    # Short lookback momentum / acceleration
+    ret_3 = close.pct_change(3)
+    ret_5 = close.pct_change(5)
+    ret_8 = close.pct_change(8)
+    feat["ret_3"] = ret_3
+    feat["ret_5"] = ret_5
+    feat["ret_8"] = ret_8
+    feat["ret_accel_3"] = ret1.diff(3)
+    feat["ret_accel_6"] = ret1.diff(6)
+    feat["ret_accel_z_6"] = feat["ret_accel_6"] / (feat["ret_accel_6"].rolling(20).std() + eps)
+
+    # Trend consistency / efficiency
+    diff_abs = close.diff().abs()
+    feat["efficiency_5"] = (close - close.shift(5)).abs() / (diff_abs.rolling(5).sum() + eps)
+    feat["efficiency_10"] = (close - close.shift(10)).abs() / (diff_abs.rolling(10).sum() + eps)
+    feat["efficiency_20"] = (close - close.shift(20)).abs() / (diff_abs.rolling(20).sum() + eps)
+    feat["eff_trend_5_10"] = feat["efficiency_5"] - feat["efficiency_10"]
+    feat["eff_trend_10_20"] = feat["efficiency_10"] - feat["efficiency_20"]
+
+    # Autocorrelation regime shift proxies
+    feat["autocorr_5"] = ret1.rolling(5).corr(ret1.shift(1))
+    feat["autocorr_10"] = ret1.rolling(10).corr(ret1.shift(1))
+    feat["autocorr_20"] = ret1.rolling(20).corr(ret1.shift(1))
+    feat["autocorr_trend_5_10"] = feat["autocorr_5"] - feat["autocorr_10"]
+    feat["autocorr_trend_10_20"] = feat["autocorr_10"] - feat["autocorr_20"]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # Session / time features
+    hour = df.index.hour
+    dow = df.index.dayofweek
+    feat["hour_sin"] = np.sin(2 * np.pi * hour / 24)
+    feat["hour_cos"] = np.cos(2 * np.pi * hour / 24)
+    feat["dow_sin"] = np.sin(2 * np.pi * dow / 7)
+    feat["dow_cos"] = np.cos(2 * np.pi * dow / 7)
+    feat["is_weekend"] = (dow >= 5).astype(float)
+
+    # Regime features
+    trend_10 = (close / close.shift(10) - 1.0)
+    trend_20 = (close / close.shift(20) - 1.0)
+    trend_40 = (close / close.shift(40) - 1.0)
+    feat["trend_strength_10"] = trend_10.abs() * 10000
+    feat["trend_strength_20"] = trend_20.abs() * 10000
+    feat["trend_strength_40"] = trend_40.abs() * 10000
+    feat["trend_dir_10"] = np.sign(trend_10)
+    feat["trend_dir_20"] = np.sign(trend_20)
+    feat["vol_regime_20_60"] = vol_20 / (vol_40 + eps)
+    feat["vol_regime_rank"] = vol_20.rolling(120).rank(pct=True)
+=======
+    # Session / time features
+    dow = df.index.dayofweek
+    feat["is_weekend"] = (dow >= 5).astype(float)
+
+    # Regime features
+    trend_10 = (close / close.shift(10) - 1.0)
+    trend_20 = (close / close.shift(20) - 1.0)
+    trend_40 = (close / close.shift(40) - 1.0)
+    feat["trend_strength_10"] = trend_10.abs() * 10000
+    feat["trend_strength_20"] = trend_20.abs() * 10000
+    feat["trend_strength_40"] = trend_40.abs() * 10000
+    feat["trend_dir_10"] = np.sign(trend_10)
+    feat["trend_dir_20"] = np.sign(trend_20)
+    feat["vol_regime_20_60"] = vol_20 / (vol_40 + eps)
+    feat["vol_regime_rank"] = vol_20.rolling(120).rank(pct=True)
+    feat["momentum_x_volregime"] = ret_3 * feat["vol_regime_20_60"]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    feat["vol_regime_20_60"] = vol_20 / (vol_40 + eps)
+    feat["vol_regime_rank"] = vol_20.rolling(120).rank(pct=True)
+    feat["momentum_x_volregime"] = ret_3 * feat["vol_regime_20_60"]
+=======
+    feat["vol_regime_20_60"] = vol_20 / (vol_40 + eps)
+    feat["vol_regime_rank"] = vol_20.rolling(120).rank(pct=True)
+    feat["momentum_x_volregime"] = ret_3 * feat["vol_regime_20_60"]
+    feat["regime_momentum_combo"] = feat["regime_shift_10_40"] * feat["vol_regime_20_60"]
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "robust_regime_normalization",
+  "patch_description": "To solve the val_slope collapse, I am implementing rolling Z-score normalization for all scale-dependent features (returns, volatility, volume, trend strength). This makes features regime-invariant, as a 'high' value is relative to the recent window rather than an absolute level. \nAdditionally, I'm simplifying the XGBoost model by reducing max_depth (5 -> 3) and significantly increasing min_child_weight (1 -> 12). This prevents the model from fitting high-frequency noise in the training set that doesn't persist. \nI also introduced Kaufman's Efficiency Ratio, which is a robust indicator of market character (trending vs. ranging) that generalizes well across regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:48:58.229339",
+  "llm_cost": 0.0175465,
+  "llm_model": "gemini-3-flash-preview"
+}

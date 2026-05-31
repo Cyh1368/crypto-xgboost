@@ -1,0 +1,14 @@
+{
+  "generation": 53,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse_add_momentum_features_and_adjust_hyperparams",
+  "patch_description": "The main issue is that the model's predictions collapse toward the mean, indicated by a very low pred_std_ratio (~0.018), meaning the model is not capturing enough signal and is essentially predicting near the mean target. This suggests insufficient model expressivity or lack of informative features.\n\nAnalysis of prior attempts shows that adding momentum features shifted by 1 (to avoid lookahead) helped increase expressivity and reduce collapse warnings. The current program lacks these momentum features, which likely reduces signal strength.\n\nAdditionally, the current hyperparameters use a high learning rate (0.1) with no regularization and full subsample/colsample, which can cause unstable training or overfitting, but here the problem is under-expressivity (collapse), so we should reduce learning rate slightly and loosen regularization minimally.\n\nFix:\n- Add momentum features (momentum_5 and momentum_10) shifted by 1 to build_features().\n- Reduce learning_rate from 0.1 to 0.05 for more stable training.\n- Loosen min_child_weight from 1 to 0.5 to allow more splits.\n- Keep reg_alpha=0.0 to avoid L1 regularization but keep reg_lambda=1.0.\n- Keep subsample and colsample_bytree at 1.0 to maximize data and features per tree.\n- Keep n_estimators=200 to keep training time reasonable.\n\nThese changes increase model expressivity and add signal features, addressing the collapse warning and improving pred_std_ratio and directional accuracy.\n\nAll features remain shifted properly to avoid lookahead bias, and total feature count remains under 80.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:06:43.837981",
+  "llm_cost": 0.0078576,
+  "llm_model": "gpt-4.1-mini"
+}

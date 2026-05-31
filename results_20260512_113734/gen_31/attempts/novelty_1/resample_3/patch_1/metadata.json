@@ -1,0 +1,14 @@
+{
+  "generation": 31,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_crossover_v1",
+  "patch_description": "This crossover combines the best elements from both programs:\n\n1. **Hyperparameters**: Taking a middle ground between the current program's moderate regularization and the inspiration's strong regularization. Using n_estimators=240, max_depth=4, min_child_weight=4, reg_alpha=0.15, reg_lambda=1.0 to balance expressivity with generalization.\n\n2. **Feature Engineering Strategy**:\n   - Adopting the inspiration's **shorter lookback windows** (5, 10, 20 instead of 20, 60, 200) which should be more regime-invariant\n   - Keeping the **z-scored returns** (ret_z_5, ret_z_10, ret_z_20) from the inspiration for regime normalization\n   - Adding **rate-of-change features** like vol_regime_change, efficiency_trend, autocorr_trend which measure market character transitions\n   - Using **tighter volatility windows** (rv_5, rv_10, rv_20) and their trends\n   - Preserving the **core momentum \u00d7 volatility interactions** that worked in both programs\n   - Keeping **efficiency ratio** features which measure trend quality at short horizons\n   - Adding **autocorrelation features** to detect persistence changes\n\n3. **Key Innovations**:\n   - All features now operate on 5-20 bar horizons instead of 20-200, reducing regime specificity\n   - Z-score normalization makes returns comparable across volatility regimes\n   - Change-rate features (vol_regime_change, efficiency_trend) capture regime transitions\n   - Reduced feature count by removing long-horizon features (60, 200 bars)\n\nThis should improve val_slope from 0.0017 to >0.002 by making features more portable across regime boundaries.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:27:28.913142",
+  "llm_cost": 0.160614,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

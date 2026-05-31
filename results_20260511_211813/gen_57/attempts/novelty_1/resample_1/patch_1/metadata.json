@@ -1,0 +1,14 @@
+{
+  "generation": 57,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_via_depth_and_interactions",
+  "patch_description": "The current model has pred_std_ratio=0.04, indicating severe prediction collapse. Previous attempts show that both high and low regularization result in collapse, suggesting the issue is under-expressivity rather than regularization. \n\nThis edit increases model capacity through:\n1. Deeper trees (max_depth 6\u21928) to capture non-linear patterns\n2. More estimators (1200\u21921500) for ensemble diversity\n3. Slightly reduced learning rate (0.18\u21920.12) to allow better convergence with deeper trees\n4. New higher-order interaction features that combine regime signals with momentum/volatility\n5. Micro-regime features capturing 15-min market structure (very short-term vol acceleration, momentum consistency)\n6. Ratio and difference features that may reveal directional bias\n\nThese targeted features focus on combining existing signals in new ways rather than adding many independent features, keeping feature count manageable while increasing model signal clarity.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:31:15.967754",
+  "llm_cost": 0.035173,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

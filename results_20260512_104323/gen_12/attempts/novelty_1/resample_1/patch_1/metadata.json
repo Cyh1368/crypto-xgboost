@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_regime_change_features",
+  "patch_description": "The model currently suffers from prediction collapse (near-zero slope) and a sharp performance drop in the validation period (regime shift). \n\nTo address this, I am:\n1.  **Increasing model expressivity**: Reducing `min_child_weight` and `reg_lambda` while increasing `max_depth` and `n_estimators`. This allows the model to fit the magnitude of returns more aggressively, countering the slope collapse.\n2.  **Stabilizing rolling features**: Increasing the z-score normalization window from 20 to 40 bars to provide a more stable baseline for \"normal\" market behavior.\n3.  **Adding \"Change of Character\" features**: \n    - `vol_regime_long`: Ratio of short-term to long-term volatility (10/120 bars) to capture major regime shifts.\n    - `vov_10`: Volatility of volatility, which often spikes before regime transitions.\n    - `efficiency_trend`: Kaufman's Efficiency Ratio trend, measuring whether the market is becoming more or less \"trending\" vs \"noisy\".\n4.  **Improving scale-invariant features**: Adding `vol_absolute` (normalized by price) and `volume_surge` to help the model scale its predictions to the current volatility environment without losing regime invariance.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:46:53.151845",
+  "llm_cost": 0.0231375,
+  "llm_model": "gemini-3-flash-preview"
+}

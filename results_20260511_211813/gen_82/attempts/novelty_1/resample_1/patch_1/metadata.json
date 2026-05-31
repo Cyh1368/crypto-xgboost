@@ -1,0 +1,14 @@
+{
+  "generation": 82,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "reduce_overregularization_and_curate_features",
+  "patch_description": "The current model is severely over-regularized (reg_lambda=0.8, lr=0.015) which causes prediction collapse. Prior experiments show that models with reg_lambda=0.05-0.15 and lr=0.05-0.10 achieve better val_DA (0.52-0.53). \n\nI will:\n1. Increase learning_rate from 0.015 to 0.08 (closest to best historical performance)\n2. Reduce reg_lambda from 0.8 to 0.12 (balanced regularization)\n3. Reduce min_child_weight from 5 to 2 (allow more flexible tree fitting)\n4. Reduce n_estimators from 1400 to 900 (avoid overfitting with lighter trees)\n5. Curate features: Remove redundant lagged features (ret_1_lag1, ret_1_lag2, obi_lag1, funding_lag1) and low-signal skew feature. Keep only essential interaction and regime features.\n6. Keep max_depth=6 (good balance) and increase subsample/colsample to 0.9 (regularize via sampling, not via penalty)\n\nThis mirrors the best-performing prior config (score -0.20) which had val_DA=0.5226 and pred_std_ratio=0.0607.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:36:58.566002",
+  "llm_cost": 0.038059,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

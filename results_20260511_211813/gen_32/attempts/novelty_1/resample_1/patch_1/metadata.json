@@ -1,0 +1,14 @@
+{
+  "generation": 32,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "feature_diversity_and_params",
+  "patch_description": "The previous model is suffering from a significant \"prediction collapse\" (pred_std_ratio = 0.04, well below the target 0.15), meaning it is essentially predicting the mean return due to a low signal-to-noise ratio in the provided features. To combat this, I am:\n1. Refining the feature set to include 'Efficiency Ratio' (to distinguish trend from noise), 'BB Width' (to capture volatility clusters), and 'Range Stretch' (to identify overextended price action).\n2. Adjusting hyperparameters: lowering 'max_depth' to 7 to improve generalization (deep trees often fit noise in 15m bars) and slowing the 'learning_rate' while increasing the number of estimators and patience. This encourages the model to find subtle directional signals that are otherwise lost in MSE optimization.\n3. Increasing 'CLIP_PERCENTILE' to 99 to preserve more target variance, which can help the model distinguish between meaningful moves and noise.\n4. Adding interactions between volume, volatility, and price direction to provide more 'expressivity' to the trees.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:24:47.688125",
+  "llm_cost": 0.020701999999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

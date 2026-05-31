@@ -1,0 +1,80 @@
+<NAME>
+increase_expressivity_and_signals
+</NAME>
+
+<DESCRIPTION>
+The previous model was severely underfitting ('collapsed toward mean'), likely due to overly aggressive regularization and low learning rate.
+
+1. Hyperparameter Tuning: I increased the learning rate (0.01 -> 0.05) and max_depth (4 -> 6) while significantly lowering the min_child_weight and regularization parameters (reg_alpha, reg_lambda). This aims to increase the 'pred_std_ratio' above the 0.15 threshold and allow the model to capture more signal.
+2. Feature Engineering: Added mean-reversion signals (SMA deviations, price position in recent 20-bar range), volatility-normalized range (HL range), and momentum acceleration (RSI diff). These provide additional directional context that was missing in the 'current' version but is critical for 15-minute timeframe directional accuracy.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 300,
+    "max_depth": 4,
+    "min_child_weight": 10,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "subsample": 0.6,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.01,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 30,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 500,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+
+    # --- Orderbook (if real data available) ---
+=======
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+
+    # --- Mean reversion & Relative position ---
+    sma_10 = close.rolling(10).mean()
+    sma_50 = close.rolling(50).mean()
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma50_dev'] = (close - sma_50) / (sma_50 + 1e-9)
+
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+
+    # --- Volatility normalized range ---
+    feat['hl_range_norm'] = (high - low) / (close + 1e-9)
+    feat['hl_range_ma'] = feat['hl_range_norm'].rolling(10).mean()
+
+    # --- Momentum acceleration ---
+    feat['rsi_14_diff'] = feat['rsi_14'].diff(3)
+    feat['vol_momentum'] = log_ret.rolling(5).std() / (log_ret.rolling(40).std() + 1e-9)
+
+    # --- Orderbook (if real data available) ---
+>>>>>>> REPLACE
+</DIFF>

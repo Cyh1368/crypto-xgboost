@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 8,
+  "patch_name": "shorter_lookback_regime_invariant_features",
+  "patch_description": "The primary issue is the val_slope collapse from 0.0738 to 0.0060, indicating that patterns learned on the training set don't transfer to the validation period. This is a classic regime shift problem.\n\nMy strategy addresses this through three coordinated changes:\n\n1. **Reduce XGBoost complexity**: Lower n_estimators from 400 to 250 and increase min_child_weight from 1 to 3. This forces the model to learn only the most robust, high-sample patterns rather than overfitting to training regime specifics.\n\n2. **Shorten lookback windows**: Replace long lookbacks (48, 60, 200) with shorter ones (12, 20, 100). Shorter windows decay faster but are more regime-invariant because they adapt to local market conditions rather than embedding long-term regime characteristics.\n\n3. **Add z-score normalization within rolling windows**: For key momentum and volatility features, normalize them by their recent mean and std. This makes features regime-invariant\u2014a 1% move in a low-vol regime vs high-vol regime will have similar z-scores if it's equally unusual for that regime. This is the most critical change.\n\n4. **Remove regime-specific absolute features**: Drop features like trend_strength_20/60 that encode absolute price changes, which are highly regime-dependent. Keep relative measures like vol_regime that compare current to historical.\n\n5. **Add rate-of-change features**: Instead of just measuring volatility level, measure how volatility is changing (vol_trend_10). This captures regime transitions rather than regime states.\n\nThe combination should maintain train_DA above 0.55 while pushing val_slope above 0.020 and val_r above 0.08 by making features more portable across market regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:15:56.190663",
+  "llm_cost": 0.061368,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

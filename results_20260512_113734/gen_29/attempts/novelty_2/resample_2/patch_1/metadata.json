@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 2,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_short_horizon_crossover",
+  "patch_description": "This crossover combines the best elements from both programs:\n\n1. **From the inspiration program (-1.55 score):**\n   - Shorter lookback windows (5, 10, 20, 40 instead of 60+)\n   - Rolling z-score normalization for regime invariance\n   - Stronger regularization (reg_alpha=0.25, reg_lambda=1.8)\n   - Higher min_child_weight (4) to prevent overfitting\n   - Efficiency and autocorrelation trend features\n   - More conservative learning rate (0.055)\n\n2. **From the current program (-1.85 score):**\n   - Broader return lag coverage (1,2,3,6,12,24,48)\n   - Volume-return correlation features\n   - Return acceleration features\n   - Close position in range features\n   - More volume interaction terms\n\n3. **Key improvements:**\n   - Combines short-horizon features with regime-invariant z-score normalization\n   - Balances model complexity with regularization to prevent collapse\n   - Keeps the most predictive interaction terms from both\n   - Uses intermediate hyperparameters that balance expressivity and generalization\n   - Focuses on features that measure CHANGE in market character (efficiency trends, autocorrelation trends, volatility trends)\n\nThe strategy is to use shorter lookbacks (which generalize better) combined with rolling normalization (which makes features regime-invariant) while maintaining enough model capacity through moderate regularization rather than aggressive constraints.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:19:20.328258",
+  "llm_cost": 0.169344,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

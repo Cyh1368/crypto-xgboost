@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover version keeps the stable parts of the prior implementations while shifting feature design toward shorter, more regime-invariant windows. The main changes are:\n\n- shorter lookbacks focused on 5\u201320 bars, with only a few 40-bar context features\n- rolling z-score normalization for returns, volume, range, and momentum features\n- explicit features for regime change rather than only absolute regime levels\n- a momentum \u00d7 volatility-regime interaction retained as a compact, high-signal feature\n- slightly more conservative XGBoost settings to reduce overfitting and improve val slope stability\n\nThe goal is to preserve directional information while reducing dependence on train-specific market regimes, which should help the model generalize better into the validation period without increasing feature count beyond the limit.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:41:08.017783",
+  "llm_cost": 0.023289,
+  "llm_model": "gpt-5.4-mini"
+}

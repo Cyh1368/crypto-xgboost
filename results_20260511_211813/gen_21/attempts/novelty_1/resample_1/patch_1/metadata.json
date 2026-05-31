@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_add_microstructure",
+  "patch_description": "The previous model showed good directional accuracy (0.53+) but suffered from a significant \"collapse\" penalty, meaning the predictions were too clustered around the mean. To address this, I am:\n1. Increasing model expressivity by increasing `max_depth` to 7 and `n_estimators` to 1000, while reducing `reg_lambda` and `reg_alpha` to allow the model to capture more granular signals.\n2. Adjusting `CLIP_PERCENTILE` to 98 to preserve more target variance, which provides stronger gradients for the model to learn from and encourages higher prediction dispersion.\n3. Adding several high-value features:\n   - `dist_ema_200`: Long-term trend deviation.\n   - `vpt_20`: Volume-Price Trend to capture liquidity-driven moves.\n   - `vol_skew_30`: Rolling skewness of returns to identify asymmetric risk regimes.\n   - `vol_shock_5_20`: Short-term volatility spikes relative to the medium-term.\n   - `ny_session`: A binary indicator for the high-volatility US trading window.\n   - `volume_z_60`: Z-scored volume over a longer lookback to identify significant flow.\nThese changes aim to push the `pred_std_ratio` closer to the 0.15 target while maintaining or improving DA.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:22:54.708499",
+  "llm_cost": 0.0151375,
+  "llm_model": "gemini-3-flash-preview"
+}

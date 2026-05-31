@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_invariant_standardizer",
+  "patch_description": "The redesign restructures the feature engineering into modular logical blocks that prioritize regime-invariance through aggressive rolling Z-score normalization. By standardizing momentum, volatility, and volume features within short windows (5-30 bars), the model is forced to learn how current market behavior relates to its immediate past rather than absolute levels, which often shift between market regimes. The XGBoost configuration is also adjusted: depth is increased to 4 and regularization is reduced to combat the 'magnitude collapse' (slope collapse) observed in previous iterations, allowing the model to produce predictions with higher variance and better scaling relative to the actual price movements.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:57:49.327326",
+  "llm_cost": 0.0200005,
+  "llm_model": "gemini-3-flash-preview"
+}

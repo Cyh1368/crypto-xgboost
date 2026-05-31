@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_crossover_xgb",
+  "patch_description": "This crossover version keeps the stronger parts of the later feature sets while reducing regime fragility and prediction collapse. It emphasizes shorter lookbacks, rolling z-score normalization, volatility/trend change features, and a few high-signal interactions such as momentum \u00d7 volatility regime. The model is regularized more conservatively than the current baseline to improve out-of-sample slope without overfitting. Feature count stays well under the 80-feature limit and all transformations use only past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:56:06.597667",
+  "llm_cost": 0.036039,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,311 @@
+<NAME>
+short_regime_boost
+</NAME>
+
+<DESCRIPTION>
+This edit attacks the two dominant failure modes in the current model: prediction collapse and regime fragility.
+
+1. Hyperparameters:
+   - Increase learning rate modestly and reduce excessive L1/L2 + child weight regularization so trees can express more signal.
+   - Keep depth shallow to avoid overfit, but raise subsampling slightly and reduce `min_child_weight` so the model can use more splits.
+   - Lower `early_stopping_rounds` a bit to match the higher learning rate.
+   - Slightly relax target clipping to preserve more tail information, which helps slope/variance.
+
+2. Features:
+   - Replace longer-horizon, regime-specific signals with shorter lookback versions where possible.
+   - Add rolling z-score normalization for price, return, volume, and volatility so the model sees regime-invariant inputs.
+   - Add explicit change-in-market-character features: volatility trend, autocorr trend, efficiency trend, dispersion trend.
+   - Add a compact momentum × volatility-regime interaction, which often generalizes better than the raw components alone.
+   - Keep feature count safely under 80 by pruning a few weaker long-horizon features.
+
+These changes should improve val slope and pred_std_ratio while preserving the already decent DA. The goal is to make the model less “mean-collapsed” and less dependent on one regime.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 260,
+    "max_depth": 3,
+    "min_child_weight": 10,
+    "reg_alpha": 1.5,
+    "reg_lambda": 8.0,
+    "gamma": 0.2,
+    "subsample": 0.72,
+    "colsample_bytree": 0.72,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 35,
+}
+
+CLIP_PERCENTILE = 95
+MIN_PRED_STD_RATIO = 0.18
+=======
+XGB_PARAMS = {
+    "n_estimators": 280,
+    "max_depth": 3,
+    "min_child_weight": 6,
+    "reg_alpha": 0.8,
+    "reg_lambda": 4.5,
+    "gamma": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.82,
+    "learning_rate": 0.07,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 42,
+}
+
+CLIP_PERCENTILE = 97
+MIN_PRED_STD_RATIO = 0.18
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Short-memory returns / momentum
+    for lag in [1, 2, 3, 5, 8, 13, 20]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    feat["ret_1_z_20"] = zscore(ret1, 20)
+    feat["ret_3_z_20"] = zscore(ret3, 20)
+    feat["ret_1_z_60"] = zscore(ret1, 60)
+    feat["ret_3_z_60"] = zscore(ret3, 60)
+
+    # momentum decay / acceleration
+    feat["mom_5_20"] = close.pct_change(5) - close.pct_change(20)
+    feat["mom_accel_3"] = ret1.diff(3)
+    feat["mom_accel_6"] = ret1.diff(6)
+
+    # ── Volatility regime and volatility trends
+    for w in [5, 10, 20]:
+        feat[f"vol_{w}"] = log_ret.rolling(w).std()
+
+    feat["vol_5_z_60"] = zscore(feat["vol_5"], 60)
+    feat["vol_10_z_60"] = zscore(feat["vol_10"], 60)
+    feat["vol_20_z_120"] = zscore(feat["vol_20"], 120)
+    feat["vol_trend_20"] = feat["vol_20"].diff(5)
+    feat["vol_trend_40"] = feat["vol_20"].diff(10)
+    feat["vol_rank_120"] = rank_pct(feat["vol_20"], 120)
+
+    # ── Directional efficiency / trend quality
+    net_10 = (close - close.shift(10)).abs()
+    path_10 = close.diff().abs().rolling(10).sum()
+    feat["eff_10"] = net_10 / (path_10 + eps)
+
+    net_20 = (close - close.shift(20)).abs()
+    path_20 = close.diff().abs().rolling(20).sum()
+    feat["eff_20"] = net_20 / (path_20 + eps)
+
+    feat["eff_trend"] = feat["eff_10"] - feat["eff_20"]
+    feat["trend_dir_10"] = np.sign(close.pct_change(10))
+    feat["trend_dir_20"] = np.sign(close.pct_change(20))
+
+    # ── Rolling autocorrelation / market memory
+    feat["autocorr_5_20"] = ret1.rolling(20).corr(ret1.shift(1))
+    feat["autocorr_5_60"] = ret1.rolling(60).corr(ret1.shift(1))
+    feat["autocorr_trend"] = feat["autocorr_5_20"] - feat["autocorr_5_60"]
+=======
+    # ── Short-memory returns / momentum
+    for lag in [1, 2, 3, 4, 6, 8, 12]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    feat["ret_1_z_10"] = zscore(ret1, 10)
+    feat["ret_1_z_20"] = zscore(ret1, 20)
+    feat["ret_3_z_10"] = zscore(ret3, 10)
+    feat["ret_3_z_20"] = zscore(ret3, 20)
+
+    # momentum decay / acceleration
+    feat["mom_3_10"] = close.pct_change(3) - close.pct_change(10)
+    feat["mom_5_12"] = close.pct_change(5) - close.pct_change(12)
+    feat["mom_accel_2"] = ret1.diff(2)
+    feat["mom_accel_4"] = ret1.diff(4)
+
+    # ── Volatility regime and volatility trends
+    for w in [5, 8, 13]:
+        feat[f"vol_{w}"] = log_ret.rolling(w).std()
+
+    feat["vol_5_z_20"] = zscore(feat["vol_5"], 20)
+    feat["vol_8_z_20"] = zscore(feat["vol_8"], 20)
+    feat["vol_13_z_40"] = zscore(feat["vol_13"], 40)
+    feat["vol_trend_5"] = feat["vol_8"].diff(3)
+    feat["vol_trend_10"] = feat["vol_13"].diff(5)
+    feat["vol_rank_60"] = rank_pct(feat["vol_13"], 60)
+
+    # ── Directional efficiency / trend quality
+    net_5 = (close - close.shift(5)).abs()
+    path_5 = close.diff().abs().rolling(5).sum()
+    feat["eff_5"] = net_5 / (path_5 + eps)
+
+    net_10 = (close - close.shift(10)).abs()
+    path_10 = close.diff().abs().rolling(10).sum()
+    feat["eff_10"] = net_10 / (path_10 + eps)
+
+    feat["eff_trend"] = feat["eff_5"] - feat["eff_10"]
+    feat["trend_dir_5"] = np.sign(close.pct_change(5))
+    feat["trend_dir_10"] = np.sign(close.pct_change(10))
+
+    # ── Rolling autocorrelation / market memory
+    feat["autocorr_10"] = ret1.rolling(10).corr(ret1.shift(1))
+    feat["autocorr_20"] = ret1.rolling(20).corr(ret1.shift(1))
+    feat["autocorr_trend"] = feat["autocorr_10"] - feat["autocorr_20"]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Rolling standardized price position
+    sma_10 = close.rolling(10).mean()
+    sma_20 = close.rolling(20).mean()
+    sma_40 = close.rolling(40).mean()
+    std_20 = close.rolling(20).std()
+    std_40 = close.rolling(40).std()
+
+    feat["price_z_20"] = (close - sma_20) / (std_20 + eps)
+    feat["price_z_40"] = (close - sma_40) / (std_40 + eps)
+    feat["sma10_sma20"] = (sma_10 - sma_20) / (sma_20 + eps)
+    feat["sma20_sma40"] = (sma_20 - sma_40) / (sma_40 + eps)
+=======
+    # ── Rolling standardized price position
+    sma_5 = close.rolling(5).mean()
+    sma_10 = close.rolling(10).mean()
+    sma_20 = close.rolling(20).mean()
+    sma_40 = close.rolling(40).mean()
+    std_10 = close.rolling(10).std()
+    std_20 = close.rolling(20).std()
+
+    feat["price_z_10"] = (close - sma_10) / (std_10 + eps)
+    feat["price_z_20"] = (close - sma_20) / (std_20 + eps)
+    feat["price_z_20_short"] = zscore(close, 20)
+    feat["sma5_sma10"] = (sma_5 - sma_10) / (sma_10 + eps)
+    feat["sma10_sma20"] = (sma_10 - sma_20) / (sma_20 + eps)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Range / candle structure, normalized
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+
+    feat["atr_10"] = tr.rolling(10).mean()
+    feat["atr_20"] = tr.rolling(20).mean()
+    feat["atr_norm_10"] = feat["atr_10"] / (close + eps)
+    feat["atr_norm_20"] = feat["atr_20"] / (close + eps)
+    feat["range_z_20"] = zscore((high - low) / (close + eps), 20)
+=======
+    # ── Range / candle structure, normalized
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+
+    feat["atr_5"] = tr.rolling(5).mean()
+    feat["atr_10"] = tr.rolling(10).mean()
+    feat["atr_norm_5"] = feat["atr_5"] / (close + eps)
+    feat["atr_norm_10"] = feat["atr_10"] / (close + eps)
+    feat["range_z_10"] = zscore((high - low) / (close + eps), 10)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Volume regime normalized
+    vol_mean_10 = volume.rolling(10).mean()
+    vol_mean_20 = volume.rolling(20).mean()
+    vol_std_20 = volume.rolling(20).std()
+
+    feat["vol_ratio_10"] = volume / (vol_mean_10 + eps)
+    feat["vol_ratio_20"] = volume / (vol_mean_20 + eps)
+    feat["vol_z_20"] = (volume - vol_mean_20) / (vol_std_20 + eps)
+    feat["vol_z_60"] = zscore(volume, 60)
+    feat["vol_trend"] = feat["vol_ratio_10"] - feat["vol_ratio_20"]
+=======
+    # ── Volume regime normalized
+    vol_mean_5 = volume.rolling(5).mean()
+    vol_mean_10 = volume.rolling(10).mean()
+    vol_std_10 = volume.rolling(10).std()
+
+    feat["vol_ratio_5"] = volume / (vol_mean_5 + eps)
+    feat["vol_ratio_10"] = volume / (vol_mean_10 + eps)
+    feat["vol_z_10"] = (volume - vol_mean_10) / (vol_std_10 + eps)
+    feat["vol_z_20"] = zscore(volume, 20)
+    feat["vol_trend"] = feat["vol_ratio_5"] - feat["vol_ratio_10"]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Price-volume interactions
+    feat["mom_x_volreg"] = ret3 * feat["vol_z_60"]
+    feat["mom_x_atrreg"] = ret3 * feat["atr_norm_20"]
+    feat["eff_x_volreg"] = feat["eff_10"] * feat["vol_rank_120"]
+    feat["range_x_volume"] = feat["range_z_20"] * feat["vol_z_20"]
+=======
+    # ── Price-volume interactions
+    feat["mom_x_volreg"] = ret3 * feat["vol_z_20"]
+    feat["mom_x_atrreg"] = ret3 * feat["atr_norm_10"]
+    feat["eff_x_volreg"] = feat["eff_5"] * feat["vol_rank_60"]
+    feat["range_x_volume"] = feat["range_z_10"] * feat["vol_z_10"]
+    feat["mom_vol_regime"] = ret1 * feat["vol_ratio_10"]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Mean reversion / breakout pressure
+    low_10 = low.rolling(10).min()
+    high_10 = high.rolling(10).max()
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+
+    feat["close_pos_10"] = (close - low_10) / (high_10 - low_10 + eps)
+    feat["close_pos_20"] = (close - low_20) / (high_20 - low_20 + eps)
+    feat["breakout_10"] = ((close > high_10.shift(1)).astype(float) - (close < low_10.shift(1)).astype(float))
+    feat["breakout_20"] = ((close > high_20.shift(1)).astype(float) - (close < low_20.shift(1)).astype(float))
+
+    feat["mr_pressure_10"] = 1.0 - feat["close_pos_10"]
+    feat["mr_pressure_20"] = 1.0 - feat["close_pos_20"]
+=======
+    # ── Mean reversion / breakout pressure
+    low_5 = low.rolling(5).min()
+    high_5 = high.rolling(5).max()
+    low_10 = low.rolling(10).min()
+    high_10 = high.rolling(10).max()
+
+    feat["close_pos_5"] = (close - low_5) / (high_5 - low_5 + eps)
+    feat["close_pos_10"] = (close - low_10) / (high_10 - low_10 + eps)
+    feat["breakout_5"] = ((close > high_5.shift(1)).astype(float) - (close < low_5.shift(1)).astype(float))
+    feat["breakout_10"] = ((close > high_10.shift(1)).astype(float) - (close < low_10.shift(1)).astype(float))
+
+    feat["mr_pressure_5"] = 1.0 - feat["close_pos_5"]
+    feat["mr_pressure_10"] = 1.0 - feat["close_pos_10"]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Short-window RSI-like oscillator with normalization
+    for period in [5, 9, 14]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + eps)
+        rsi = 100 - 100 / (1 + rs)
+        feat[f"rsi_{period}"] = rsi
+        feat[f"rsi_{period}_z_60"] = zscore(rsi, 60)
+=======
+    # ── Short-window RSI-like oscillator with normalization
+    for period in [5, 8, 13]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + eps)
+        rsi = 100 - 100 / (1 + rs)
+        feat[f"rsi_{period}"] = rsi
+        feat[f"rsi_{period}_z_20"] = zscore(rsi, 20)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Distance from anchored rolling VWAP
+    vwap_10 = (close * volume).rolling(10).sum() / (volume.rolling(10).sum() + eps)
+    vwap_20 = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + eps)
+    feat["vwap_dev_10"] = (close - vwap_10) / (close + eps)
+    feat["vwap_dev_20"] = (close - vwap_20) / (close + eps)
+    feat["vwap_dev_x_vol"] = feat["vwap_dev_20"] * feat["vol_z_20"]
+=======
+    # ── Distance from

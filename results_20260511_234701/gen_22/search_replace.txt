@@ -1,0 +1,108 @@
+<NAME>
+reduce_regularization_and_enhance_features
+</NAME>
+
+<DESCRIPTION>
+The model is currently suffering from severe prediction collapse (val_slope=0.0006, pred_std_ratio=0.0146), indicating it is over-regularized and under-expressive.
+1. Reduced `min_child_weight` (20 -> 5) and `reg_lambda` (10.0 -> 1.0) to allow the model to make bolder predictions and increase the predictive slope.
+2. Increased `max_depth` (4 -> 5) and `learning_rate` (0.05 -> 0.07) to increase model expressivity and capture more complex patterns.
+3. Shortened the Z-score normalization window (100 -> 60) to make features more adaptive to recent market regimes, which is critical for generalizing across the regime shifts observed in the val period.
+4. Added more return lags [2, 8] and a `vol_trend` feature to capture the rate of change in market character.
+5. Modified the momentum-volatility interaction to be multiplicative with the volatility regime, which often generalizes better than simple division.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 500,
+    "max_depth": 4,
+    "min_child_weight": 20,
+    "reg_alpha": 0.5,
+    "reg_lambda": 10.0,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 5,
+    "min_child_weight": 5,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.07,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build regime-invariant features using rolling Z-scores and normalized indicators.
+    """
+    feat = pd.DataFrame(index=df.index)
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    log_ret = np.log(close / close.shift(1))
+
+    def z_score(s, window=100):
+        return (s - s.rolling(window).mean()) / (s.rolling(window).std() + 1e-9)
+
+    # --- Returns (Z-scored for regime invariance) ---
+    for lag in [1, 4, 12]:
+        feat[f'ret_z_{lag}'] = z_score(close.pct_change(lag), 100)
+
+    # --- Volatility (Z-scored) ---
+    vol_20 = log_ret.rolling(20).std()
+    feat['vol_z_20'] = z_score(vol_20, 100)
+    feat['vol_regime'] = vol_20 / (vol_20.rolling(100).mean() + 1e-9)
+=======
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build regime-invariant features using rolling Z-scores and normalized indicators.
+    """
+    feat = pd.DataFrame(index=df.index)
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    log_ret = np.log(close / close.shift(1))
+
+    def z_score(s, window=60):
+        return (s - s.rolling(window).mean()) / (s.rolling(window).std() + 1e-9)
+
+    # --- Returns (Z-scored for regime invariance) ---
+    for lag in [1, 2, 4, 8, 12]:
+        feat[f'ret_z_{lag}'] = z_score(close.pct_change(lag), 60)
+
+    # --- Volatility (Z-scored) ---
+    vol_10 = log_ret.rolling(10).std()
+    vol_20 = log_ret.rolling(20).std()
+    feat['vol_z_10'] = z_score(vol_10, 60)
+    feat['vol_z_20'] = z_score(vol_20, 60)
+    feat['vol_regime'] = vol_20 / (vol_20.rolling(60).mean() + 1e-9)
+    feat['vol_trend'] = vol_10 / (vol_20 + 1e-9)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Efficiency & Momentum ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['mom_vol_adj'] = feat['ret_z_4'] / (vol_20 + 1e-9)
+=======
+    # --- Efficiency & Momentum ---
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['mom_vol_adj'] = feat['ret_z_4'] * feat['vol_regime']
+>>>>>>> REPLACE
+</DIFF>

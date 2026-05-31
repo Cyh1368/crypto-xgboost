@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb_crossover",
+  "patch_description": "This crossover keeps the strongest ideas from both prior implementations while explicitly targeting the train\u2192val regime collapse.\n\nKey changes:\n- Shorter, more regime-robust lookbacks dominate the feature set.\n- Rolling z-score / normalized features are added to make features less scale-dependent across volatility regimes.\n- New \u201crate of change of market character\u201d features capture changes in volatility, efficiency, and autocorrelation instead of only absolute levels.\n- Momentum \u00d7 volatility-regime interactions are preserved, but simplified and made more robust.\n- XGBoost is regularized more carefully than the current overfit-heavy version: shallower trees, higher min_child_weight, moderate subsampling, and stronger regularization.\n- Feature count remains comfortably below 80 and all features use only past data.\n\nThe implementation is still compatible with the same interface and return format, and it avoids changing anything outside the EVOLVE blocks and constants. It should be more stable on the validation regime while preserving enough expressivity to avoid collapsing predictions toward the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:40:06.113021",
+  "llm_cost": 0.022677,
+  "llm_model": "gpt-5.4-mini"
+}

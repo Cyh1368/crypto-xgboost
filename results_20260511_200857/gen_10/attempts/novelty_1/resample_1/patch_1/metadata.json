@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "increase_expressivity_and_features",
+  "patch_description": "The previous model failed due to a \"collapsed\" prediction spread (`pred_std_ratio=0.0091`), which triggered a severe penalty. This happens when the model is underfitting or too heavily regularized in a noisy environment, leading it to predict values close to the mean (0).\n\nTo fix this, I have:\n1.  **Increased Model Expressivity:** Boosted `max_depth` (4 \u2192 6) and `learning_rate` (0.01 \u2192 0.05).\n2.  **Reduced Regularization:** Lowered `min_child_weight` (10 \u2192 1) to allow the model to capture smaller, more granular signals, and reduced `reg_alpha` and `reg_lambda`.\n3.  **Enhanced Feature Engineering:**\n    *   Added scale-invariant momentum features (EMA distances, log-returns of multiple lags).\n    *   Added standard indicators like Bollinger Band % and VWAP deviation.\n    *   Modified volume features to use log-transforms for better distribution.\n    *   Improved the OBI (Orderbook Imbalance) calculation with a more efficient and robust vectorized-style implementation.\n    *   Added regime-specific indicators like volatility-normalized returns and MA-trend crossovers.\n4.  **Ensured Feature Robustness:** Used `ffill()` and `dropna()` to handle rolling window warm-ups without yielding NaNs to the XGBoost model.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-11T20:11:12.613922",
+  "llm_cost": 0.006574,
+  "llm_model": "gemini-3-flash-preview"
+}

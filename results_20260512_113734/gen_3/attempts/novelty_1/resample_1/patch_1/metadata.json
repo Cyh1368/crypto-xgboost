@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_invariant_short_windows",
+  "patch_description": "This edit shifts the model toward more regime-robust signals by replacing long-horizon, regime-specific features with shorter rolling windows, rolling z-scores, and trend-of-character features like volatility trend and efficiency trend. It also adds a direct momentum \u00d7 volatility-regime interaction, which often captures whether momentum is more meaningful in quiet or volatile markets.\n\nOn the modeling side, it reduces tree complexity and adds regularization so the booster is less likely to memorize the training regime. The goal is to increase validation slope and prediction dispersion without letting train/val gap widen further.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:38:03.053010",
+  "llm_cost": 0.02152575,
+  "llm_model": "gpt-5.4-mini"
+}

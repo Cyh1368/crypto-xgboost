@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 10,
+  "patch_name": "regime_adaptive_short_lookback",
+  "patch_description": "The primary issue is regime shift: the model learns 60-bar patterns in training that don't exist in val. The strategy:\n\n1. **Shorten lookback windows**: Replace 60-bar features with 5-20 bar windows. Shorter windows decay faster and track recent market state, not historical regime-specific patterns.\n\n2. **Add z-score normalization within rolling windows**: Features like momentum will be measured relative to their recent distribution, making them comparable across different volatility regimes. A 2% move means different things when vol is 0.5% vs 2%.\n\n3. **Add rate-of-change features for market character**: Instead of absolute vol_regime, add vol_trend (is vol increasing?), momentum_trend (is momentum accelerating?). These capture second-order dynamics that generalize better.\n\n4. **Reduce regularization and min_child_weight**: The collapse in pred_std_ratio (0.112 vs needed 0.18) suggests the model is too constrained. Lowering min_child_weight from 1 to 0.5 and reducing reg_alpha/lambda allows learning of finer patterns.\n\n5. **Add volatility-scaled momentum**: Interaction term that multiplies momentum by a slow vol_regime estimate\u2014this makes momentum adaptive to current market conditions.\n\nThe expected effect:\n- val_slope should increase from 0.006 toward 0.020+ (more predictive power in val)\n- pred_std_ratio should increase from 0.112 toward 0.18+ (less collapsed predictions)\n- Shorter lookbacks + z-score normalization should reduce the train\u2192val regime gap",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:54:47.698743",
+  "llm_cost": 0.038576000000000006,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

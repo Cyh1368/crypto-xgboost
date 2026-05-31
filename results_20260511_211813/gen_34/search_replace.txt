@@ -1,0 +1,85 @@
+<NAME>
+expressivity_and_flow_indicators
+</NAME>
+
+<DESCRIPTION>
+The previous model suffered from a significant 'collapse toward mean' (pred_std_ratio of ~0.036 where 0.15 is required). This suggests the model is finding the noise-to-signal ratio too high and defaulting to safe, near-zero predictions.
+
+To address this, I am:
+1. Refining XGBoost hyperparameters: Increasing 'n_estimators' to 1000 and lowering 'learning_rate' to 0.03. This slower learning process with more steps typically allows the model to build a more robust signal in financial time-series data compared to the faster LR=0.1. I also set 'max_depth' to 7 and 'min_child_weight' to 2 to maintain expressivity while preventing capture of single-outlier noise.
+2. Adding 'Energy and Flow' indicators: Money Flow Index (MFI) and Chaikin Money Flow (CMF) proxies are added to capture volume-weighted price pressure, which is often more predictive than price alone in crypto perps.
+3. Adding Keltner Channel and Williams %R indicators: These provide better context for overbought/oversold regimes relative to volatility than basic RSI or Bollinger Bands.
+4. Adding interaction terms: Specifically crossing volume dynamics with momentum (RSI) to identify high-conviction moves.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 8,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 2,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.6,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Statistical and Momentum features ---
+    feat['zscore_20'] = (close - close.rolling(20).mean()) / (close.rolling(20).std() + 1e-9)
+    feat['vol_zscore_20'] = (volume - volume.rolling(20).mean()) / (volume.rolling(20).std() + 1e-9)
+    feat['skew_20'] = log_ret.rolling(20).skew()
+    feat['kurt_20'] = log_ret.rolling(20).kurt()
+    feat['stoch_k_14'] = (close - low.rolling(14).min()) / (high.rolling(14).max() - low.rolling(14).min() + 1e-9)
+    feat['vol_momentum'] = volume.pct_change(5)
+    feat['mom_accel'] = feat['ret_1'] - feat['ret_3']
+=======
+    # --- Energy and Flow features ---
+    mf_multiplier = ((close - low) - (high - close)) / (high - low + 1e-9)
+    feat['cmf_20'] = (mf_multiplier * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['mfi_14'] = (mf_multiplier * volume).rolling(14).sum() / (volume.rolling(14).sum() + 1e-9)
+
+    # --- Statistical and Momentum features ---
+    feat['zscore_20'] = (close - close.rolling(20).mean()) / (close.rolling(20).std() + 1e-9)
+    feat['vol_zscore_20'] = (volume - volume.rolling(20).mean()) / (volume.rolling(20).std() + 1e-9)
+    feat['skew_20'] = log_ret.rolling(20).skew()
+    feat['kurt_20'] = log_ret.rolling(20).kurt()
+    feat['stoch_k_14'] = (close - low.rolling(14).min()) / (high.rolling(14).max() - low.rolling(14).min() + 1e-9)
+    feat['williams_r_14'] = (high.rolling(14).max() - close) / (high.rolling(14).max() - low.rolling(14).min() + 1e-9)
+    feat['vol_momentum'] = volume.pct_change(5)
+    feat['mom_accel'] = feat['ret_1'] - feat['ret_3']
+
+    # --- Advanced Context & Interactions ---
+    feat['rsi_diff'] = feat['rsi_6'] - feat['rsi_14']
+    feat['vol_rsi_interaction'] = feat['volume_ratio_20'] * (feat['rsi_14'] - 50)
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / ((high - low).rolling(10).sum() + 1e-9)
+
+    # Keltner Channel Position
+    kc_mid = close.ewm(span=20, adjust=False).mean()
+    kc_range = tr.ewm(span=20, adjust=False).mean()
+    feat['kc_pct'] = (close - kc_mid) / (kc_range + 1e-9)
+>>>>>>> REPLACE
+</DIFF>

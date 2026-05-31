@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortxgb",
+  "patch_description": "This crossover version combines the strongest parts of the recent regime-adaptive feature set with the most robust short-lookback ideas from the inspiration program.\n\nKey changes:\n- Uses shorter windows and rolling z-scores to reduce regime dependence.\n- Adds rate-of-change features for volatility, momentum, and efficiency to capture second-order regime shifts.\n- Keeps a compact but expressive feature set well below the 80-feature limit.\n- Loosens regularization slightly versus the current program to reduce prediction collapse and raise prediction dispersion.\n- Preserves the same interface, inputs, outputs, and causal-only feature construction.\n\nThe goal is to improve val slope and correlation without regressing the current directional accuracy.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:17:32.158736",
+  "llm_cost": 0.03544125,
+  "llm_model": "gpt-5.4-mini"
+}

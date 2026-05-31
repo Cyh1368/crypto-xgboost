@@ -1,0 +1,314 @@
+<NAME>regime_adaptive_pipeline</NAME>
+
+<DESCRIPTION>
+This redesign fundamentally restructures the program around a modular, regime-adaptive architecture:
+
+1. **Feature Factory Pattern**: Separates feature computation into specialized modules (momentum, volatility, microstructure, regime) that can be independently tuned and tested.
+
+2. **Adaptive Normalization Layer**: Implements a two-stage normalization strategy:
+   - First: Rolling z-score normalization within short windows (10-20 bars) to make features regime-invariant
+   - Second: Global standardization for model input
+   This addresses the core problem of regime shifts between train/test/val.
+
+3. **Regime-Conditional Feature Engineering**: Instead of computing absolute features, focuses on:
+   - Rate-of-change features (volatility acceleration, trend momentum changes)
+   - Relative position features (percentile ranks within rolling windows)
+   - Cross-regime stability indicators (autocorrelation trends, efficiency ratios)
+
+4. **Reduced Model Complexity with Better Regularization**: Uses fewer estimators (180 vs 260) but with better-tuned regularization to force the model to learn only the most robust patterns that generalize across regime shifts.
+
+5. **Feature Interaction Pruning**: Reduces from 70+ features to ~55 by eliminating redundant interactions and focusing on multiplicative terms that capture regime-dependent behavior (momentum × volatility regime, volume × price pressure).
+
+The key insight: the val_slope collapse from 0.023 to 0.002 indicates the model learns training-specific patterns. By making features regime-invariant through adaptive normalization and focusing on rate-of-change rather than absolute levels, we improve cross-regime generalization.
+</DESCRIPTION>
+
+<CODE>
+```python
+# evolve/initial.py
+
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 180,
+    "max_depth": 3,
+    "min_child_weight": 10,
+    "reg_alpha": 0.20,
+    "reg_lambda": 3.0,
+    "subsample": 0.80,
+    "colsample_bytree": 0.70,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 35,
+}
+
+CLIP_PERCENTILE = 96
+MIN_PRED_STD_RATIO = 0.18
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+
+class FeatureFactory:
+    """Modular feature computation with regime-adaptive normalization."""
+    
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+        self.close = df["close"].astype(float)
+        self.open_ = df["open"].astype(float)
+        self.high = df["high"].astype(float)
+        self.low = df["low"].astype(float)
+        self.volume = df["volume"].astype(float)
+        self.eps = 1e-9
+        self.log_ret = np.log(self.close / self.close.shift(1))
+        
+    def adaptive_zscore(self, series: pd.Series, window: int) -> pd.Series:
+        """Z-score normalization within rolling window for regime invariance."""
+        rolling_mean = series.rolling(window, min_periods=max(1, window//2)).mean()
+        rolling_std = series.rolling(window, min_periods=max(1, window//2)).std()
+        return (series - rolling_mean) / (rolling_std + self.eps)
+    
+    def percentile_rank(self, series: pd.Series, window: int) -> pd.Series:
+        """Percentile rank within rolling window (0-1)."""
+        return series.rolling(window, min_periods=max(1, window//2)).rank(pct=True)
+    
+    def momentum_features(self) -> pd.DataFrame:
+        """Short-horizon momentum with adaptive normalization."""
+        feat = pd.DataFrame(index=self.df.index)
+        
+        # Raw returns at key lags
+        for lag in [1, 2, 3, 5, 8]:
+            feat[f"ret_{lag}"] = self.close.pct_change(lag)
+        
+        # Adaptive z-scored returns (regime-invariant)
+        ret_1 = self.close.pct_change(1)
+        feat["ret_z_10"] = self.adaptive_zscore(ret_1, 10)
+        feat["ret_z_20"] = self.adaptive_zscore(ret_1, 20)
+        
+        # Return acceleration (rate of change of momentum)
+        feat["ret_accel_3"] = ret_1.diff(3)
+        feat["ret_accel_5"] = ret_1.diff(5)
+        
+        # Momentum percentile ranks
+        ret_3 = self.close.pct_change(3)
+        feat["ret_3_rank_20"] = self.percentile_rank(ret_3, 20)
+        
+        return feat
+    
+    def volatility_features(self) -> pd.DataFrame:
+        """Volatility with focus on regime changes."""
+        feat = pd.DataFrame(index=self.df.index)
+        
+        # Short-window volatility
+        vol_5 = self.log_ret.rolling(5).std()
+        vol_10 = self.log_ret.rolling(10).std()
+        vol_20 = self.log_ret.rolling(20).std()
+        
+        feat["vol_5"] = vol_5
+        feat["vol_10"] = vol_10
+        
+        # Volatility acceleration (key for regime shifts)
+        feat["vol_accel_5"] = (vol_5 - vol_5.shift(5)) / (vol_5.shift(5) + self.eps)
+        feat["vol_accel_10"] = (vol_10 - vol_10.shift(10)) / (vol_10.shift(10) + self.eps)
+        
+        # Volatility regime as percentile rank
+        feat["vol_rank_40"] = self.percentile_rank(vol_10, 40)
+        
+        # Volatility ratio (fast/slow)
+        feat["vol_ratio_5_20"] = vol_5 / (vol_20 + self.eps)
+        
+        return feat
+    
+    def price_structure_features(self) -> pd.DataFrame:
+        """Price position and mean reversion with short lookbacks."""
+        feat = pd.DataFrame(index=self.df.index)
+        
+        # Short-window moving averages
+        sma_5 = self.close.rolling(5).mean()
+        sma_10 = self.close.rolling(10).mean()
+        sma_20 = self.close.rolling(20).mean()
+        
+        # Price deviations (z-scored for regime invariance)
+        dev_5 = (self.close - sma_5) / (sma_5 + self.eps)
+        dev_10 = (self.close - sma_10) / (sma_10 + self.eps)
+        
+        feat["price_dev_5_z"] = self.adaptive_zscore(dev_5, 20)
+        feat["price_dev_10_z"] = self.adaptive_zscore(dev_10, 20)
+        
+        # SMA crossover
+        feat["sma_cross_5_20"] = (sma_5 - sma_20) / (sma_20 + self.eps)
+        
+        # Trend efficiency (how direct is the move)
+        feat["efficiency_10"] = (self.close - self.close.shift(10)).abs() / (
+            self.close.diff().abs().rolling(10).sum() + self.eps
+        )
+        feat["efficiency_20"] = (self.close - self.close.shift(20)).abs() / (
+            self.close.diff().abs().rolling(20).sum() + self.eps
+        )
+        
+        # Efficiency change (rate of change of market character)
+        eff_10 = feat["efficiency_10"]
+        feat["efficiency_chg_10"] = (eff_10 - eff_10.shift(10)) / (eff_10.shift(10) + self.eps)
+        
+        return feat
+    
+    def oscillator_features(self) -> pd.DataFrame:
+        """Short-period oscillators with adaptive normalization."""
+        feat = pd.DataFrame(index=self.df.index)
+        
+        # RSI with short periods
+        delta = self.close.diff()
+        gain = delta.clip(lower=0)
+        loss = (-delta.clip(upper=0))
+        
+        for period in [5, 10]:
+            avg_gain = gain.rolling(period).mean()
+            avg_loss = loss.rolling(period).mean()
+            rs = avg_gain / (avg_loss + self.eps)
+            rsi = 100 - 100 / (1 + rs)
+            # Z-score RSI for regime invariance
+            feat[f"rsi_{period}_z"] = self.adaptive_zscore(rsi, 20)
+        
+        # Bollinger position (z-scored)
+        bb_mid_10 = self.close.rolling(10).mean()
+        bb_std_10 = self.close.rolling(10).std()
+        bb_pct = (self.close - bb_mid_10) / (2 * bb_std_10 + self.eps)
+        feat["bb_pct_10"] = bb_pct
+        
+        return feat
+    
+    def microstructure_features(self) -> pd.DataFrame:
+        """Candle structure and range features."""
+        feat = pd.DataFrame(index=self.df.index)
+        
+        # ATR normalized
+        tr = pd.concat([
+            self.high - self.low,
+            (self.high - self.close.shift(1)).abs(),
+            (self.low - self.close.shift(1)).abs(),
+        ], axis=1).max(axis=1)
+        
+        atr_10 = tr.rolling(10).mean()
+        feat["atr_norm_10"] = atr_10 / (self.close + self.eps)
+        
+        # High-low range (z-scored)
+        hl_range = (self.high - self.low) / (self.close + self.eps)
+        feat["hl_range_z_20"] = self.adaptive_zscore(hl_range, 20)
+        
+        # Candle body ratio
+        body = (self.close - self.open_).abs()
+        candle_range = (self.high - self.low) + self.eps
+        feat["body_ratio"] = body / candle_range
+        
+        # Wick ratios
+        feat["upper_wick"] = (self.high - np.maximum(self.open_, self.close)) / candle_range
+        feat["lower_wick"] = (np.minimum(self.open_, self.close) - self.low) / candle_range
+        
+        # Close position in range (percentile)
+        low_10 = self.low.rolling(10).min()
+        high_10 = self.high.rolling(10).max()
+        feat["close_pos_10"] = (self.close - low_10) / (high_10 - low_10 + self.eps)
+        
+        return feat
+    
+    def volume_features(self) -> pd.DataFrame:
+        """Volume features with adaptive normalization."""
+        feat = pd.DataFrame(index=self.df.index)
+        
+        # Volume z-scored
+        feat["volume_z_10"] = self.adaptive_zscore(self.volume, 10)
+        feat["volume_z_20"] = self.adaptive_zscore(self.volume, 20)
+        
+        # Volume ratio
+        vol_ma_10 = self.volume.rolling(10).mean()
+        feat["volume_ratio_10"] = self.volume / (vol_ma_10 + self.eps)
+        
+        # VWAP deviation
+        vwap_10 = (self.close * self.volume).rolling(10).sum() / (
+            self.volume.rolling(10).sum() + self.eps
+        )
+        feat["vwap_dev_10"] = (self.close - vwap_10) / (self.close + self.eps)
+        
+        # Volume-return correlation (market character)
+        feat["vol_ret_corr_10"] = self.log_ret.rolling(10).corr(self.volume.pct_change(1))
+        
+        return feat
+    
+    def regime_features(self) -> pd.DataFrame:
+        """Regime indicators focusing on changes in market character."""
+        feat = pd.DataFrame(index=self.df.index)
+        
+        # Volatility regime as percentile
+        vol_10 = self.log_ret.rolling(10).std()
+        vol_regime = vol_10 / (vol_10.rolling(60).mean() + self.eps)
+        feat["vol_regime"] = vol_regime
+        
+        # Regime change (key for detecting shifts)
+        feat["vol_regime_chg_10"] = (vol_regime - vol_regime.shift(10)) / (
+            vol_regime.shift(10) + self.eps
+        )
+        
+        # Trend strength and direction
+        trend_10 = self.close.pct_change(10)
+        feat["trend_strength_10"] = trend_10.abs() * 10000
+        feat["trend_dir_10"] = np.sign(trend_10)
+        
+        # Trend change (rate of change of trend)
+        feat["trend_chg_10"] = trend_10 - trend_10.shift(10)
+        
+        # Autocorrelation trend (market efficiency change)
+        ret_1 = self.close.pct_change(1)
+        autocorr_10 = ret_1.rolling(10).apply(
+            lambda x: x.autocorr(lag=1) if len(x) >= 2 else 0, raw=False
+        )
+        feat["autocorr_10"] = autocorr_10
+        feat["autocorr_chg_5"] = autocorr_10.diff(5)
+        
+        return feat
+    
+    def interaction_features(self) -> pd.DataFrame:
+        """Key multiplicative interactions for regime-dependent behavior."""
+        feat = pd.DataFrame(index=self.df.index)
+        
+        # Momentum × volatility regime (single robust interaction)
+        ret_3 = self.close.pct_change(3)
+        vol_10 = self.log_ret.rolling(10).std()
+        vol_regime = vol_10 / (vol_10.rolling(60).mean() + self.eps)
+        
+        feat["mom_x_volreg"] = ret_3 * vol_regime
+        
+        # Volume × price pressure
+        vol_ratio = self.volume / (self.volume.rolling(10).mean() + self.eps)
+        price_dev = (self.close - self.close.rolling(10).mean()) / (
+            self.close.rolling(10).mean() + self.eps
+        )
+        feat["vol_x_price"] = vol_ratio * price_dev
+        
+        return feat
+    
+    def time_features(self) -> pd.DataFrame:
+        """Time-based features."""
+        feat = pd.DataFrame(index=self.df.index)
+        
+        hour = self.df.index.hour
+        dow = self.df.index.dayofweek
+        
+        feat["hour_sin"] = np.sin(2 * np.pi * hour / 24.0)
+        feat["hour_cos"] = np.cos(2 * np.pi * hour / 24.0)
+        feat["dow_sin"] = np.sin(2 * np.pi * dow / 7.0)
+        feat["is_weekend"] = (dow >= 5).astype(float)
+        
+        return feat
+    
+    def funding_features

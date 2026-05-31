@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "rolling_regime_features",
+  "patch_description": "This edit aims to reduce regime-specific overfitting by shifting the feature set away from long-horizon absolute levels and toward short-horizon, rolling standardized signals. The main idea is:\n\n- Replace the broad set of long lookbacks with shorter, more responsive windows.\n- Add rolling z-score normalization for returns, volatility, and volume so the model sees regime-invariant deviations instead of raw magnitudes.\n- Add \u201cmarket character change\u201d features such as volatility trend, efficiency trend, and autocorrelation trend.\n- Keep the important momentum \u00d7 volatility interaction, but make it more robust via short-window inputs.\n- Reduce model capacity slightly and add regularization to force the booster to focus on stable patterns and improve validation slope.\n\nThis should help the model preserve slope on the validation regime while also increasing prediction dispersion away from the current near-mean collapse.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:40:29.060183",
+  "llm_cost": 0.02152575,
+  "llm_model": "gpt-5.4-mini"
+}

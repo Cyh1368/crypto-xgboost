@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "short_regime_adaptive_features",
+  "patch_description": "The current model is severely underpredicting variation on the held-out periods, which is consistent with overly strong regularization and features that are still too tied to a single regime. This edit makes two coordinated changes:\n\n1. **Loosens XGBoost regularization slightly** so the model can express more signal and avoid collapsing toward the mean:\n   - lower `min_child_weight`\n   - lower `reg_alpha` / `reg_lambda`\n   - modestly increase depth\n   - slightly increase tree count while keeping learning rate moderate\n\n2. **Rebuilds features around short, rolling, regime-normalized signals**:\n   - add short-horizon returns and z-scored returns\n   - add short volatility levels and volatility trends\n   - add rolling efficiency/AC-style trend proxies\n   - add momentum \u00d7 volatility-regime interaction\n   - add rolling volume and price-position normalization\n   - keep the feature count comfortably below 80\n\nThis should help the model recover slope on validation by emphasizing faster-decaying patterns and regime-relative structure rather than absolute levels.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:51:01.796100",
+  "llm_cost": 0.0230115,
+  "llm_model": "gpt-5.4-mini"
+}

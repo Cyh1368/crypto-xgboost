@@ -1,0 +1,14 @@
+{
+  "generation": 35,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb",
+  "patch_description": "This crossover version keeps the stronger short-horizon and regime-aware ideas from the better prior programs, while reducing dependence on long lookbacks that appeared to overfit the earlier regime.\n\nKey changes:\n- Uses shorter rolling windows more heavily (5/10/20/40) to improve regime adaptability.\n- Adds rolling z-scored returns and z-scored volume to normalize across changing volatility environments.\n- Adds explicit \u201cmarket character change\u201d features: volatility trend, efficiency trend, autocorrelation trend, and regime-change deltas.\n- Keeps a compact feature count under the 80-feature limit while preserving the most useful price, volatility, momentum, range, volume, and interaction signals.\n- Uses a slightly less constrained XGBoost setup than the collapsing version, but still regularized enough to avoid extreme overfit.\n\nThe interface, inputs, outputs, and run_experiment logic remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:57:37.799373",
+  "llm_cost": 0.03637875,
+  "llm_model": "gpt-5.4-mini"
+}

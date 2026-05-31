@@ -1,0 +1,14 @@
+{
+  "generation": 77,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "increase_expressivity_and_reduce_collapse",
+  "patch_description": "The model is currently suffering from \"mean collapse,\" where predictions are too close to zero (pred_std_ratio ~0.05, while the target is >0.15). This is caused by excessive regularization or insufficient model expressivity relative to the noise in the target.\n\nI am proposing the following changes:\n1.  **Hyperparameters**: Increase `max_depth` to 7 and `n_estimators` to 1000 to increase model capacity. Reduce `reg_lambda` to 0.005 and `reg_alpha` to 0 to significantly lower the penalty for non-zero predictions. Lower `learning_rate` to 0.06 to allow for more stable convergence with higher capacity.\n2.  **Target Clipping**: Increase `CLIP_PERCENTILE` to 98. This preserves more variance in the training targets, which provides stronger gradients and encourages the model to predict larger moves rather than defaulting to the mean.\n3.  **Feature Engineering**: \n    - Added `log_vol` to handle the log-normal distribution of volume.\n    - Added `vol_change_5` to capture shifts in volatility regimes.\n    - Added `vol_skew_20` to capture asymmetric risk in price returns.\n    - Added `tail_ratio` to distinguish between trending bars and range-bound \"wicky\" bars.\n    - Added a normalized `vpt_20` (Volume Price Trend) to better capture volume-weighted momentum.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:35:43.633188",
+  "llm_cost": 0.017266,
+  "llm_model": "gemini-3-flash-preview"
+}

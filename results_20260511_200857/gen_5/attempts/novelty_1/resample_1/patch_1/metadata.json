@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "less_regularization_shifted_features",
+  "patch_description": "The validation output shows a classic prediction-collapse issue: `pred_std_ratio=0.0091` is far too low, meaning the model is predicting near the mean almost all the time. The current XGBoost setup is over-regularized for this task (`min_child_weight=10`, `reg_alpha=0.1`, `reg_lambda=1.0`, `learning_rate=0.01` with only 300 trees), so the model lacks expressivity and underfits.\n\nI fixed this by:\n1. Making all engineered features explicitly past-only using a 1-bar shift before any rolling/technical calculations, which also aligns with the stated no-lookahead constraint.\n2. Expanding the feature set modestly with a few useful regime and interaction features while keeping total feature count under 80.\n3. Reducing regularization and increasing model capacity so predictions are less collapsed:\n   - lower `min_child_weight`\n   - lower `reg_alpha` / `reg_lambda`\n   - deeper trees\n   - more estimators\n   - slightly higher learning rate\n4. Keeping the interface and return format unchanged.\n\nThis should increase prediction variance and improve directional accuracy without peeking at future data.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:09:39.873226",
+  "llm_cost": 0.013176,
+  "llm_model": "gpt-5.4-mini"
+}

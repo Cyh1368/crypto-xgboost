@@ -1,0 +1,8 @@
+{
+  "combined_score": -10.0,
+  "public": {
+    "error": "NDFrame.fillna() got an unexpected keyword argument 'method'"
+  },
+  "private": {},
+  "text_feedback": "NDFrame.fillna() got an unexpected keyword argument 'method'"
+}

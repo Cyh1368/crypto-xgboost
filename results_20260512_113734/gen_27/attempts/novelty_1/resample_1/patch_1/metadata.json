@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "short_regime_xgb",
+  "patch_description": "This crossover version keeps the best parts of the prior feature sets while shifting the model toward shorter, more regime-robust signals. I reduced reliance on long lookbacks, added rolling z-score normalization, and emphasized change-in-market-character features such as volatility trend, autocorrelation trend, efficiency trend, and momentum scaled by volatility regime.\n\nOn the model side, I eased the over-regularization that was causing prediction collapse by using a slightly deeper tree, lower min_child_weight, milder L1/L2, and a learning rate / estimator mix that should preserve expressivity while still controlling overfit. The feature set remains comfortably under the 80-feature limit and uses only past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:55:59.686234",
+  "llm_cost": 0.032388,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "reduce_regularization_add_interactions",
+  "patch_description": "The model is severely underfitting (pred_std_ratio=0.0091). We need to:\n\n1. Dramatically reduce regularization (reg_alpha, reg_lambda, min_child_weight) to allow the model to express learned patterns\n2. Increase max_depth and learning_rate slightly to improve expressivity\n3. Add interaction features (momentum \u00d7 volatility, price position \u00d7 volume) that capture regime-dependent signals\n4. Add mean-reversion features (price deviation from moving average) which are strong in crypto\n5. Add cross-asset correlation features if available, or at least lagged cross-asset returns\n\nThese changes should increase pred_std_ratio from 0.009 to at least 0.20+ while maintaining val_DA >= 0.52.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:19:07.203069",
+  "llm_cost": 0.024334,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

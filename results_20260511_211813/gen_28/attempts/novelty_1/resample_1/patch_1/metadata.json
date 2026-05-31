@@ -1,0 +1,14 @@
+{
+  "generation": 28,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "reduce_regularization_and_increase_depth",
+  "patch_description": "The current model is showing a collapse penalty of 0.572, indicating severe prediction collapse toward the mean. The pred_std_ratio is only 0.0356, which is still far below the 0.15 minimum target. \n\nThe root cause is **excessive regularization** combined with **insufficient model depth**. The current hyperparameters have:\n- reg_lambda=0.05 (very low, good)\n- reg_alpha=0.0 (good)\n- But max_depth=8 is actually reasonable given the feature count\n\nHowever, looking at the trajectory of prior runs:\n- When we reduced regularization (reg_alpha from 0.01\u21920.0, reg_lambda from 0.1\u21920.05), pred_std_ratio improved from 0.01\u21920.04\n- But it's still not enough to break out of collapse mode\n\nThe key insight: we need to **drastically reduce regularization further** and **increase model capacity** through higher learning rate and more estimators. The current learning_rate=0.1 is good, but:\n- min_child_weight=1 is very low and may help, but we need fewer constraints\n- We should increase max_depth slightly to 9-10 to allow more expressive trees\n- Remove reg_alpha completely (keep at 0.0)\n- Further reduce reg_lambda to near-zero (0.01)\n\nAdditionally, increase MIN_PRED_STD_RATIO threshold slightly to force the model to be more penalized when collapsing, but also relax CLIP_PERCENTILE from 99 to 98 to give the model slightly more extreme values to work with.\n\nExpected impact: pred_std_ratio should jump to 0.08-0.12 range, helping escape collapse penalty.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:23:37.230036",
+  "llm_cost": 0.025157,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

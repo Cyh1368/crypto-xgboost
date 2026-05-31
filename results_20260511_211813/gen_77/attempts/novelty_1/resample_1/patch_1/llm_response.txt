@@ -1,0 +1,117 @@
+<NAME>
+increase_expressivity_and_reduce_collapse
+</NAME>
+
+<DESCRIPTION>
+The model is currently suffering from "mean collapse," where predictions are too close to zero (pred_std_ratio ~0.05, while the target is >0.15). This is caused by excessive regularization or insufficient model expressivity relative to the noise in the target.
+
+I am proposing the following changes:
+1.  **Hyperparameters**: Increase `max_depth` to 7 and `n_estimators` to 1000 to increase model capacity. Reduce `reg_lambda` to 0.005 and `reg_alpha` to 0 to significantly lower the penalty for non-zero predictions. Lower `learning_rate` to 0.06 to allow for more stable convergence with higher capacity.
+2.  **Target Clipping**: Increase `CLIP_PERCENTILE` to 98. This preserves more variance in the training targets, which provides stronger gradients and encourages the model to predict larger moves rather than defaulting to the mean.
+3.  **Feature Engineering**: 
+    - Added `log_vol` to handle the log-normal distribution of volume.
+    - Added `vol_change_5` to capture shifts in volatility regimes.
+    - Added `vol_skew_20` to capture asymmetric risk in price returns.
+    - Added `tail_ratio` to distinguish between trending bars and range-bound "wicky" bars.
+    - Added a normalized `vpt_20` (Volume Price Trend) to better capture volume-weighted momentum.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.02,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.08,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 96          # preserve more signal variance for stronger gradients
+MIN_PRED_STD_RATIO = 0.08     # lower threshold to reduce collapse penalty
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.005,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.06,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # allow model to see larger moves to prevent mean collapse
+MIN_PRED_STD_RATIO = 0.15     # target a healthier prediction standard deviation
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV + orderbook + funding data.
+    All features must use only past data (no lookahead).
+    Returns a DataFrame aligned to df.index.
+    """
+    feat = pd.DataFrame(index=df.index)
+
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+=======
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV + orderbook + funding data.
+    All features must use only past data (no lookahead).
+    Returns a DataFrame aligned to df.index.
+    """
+    feat = pd.DataFrame(index=df.index)
+
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    open_ = df['open']
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+        feat['funding_z_32'] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+=======
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+        feat['funding_z_32'] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+
+    # --- Additional Expressivity Features ---
+    feat['log_vol'] = np.log1p(volume)
+    feat['vol_change_5'] = vol_regime.pct_change(5)
+    feat['vol_skew_20'] = log_ret.rolling(20).skew()
+    feat['tail_ratio'] = (high - low) / ((close - open_).abs() + 1e-9)
+    feat['vpt_20'] = (ret1 * volume).rolling(20).sum() / (vol_ma20 + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+>>>>>>> REPLACE
+</DIFF>

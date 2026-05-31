@@ -1,0 +1,14 @@
+{
+  "generation": 47,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb_crossover",
+  "patch_description": "This crossover version keeps the stronger parts of both prior implementations while pushing harder toward regime invariance and shorter-horizon signals.\n\nMain changes:\n- Uses shorter lookbacks for momentum, volatility, mean reversion, and regime features.\n- Adds rolling z-scores and rank-based transforms to reduce regime dependence.\n- Emphasizes \u201cchange in market character\u201d features such as volatility trend, trend change, efficiency change, and regime shifts.\n- Keeps only robust multiplicative interactions like momentum \u00d7 volatility regime and volume \u00d7 price pressure.\n- Reduces model over-complexity slightly versus the current program to improve generalization across the second regime shift.\n- Maintains the same inputs, outputs, and interface, and stays within the feature-count and runtime constraints.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:15:00.207254",
+  "llm_cost": 0.038811,
+  "llm_model": "gpt-5.4-mini"
+}

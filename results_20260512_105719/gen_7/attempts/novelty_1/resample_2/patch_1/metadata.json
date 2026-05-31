@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_robust_xgb",
+  "patch_description": "This rewrite focuses on regime robustness rather than memorizing long-horizon patterns that collapse out of sample.\n\nKey changes:\n- Heavier use of short lookbacks (5\u201320 bars) and rolling z-scores to reduce regime dependence.\n- Added \u201cmarket character\u201d trend features such as volatility trend, efficiency trend, and autocorrelation trend.\n- Added multiplicative interactions like momentum \u00d7 volatility regime to help the tree model learn conditional behavior.\n- Removed most long-window, brittle absolute-level features and replaced them with normalized versions.\n- Tuned XGBoost to be slightly more expressive than the current model while adding enough regularization to prevent train-only overfit.\n- Kept the feature count safely below 80 and ensured all features use only past data.\n\nThe goal is to improve validation slope and correlation while raising prediction variance away from the collapsed mean-reverting behavior.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:58:58.670994",
+  "llm_cost": 0.020220000000000002,
+  "llm_model": "gpt-5.4-mini"
+}

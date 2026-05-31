@@ -1,0 +1,14 @@
+{
+  "generation": 88,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "aggressive_regularization_reduction_with_signal_features",
+  "patch_description": "The core problem is that heavy L2/L1 regularization (reg_lambda=0.5, reg_alpha=0.05) is collapsing predictions toward the mean, producing pred_std_ratio~0.056 instead of the needed 0.15+. Prior runs show the best results when regularization is lighter (e.g., reg_lambda=0.1, reg_alpha=0.0-0.01).\n\nChanges:\n1. **XGB_PARAMS**: Drastically reduce reg_lambda (0.5\u21920.15), eliminate reg_alpha (0.05\u21920.0), increase learning_rate (0.05\u21920.08), allow min_child_weight to go to 0, increase max_depth to 7 for flexibility, raise n_estimators to 1200 with aggressive early stopping (40).\n\n2. **build_features()**: Add short-term mean-reversion and directional-bias features that XGBoost can latch onto:\n   - Short-term price extremes (5-bar and 10-bar percentile ranks) to capture mean-reversion setups\n   - Intrabar momentum acceleration (ret_accel_3_12, ret_accel_6_24) \n   - Return entropy/skewness over short windows for tail-risk detection\n   - Close relative to recent range (close_rank_8) for quick reversals\n   - Simple price velocity (close - close_shift_4) as a leading signal\n   These are all properly shifted and past-only.\n\n3. **CLIP_PERCENTILE**: Increase from 98.0\u219299.0 to preserve tail signal while still clipping outliers.\n\nExpected outcome: Higher pred_std_ratio (target 0.10+), better signal capture, and val_DA\u21920.53+.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:45:00.293666",
+  "llm_cost": 0.032222,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

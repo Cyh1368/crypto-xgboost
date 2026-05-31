@@ -1,0 +1,14 @@
+{
+  "generation": 34,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "expressivity_and_flow_indicators",
+  "patch_description": "The previous model suffered from a significant 'collapse toward mean' (pred_std_ratio of ~0.036 where 0.15 is required). This suggests the model is finding the noise-to-signal ratio too high and defaulting to safe, near-zero predictions. \n\nTo address this, I am:\n1. Refining XGBoost hyperparameters: Increasing 'n_estimators' to 1000 and lowering 'learning_rate' to 0.03. This slower learning process with more steps typically allows the model to build a more robust signal in financial time-series data compared to the faster LR=0.1. I also set 'max_depth' to 7 and 'min_child_weight' to 2 to maintain expressivity while preventing capture of single-outlier noise.\n2. Adding 'Energy and Flow' indicators: Money Flow Index (MFI) and Chaikin Money Flow (CMF) proxies are added to capture volume-weighted price pressure, which is often more predictive than price alone in crypto perps.\n3. Adding Keltner Channel and Williams %R indicators: These provide better context for overbought/oversold regimes relative to volatility than basic RSI or Bollinger Bands.\n4. Adding interaction terms: Specifically crossing volume dynamics with momentum (RSI) to identify high-conviction moves.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:25:16.873280",
+  "llm_cost": 0.014638,
+  "llm_model": "gemini-3-flash-preview"
+}

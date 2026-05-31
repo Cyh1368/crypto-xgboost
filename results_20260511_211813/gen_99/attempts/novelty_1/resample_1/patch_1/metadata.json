@@ -1,0 +1,14 @@
+{
+  "generation": 99,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_aware_regularization_and_signal_boost",
+  "patch_description": "The current model is overfitting (Train DA 0.59 vs Val DA 0.51) and its predictions are collapsing toward the mean (pred_std_ratio 0.08). To address this, I am proposing a shallower model (max_depth 5) with a slower learning rate (0.02) and increased regularization (reg_alpha 0.05, reg_lambda 0.5). This should improve generalization. \n\nAdditionally, I am adding several high-signal features to help the model distinguish between different market regimes and identify mean-reversion opportunities:\n1. ADX (Average Directional Index): To measure trend strength.\n2. Choppiness Index: To distinguish between trending and ranging markets.\n3. VWAP Deviation normalized by ATR: A more robust mean-reversion signal.\n4. Price-Volume Correlation: To detect accumulation/distribution phases.\n5. Distance from 20-period High/Low: To identify potential trend exhaustion.\n6. 20-period Volume Z-Score: To capture short-term volume spikes.\n\nThese changes aim to increase the model's confidence on unseen data, thereby improving both directional accuracy and the prediction standard deviation ratio.",
+  "error_msg": "No changes applied",
+  "timestamp": "2026-05-11T21:47:39.493530",
+  "llm_cost": 0.014499999999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

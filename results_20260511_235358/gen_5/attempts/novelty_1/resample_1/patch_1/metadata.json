@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_short_windows",
+  "patch_description": "This edit targets the main failure mode: the model\u2019s signal collapses in validation because the current feature set leans too heavily on long-horizon, regime-specific levels. I\u2019m switching the feature bank toward shorter lookbacks and rolling z-score / rank normalization so the inputs become more regime-invariant. I also add a few explicit rate-of-change features for volatility, efficiency, and autocorrelation so the model can learn when market character is changing rather than only its absolute state.\n\nOn the model side, I reduce tree complexity and increase regularization / sample constraints to discourage memorizing brittle training-only patterns. I also lower the clipping threshold slightly to reduce outlier dominance while keeping enough dynamic range to avoid prediction collapse.\n\nThe intent is to raise validation slope and predicted dispersion without inflating train/val gap, while keeping feature count safely under the limit.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:55:09.982465",
+  "llm_cost": 0.02344725,
+  "llm_model": "gpt-5.4-mini"
+}

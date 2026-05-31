@@ -1,0 +1,8 @@
+{
+  "combined_score": -10.0,
+  "public": {
+    "error": "unsupported operand type(s) for -: 'Rolling' and 'float'"
+  },
+  "private": {},
+  "text_feedback": "unsupported operand type(s) for -: 'Rolling' and 'float'"
+}

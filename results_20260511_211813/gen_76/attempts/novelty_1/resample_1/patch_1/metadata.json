@@ -1,0 +1,14 @@
+{
+  "generation": 76,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "none",
+  "patch_description": "The current model is suffering from prediction collapse (pred_std_ratio = 0.02), indicating that the regularization is too strong or the model is not expressive enough to capture the signal. \n\nI am proposing the following changes:\n1.  **Hyperparameters**: Increase `n_estimators` to 800 and `learning_rate` to 0.08 to allow the model more capacity to learn. Reduce `reg_alpha` and `reg_lambda` significantly to 0.001 and 0.01 respectively to combat the collapse toward the mean. Set `min_child_weight` to 1 to allow for more granular splits.\n2.  **Clipping**: Reduce `CLIP_PERCENTILE` to 95.0. Financial returns are heavy-tailed; focusing the gradient on the bulk of the distribution (95th percentile) often improves directional accuracy by preventing outliers from dominating the loss function and flattening the predictions.\n3.  **Feature Engineering**:\n    *   Add `volume_z_20` to capture volume shocks relative to recent history.\n    *   Add `momentum_trend_aligned` as a high-contrast interaction between the 6-bar return and the SMA crossover, which provides a strong tree-friendly signal for trend-following regimes.\n    *   Lower `MIN_PRED_STD_RATIO` to 0.08 to align with the observed model behavior while still providing a floor.",
+  "error_msg": "No changes applied",
+  "timestamp": "2026-05-11T21:36:04.900836",
+  "llm_cost": 0.014773499999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

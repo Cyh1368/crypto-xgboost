@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb",
+  "patch_description": "This crossover version keeps the strongest parts of the prior implementations while reducing regime fragility.\n\nKey changes:\n- Uses shorter lookback windows and more rolling z-scores to improve regime invariance.\n- Adds explicit \u201cchange in market character\u201d features: volatility trend, efficiency trend, trend acceleration, and regime shifts.\n- Keeps a compact interaction set, especially momentum \u00d7 volatility-regime terms, which tend to generalize better than raw levels alone.\n- Slightly relaxes the current model\u2019s over-regularization so XGBoost can avoid collapsing predictions toward the mean.\n- Preserves the same input/output interface and uses only past data in feature construction.\n\nThe feature count stays comfortably under the 80-feature cap, and the implementation remains efficient enough for the runtime constraint.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:00:19.685456",
+  "llm_cost": 0.04080375,
+  "llm_model": "gpt-5.4-mini"
+}

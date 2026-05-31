@@ -1,0 +1,89 @@
+<NAME>
+increase_expressivity_and_prune_features
+</NAME>
+
+<DESCRIPTION>
+The model currently suffers from 'prediction collapse' (pred_std_ratio = 0.04, well below the 0.15 target), which heavily penalizes the combined score. To address this, I am increasing model expressivity and reducing regularization:
+1.  **XGBoost Hyperparameters**: Increased `max_depth` to 6, `learning_rate` to 0.06, and `n_estimators` to 1000. Reduced `min_child_weight` to 1 and `reg_lambda` to 0.1 to allow the model to capture more signal variance.
+2.  **Feature Pruning**: The current feature set (~90 features) exceeds the 80-feature limit, causing critical features like Orderbook Imbalance (OBI) and Funding Rates to be truncated. I removed redundant features (`logret_lag`, `mom_slope`, `ret_mean`) to bring the count under 80, ensuring all signals are utilized.
+3.  **Refined Windows**: Simplified volume and momentum windows to focus on the most impactful horizons while maintaining diversity.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 900,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.6,
+    "gamma": 0.0,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "gamma": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    for lag in [1, 2, 3, 6, 12, 24, 48]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+        feat[f"logret_{lag}"] = log_close.diff(lag)
+
+    # Multi-horizon momentum stack
+    for w in [4, 8, 16, 32, 64]:
+        feat[f"mom_{w}"] = close.pct_change(w)
+        feat[f"mom_slope_{w}"] = close.pct_change(w).diff()
+        feat[f"ret_mean_{w}"] = log_ret1.rolling(w).mean().shift(1)
+        feat[f"ret_std_{w}"] = log_ret1.rolling(w).std().shift(1)
+=======
+    for lag in [1, 2, 3, 6, 12, 24, 48]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    # Multi-horizon momentum stack
+    for w in [4, 8, 16, 32, 64]:
+        feat[f"mom_{w}"] = close.pct_change(w)
+        feat[f"ret_std_{w}"] = log_ret1.rolling(w).std().shift(1)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Volume / participation ---
+    vol_z_windows = [12, 24, 48]
+    for w in vol_z_windows:
+        vma = volume.rolling(w).mean().shift(1)
+        vsd = volume.rolling(w).std().shift(1)
+        feat[f"vol_z_{w}"] = (volume - vma) / (vsd + eps)
+        feat[f"vol_ratio_{w}"] = volume / (vma + eps)
+=======
+    # --- Volume / participation ---
+    vol_z_windows = [24, 48]
+    for w in vol_z_windows:
+        vma = volume.rolling(w).mean().shift(1)
+        vsd = volume.rolling(w).std().shift(1)
+        feat[f"vol_z_{w}"] = (volume - vma) / (vsd + eps)
+        feat[f"vol_ratio_{w}"] = volume / (vma + eps)
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,13 @@
+RUN ERROR: name 'tr' is not defined
+Traceback (most recent call last):
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 154, in main
+    result = run_fn(df)
+             ^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 130, in run_fn
+    X_all = mod.build_features(df)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/results_20260511_211813/gen_50/main.py", line 84, in build_features
+    feat['efficiency_8'] = ((close - close.shift(8)).abs() / (tr.rolling(8).sum().shift(1) + eps)).shift(1)
+                                                              ^^
+NameError: name 'tr' is not defined
+

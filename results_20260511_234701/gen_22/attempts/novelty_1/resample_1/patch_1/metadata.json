@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "reduce_regularization_and_enhance_features",
+  "patch_description": "The model is currently suffering from severe prediction collapse (val_slope=0.0006, pred_std_ratio=0.0146), indicating it is over-regularized and under-expressive.\n1. Reduced `min_child_weight` (20 -> 5) and `reg_lambda` (10.0 -> 1.0) to allow the model to make bolder predictions and increase the predictive slope.\n2. Increased `max_depth` (4 -> 5) and `learning_rate` (0.05 -> 0.07) to increase model expressivity and capture more complex patterns.\n3. Shortened the Z-score normalization window (100 -> 60) to make features more adaptive to recent market regimes, which is critical for generalizing across the regime shifts observed in the val period.\n4. Added more return lags [2, 8] and a `vol_trend` feature to capture the rate of change in market character.\n5. Modified the momentum-volatility interaction to be multiplicative with the volatility regime, which often generalizes better than simple division.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:52:06.682033",
+  "llm_cost": 0.0110265,
+  "llm_model": "gemini-3-flash-preview"
+}

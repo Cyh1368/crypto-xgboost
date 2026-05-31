@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_short_lookbacks",
+  "patch_description": "This edit targets the core failure mode: the model\u2019s slope collapses out-of-sample because it is over-relying on regime-specific absolute levels that do not persist into the validation period. I\u2019m making the feature set more regime-invariant by emphasizing short lookbacks, rolling z-scores, and \u201cchange in market character\u201d features (volatility trend, efficiency trend, autocorrelation proxy trend). I\u2019m also adding a compact momentum\u00d7volatility interaction, which often survives regime shifts better than standalone raw momentum or raw volatility.\n\nOn the model side, I\u2019m slightly increasing expressivity while keeping regularization moderate: more trees with a smaller learning rate, shallower depth, and lower min_child_weight than the current setup. This should help recover validation slope and prediction dispersion without pushing train/val gap too far.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:56:27.054303",
+  "llm_cost": 0.02574375,
+  "llm_model": "gpt-5.4-mini"
+}

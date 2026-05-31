@@ -1,0 +1,118 @@
+<NAME>
+increase_expressivity_and_microstructure
+</NAME>
+
+<DESCRIPTION>
+The model currently suffers from a "prediction collapse" penalty, meaning the predicted standard deviation is too low compared to the actual targets (ratio ~0.06 vs target 0.15). To fix this, I am proposing two sets of changes:
+
+1. **Hyperparameters:** I am increasing `max_depth` to 7 and reducing `reg_lambda` and `reg_alpha` to reduce the pressure on predictions to stay near zero. I am also increasing `CLIP_PERCENTILE` to 98% and `learning_rate` to 0.1 to provide stronger gradients and more expressive learning.
+2. **Features:** Adding candle microstructure features (`upper_wick`, `lower_wick`, `candle_body`) and `volume_surprise` to provide the model with "state" indicators that often precede directional moves in crypto markets (e.g., upper wick rejection). I'm also consolidating momentum calculations to ensure clean, past-shifted signal usage.
+
+Goal: Increase `pred_std_ratio` while maintaining `val_DA > 0.53`.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.02,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.08,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 96          # preserve more signal variance for stronger gradients
+MIN_PRED_STD_RATIO = 0.08     # lower threshold to reduce collapse penalty
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 2,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.1,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 98.0        # higher clip level to increase target variance/scale
+MIN_PRED_STD_RATIO = 0.15    # standardized threshold
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+
+    log_ret = np.log(close / close.shift(1))
+=======
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    open_ = df['open']
+
+    log_ret = np.log(close / close.shift(1))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat['range_pct'] = (high - low) / (close + 1e-9)
+    feat['close_pos_20'] = (close - close.rolling(20).min()) / (close.rolling(20).max() - close.rolling(20).min() + 1e-9)
+
+    # --- Oscillators / trend ---
+=======
+    feat['range_pct'] = (high - low) / (close + 1e-9)
+    feat['close_pos_20'] = (close - close.rolling(20).min()) / (close.rolling(20).max() - close.rolling(20).min() + 1e-9)
+    feat['upper_wick'] = (high - df[['open', 'close']].max(axis=1)) / (high - low + 1e-9)
+    feat['lower_wick'] = (df[['open', 'close']].min(axis=1) - low) / (high - low + 1e-9)
+    feat['candle_body'] = (close - open_) / (high - low + 1e-9)
+    feat['range_surprise'] = (high - low) / ((high - low).rolling(50).mean() + 1e-9)
+
+    # --- Oscillators / trend ---
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat['vol_x_ret1'] = feat['volume_ratio_5'] * ret1
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+=======
+    feat['vol_x_ret1'] = feat['volume_ratio_5'] * ret1
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+    feat['volume_surprise'] = volume / (volume.rolling(50).mean() + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- High-contrast binary regime signals (create natural tree splits) ---
+    # Momentum regime: strong positive vs negative momentum
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+    feat['momentum_positive'] = (ret_6 > 0).astype(float)
+    feat['momentum_strong'] = (ret_6.abs() > ret_6.rolling(20).std()).astype(float)
+    feat['momentum_regime'] = np.sign(ret_6) * feat['momentum_strong']
+=======
+    # --- High-contrast binary regime signals (create natural tree splits) ---
+    # Momentum regime: strong positive vs negative momentum
+    ret_6 = feat['ret_6']
+    ret_12 = feat['ret_12']
+    feat['momentum_positive'] = (ret_6 > 0).astype(float)
+    feat['momentum_strong'] = (ret_6.abs() > ret_6.rolling(20).std()).astype(float)
+    feat['momentum_regime'] = np.sign(ret_6) * feat['momentum_strong']
+>>>>>>> REPLACE
+</DIFF>

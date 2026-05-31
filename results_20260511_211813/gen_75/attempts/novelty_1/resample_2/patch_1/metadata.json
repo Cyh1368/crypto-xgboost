@@ -1,0 +1,14 @@
+{
+  "generation": 75,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "increase_expressivity_and_reduce_collapse",
+  "patch_description": "The model is currently suffering from 'prediction collapse', where it predicts values too close to the mean, resulting in a low pred_std_ratio (0.049) and a significant penalty. To address this, I am proposing several changes:\n1. Increase model expressivity by increasing `max_depth` to 7 and `n_estimators` to 1200.\n2. Reduce regularization (`reg_alpha`, `reg_lambda`, and `gamma`) to allow the model to capture more complex patterns and produce more varied predictions.\n3. Increase `CLIP_PERCENTILE` to 99.0 to preserve variance in the target returns, which encourages the model to predict larger moves.\n4. Add microstructure features (wick ratios, body percentage) and statistical features (skewness, kurtosis, volume momentum) to provide more granular signals that can help the model differentiate between different market states.\n5. Set a higher `MIN_PRED_STD_RATIO` (0.15) to align the model's objective with producing predictions that match the natural volatility of the target.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:36:57.442988",
+  "llm_cost": 0.016751000000000002,
+  "llm_model": "gemini-3-flash-preview"
+}

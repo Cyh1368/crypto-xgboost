@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reduce_collapse_richer_features",
+  "patch_description": "The validation output shows the model is not overfitting, but its predictions are collapsing toward the mean: `pred_std_ratio` is only `0.0086`, far below the expected floor. That usually means the model is too conservative or the feature set is too weak / too smooth for XGBoost to learn meaningful separation.\n\nI fixed this by:\n- making the feature engineering more expressive while still using only past data,\n- adding regime and interaction features that help directionality,\n- reducing target clipping severity so the model does not lose too much signal,\n- loosening regularization and slightly increasing model capacity so predictions can vary more.\n\nI also kept the required markers and preserved the same input/output interface.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:09:45.053000",
+  "llm_cost": 0.0173625,
+  "llm_model": "gpt-5.4-mini"
+}

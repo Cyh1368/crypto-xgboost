@@ -1,0 +1,156 @@
+<NAME>
+broader_signal_unclamp
+</NAME>
+
+<DESCRIPTION>
+The current model is still predicting too close to the mean, which is consistent with overly conservative tree growth and a feature set that is useful but not diverse enough to separate bullish vs bearish 15-minute regimes.
+
+This edit makes two coordinated changes:
+
+1. Loosens the XGBoost regularization and increases model capacity slightly:
+   - more trees, slightly deeper trees
+   - lower `min_child_weight`, `reg_alpha`, `reg_lambda`
+   - lower learning rate to stabilize the extra capacity
+   - slightly more aggressive clipping (`CLIP_PERCENTILE=99`) so the model can see a wider target range
+
+2. Expands `build_features()` with short-horizon regime-sensitive signals that are still causal:
+   - fast/medium return momentum
+   - return spread and acceleration
+   - rolling z-score of returns
+   - volume z-score and volume change
+   - range expansion and candle body/wick structure
+   - price position inside recent high/low range
+   - trend vs mean-reversion interaction using short-vs-long momentum
+   - a volatility-adjusted momentum feature
+
+These additions are designed to improve directional separation without blowing up feature count or introducing lookahead. The feature total remains comfortably below 80.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 200,
+    "max_depth": 6,
+    "min_child_weight": 3,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 450,
+    "max_depth": 4,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.02,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Momentum & Interaction Features ---
+    # Decay-weighted momentum: emphasize recent returns
+    ret_1 = close.pct_change(1)
+    ret_3 = close.pct_change(3)
+    ret_6 = close.pct_change(6)
+    feat['momentum_decay_6'] = (ret_1 * 0.5 + ret_3 * 0.3 + ret_6 * 0.2)
+
+    # Volatility-weighted return momentum
+    vol_5 = log_ret.rolling(5).std()
+    feat['vol_weighted_ret'] = ret_1 / (vol_5 + 1e-6)
+
+    # Return acceleration (momentum of momentum)
+    feat['ret_accel_3'] = ret_1 - ret_3 / 3.0
+
+    # Cross-regime signal: vol regime × momentum
+    feat['vol_regime_x_momentum'] = feat['vol_regime'] * feat['momentum_decay_6']
+
+    # RSI interaction: RSI slope
+    rsi_6 = feat['rsi_6']
+    feat['rsi_6_slope'] = rsi_6 - rsi_6.shift(1)
+
+    # MACD × Momentum interaction
+    feat['macd_x_momentum'] = feat['macd_signal'] * feat['momentum_decay_6']
+
+    # Volume surge + momentum combination
+    feat['volume_momentum'] = feat['volume_ratio_5'] * feat['momentum_decay_6']
+=======
+    # --- Momentum, micro-trend, and regime interaction features ---
+    ret_1 = close.pct_change(1)
+    ret_3 = close.pct_change(3)
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+
+    feat['momentum_decay_6'] = (ret_1 * 0.5 + ret_3 * 0.3 + ret_6 * 0.2)
+    feat['momentum_fast'] = (ret_1 * 0.7 + ret_3 * 0.3)
+    feat['momentum_mid'] = (ret_3 * 0.5 + ret_6 * 0.5)
+    feat['momentum_slow'] = (ret_6 * 0.6 + ret_12 * 0.4)
+    feat['momentum_spread'] = feat['momentum_fast'] - feat['momentum_slow']
+
+    # Volatility-weighted return momentum
+    vol_5 = log_ret.rolling(5).std()
+    feat['vol_weighted_ret'] = ret_1 / (vol_5 + 1e-6)
+    feat['vol_adjusted_momentum'] = feat['momentum_decay_6'] / (feat['vol_5'] + 1e-6)
+
+    # Return acceleration and local trend shift
+    feat['ret_accel_3'] = ret_1 - ret_3 / 3.0
+    feat['ret_accel_6'] = ret_3 - ret_6 / 2.0
+
+    # Rolling return and volume z-scores
+    ret_mean_20 = log_ret.rolling(20).mean()
+    ret_std_20 = log_ret.rolling(20).std()
+    feat['ret_z_20'] = (log_ret - ret_mean_20) / (ret_std_20 + 1e-9)
+
+    vol_mean_20 = volume.rolling(20).mean()
+    vol_std_20 = volume.rolling(20).std()
+    feat['volume_z_20'] = (volume - vol_mean_20) / (vol_std_20 + 1e-9)
+    feat['volume_chg_1'] = volume.pct_change(1)
+
+    # Candle structure / breakout pressure
+    candle_range = (high - low).replace(0, np.nan)
+    feat['candle_body'] = (close - df['open']) / (candle_range + 1e-9)
+    feat['upper_wick'] = (high - np.maximum(close, df['open'])) / (candle_range + 1e-9)
+    feat['lower_wick'] = (np.minimum(close, df['open']) - low) / (candle_range + 1e-9)
+
+    # Price location within recent range
+    roll_high_20 = high.rolling(20).max()
+    roll_low_20 = low.rolling(20).min()
+    feat['range_pos_20'] = (close - roll_low_20) / ((roll_high_20 - roll_low_20) + 1e-9)
+    feat['range_width_20'] = (roll_high_20 - roll_low_20) / (close + 1e-9)
+
+    # Cross-regime signal: vol regime × momentum
+    feat['vol_regime_x_momentum'] = feat['vol_regime'] * feat['momentum_decay_6']
+    feat['vol_regime_x_ret_z'] = feat['vol_regime'] * feat['ret_z_20']
+
+    # RSI interaction: RSI slope
+    rsi_6 = feat['rsi_6']
+    feat['rsi_6_slope'] = rsi_6 - rsi_6.shift(1)
+
+    # MACD × Momentum interaction
+    feat['macd_x_momentum'] = feat['macd_signal'] * feat['momentum_decay_6']
+
+    # Volume surge + momentum combination
+    feat['volume_momentum'] = feat['volume_ratio_5'] * feat['momentum_decay_6']
+    feat['trend_reversal'] = feat['momentum_fast'] * (-feat['momentum_slow'])
+>>>>>>> REPLACE
+</DIFF>

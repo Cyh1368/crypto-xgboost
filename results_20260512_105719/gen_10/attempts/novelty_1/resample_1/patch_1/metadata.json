@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_smooth_xgb",
+  "patch_description": "This version reorganizes the program into a small feature-engineering pipeline with reusable helpers instead of one long monolithic block. The feature set is redesigned around shorter rolling windows, rolling z-score normalization, and regime-change signals so the model is less dependent on brittle absolute levels and more sensitive to recent market structure.\n\nKey structural changes:\n- Feature generation is split into modular helpers for returns, volatility, momentum, regime trends, and normalized interactions.\n- Most features use shorter lookbacks and rolling normalization to improve regime transfer.\n- Added compact rate-of-change features for volatility, autocorrelation, efficiency, and volume pressure.\n- Introduced a small set of multiplicative interactions that combine momentum with regime state.\n- Reduced model complexity and added regularization to improve validation stability and preserve prediction variance.\n\nThe external interface is unchanged: `build_features()` still only uses past data, and `run_experiment()` returns the same outputs in the same format.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:59:27.212296",
+  "llm_cost": 0.019449,
+  "llm_model": "gpt-5.4-mini"
+}

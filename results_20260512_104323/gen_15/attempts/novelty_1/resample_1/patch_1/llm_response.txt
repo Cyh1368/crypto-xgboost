@@ -1,0 +1,85 @@
+<NAME>
+increase_expressivity_and_regime_invariance
+</NAME>
+
+<DESCRIPTION>
+The model currently suffers from prediction collapse (very low slope and pred_std_ratio) and poor generalization across regimes. 
+
+Key changes:
+1.  **Increased Model Expressivity**: Boosted `max_depth` to 5, decreased `min_child_weight` to 2, and reduced `reg_lambda` to 0.6. This allows the model to capture more complex patterns and prevents it from collapsing toward the mean.
+2.  **Vol-Normalized Returns**: Replaced raw returns with volatility-normalized returns (`ret / (vol * sqrt(lag))`). This makes return features regime-invariant, as a 1% move is scaled by the current market volatility.
+3.  **Regime-Invariant Volatility**: Replaced raw volatility with Z-scored volatility and added a rolling `vol_rank_100`. Rank-based features are perfectly regime-invariant.
+4.  **Removed Slow Operations**: Removed the `ret_autocorr_5` feature which uses a slow `.apply()` call, improving execution speed.
+5.  **Added Robust Indicators**: Added a 14-period Stochastic %K (`stoch_k_14`) which is naturally bounded and robust to price scaling.
+6.  **Adjusted Learning Rate**: Increased `n_estimators` to 400 and tuned the `learning_rate` to 0.06 to allow for better convergence with the increased depth.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 200,
+    "max_depth": 4,
+    "min_child_weight": 5,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 30,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 2,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.6,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Short-term returns (shorter lookbacks) ---
+    for lag in [1, 2, 3, 5, 10, 15]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # --- Volatility (shorter windows) ---
+    for w in [5, 10, 15, 20]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+=======
+    # --- Volatility-normalized returns (regime-invariant) ---
+    vol_ref = log_ret.rolling(20).std() + 1e-9
+    for lag in [1, 2, 3, 5, 10, 15]:
+        feat[f'ret_n_{lag}'] = close.pct_change(lag) / (vol_ref * np.sqrt(lag))
+
+    # --- Z-scored Volatility ---
+    for w in [10, 20]:
+        v = log_ret.rolling(w).std()
+        feat[f'vol_z_{w}'] = (v - v.rolling(100).mean()) / (v.rolling(100).std() + 1e-9)
+    feat['vol_rank_100'] = log_ret.rolling(20).std().rolling(100).rank(pct=True)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Return autocorrelation ---
+    ret_1 = close.pct_change(1)
+    feat['ret_autocorr_5'] = ret_1.rolling(5).apply(lambda x: x.autocorr(lag=1) if len(x) > 1 else 0, raw=False)
+
+    # --- Efficiency ratio (shorter window) ---
+=======
+    # --- Robust Price Indicators ---
+    feat['stoch_k_14'] = (close - low.rolling(14).min()) / (high.rolling(14).max() - low.rolling(14).min() + 1e-9)
+
+    # --- Efficiency ratio (shorter window) ---
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_z_scores_and_regularization",
+  "patch_description": "The model currently suffers from 'slope collapse' and poor generalization across the test-validation boundary, indicating that it is learning regime-specific patterns that do not hold in the most recent market data. \n\nTo address this, I am implementing the following strategies:\n1. **Regime-Invariant Features**: Adding features that normalize price action and volatility against their own recent history. Specifically:\n   - `vol_z_100`: Z-score of current volatility relative to the last 100 periods.\n   - `mom_z_10`: Momentum (10-period return) scaled by the current volatility, making a 1% move in low-vol regimes comparable to a 1% move in high-vol regimes.\n   - `price_z_40`: Z-score of price relative to its 40-period moving average and standard deviation.\n   - `autocorr_10`: Rolling 10-period autocorrelation of returns to identify trending vs. mean-reverting regimes.\n2. **Momentum-Efficiency Interaction**: Adding an interaction between momentum and market efficiency (Kaufman's Efficiency Ratio). Momentum is generally more reliable in high-efficiency (trending) regimes.\n3. **Increased Regularization**: Reducing `max_depth` to 3 and significantly increasing `min_child_weight` and `reg_lambda`. This forces the XGBoost model to find broader, more robust patterns that are less likely to disappear during regime shifts.\n4. **Slower Learning**: Reducing the `learning_rate` and `n_estimators` to prevent the model from over-fitting the training regime's noise.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:56:20.228596",
+  "llm_cost": 0.009916,
+  "llm_model": "gemini-3-flash-preview"
+}

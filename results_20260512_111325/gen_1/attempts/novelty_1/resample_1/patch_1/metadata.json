@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_rescaled_xgb",
+  "patch_description": "This version restructures feature engineering into a modular, regime-aware pipeline with three layers: short-horizon market state, rolling z-scored local context, and compact interaction features. It replaces many long-memory absolute indicators with shorter lookbacks and rate-of-change features, which should be more stable across regime shifts. The model is also made more conservative with stronger regularization and smaller trees to reduce regime-specific overfitting while preserving prediction spread. The external inputs/outputs and `run_experiment()` interface remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:13:59.300360",
+  "llm_cost": 0.019602,
+  "llm_model": "gpt-5.4-mini"
+}

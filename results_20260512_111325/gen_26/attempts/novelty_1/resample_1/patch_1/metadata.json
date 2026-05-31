@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb",
+  "patch_description": "This crossover version keeps the strongest parts of the prior implementations while pushing harder on regime robustness.  \nThe feature set is intentionally biased toward short lookbacks, rolling z-scores, and \u201cchange in market character\u201d signals such as volatility trend, efficiency trend, and autocorrelation trend. It also adds a few multiplicative interactions that often generalize better than the raw components alone, while keeping the total feature count under the 80-feature limit.\n\nOn the model side, the XGBoost configuration is made slightly less rigid than the current program: fewer heavy penalties, a bit more tree depth, and a moderate estimator count with stronger early stopping. This is meant to reduce the prediction collapse seen in prior runs while still limiting overfit across the train\u2192test\u2192val regime shifts.\n\nAll features use only past data, and the interface / outputs remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:20:28.171794",
+  "llm_cost": 0.036916500000000005,
+  "llm_model": "gpt-5.4-mini"
+}

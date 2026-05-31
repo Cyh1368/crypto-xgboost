@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb",
+  "patch_description": "This crossover version combines the strongest parts of the prior implementations while emphasizing the main failure mode: regime collapse on the validation period. The feature set is rebuilt around shorter lookbacks, rolling z-scores, volatility/trend-change signals, and a few robust multiplicative interactions such as momentum \u00d7 volatility regime. I also keep the feature count comfortably below the 80-feature limit and preserve the exact input/output interface.\n\nOn the model side, the hyperparameters are adjusted to be slightly less regularized and a bit more expressive than the current program, while still using moderate tree depth and early stopping to avoid runaway overfit. The goal is to improve validation slope and correlation without sacrificing directional accuracy.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:43:59.582018",
+  "llm_cost": 0.036195000000000005,
+  "llm_model": "gpt-5.4-mini"
+}

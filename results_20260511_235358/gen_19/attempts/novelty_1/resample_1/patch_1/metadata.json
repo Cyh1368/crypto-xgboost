@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "robust_regime_invariant_features",
+  "patch_description": "The primary issue is a massive slope collapse (0.07 -> 0.006) and a Directional Accuracy drop (0.57 -> 0.51) between training and validation. This indicates the model is learning regime-specific magnitudes and patterns that disappear in the validation period.\n\nTo fix this, I am:\n1.  **Transforming features to be regime-invariant:** Applying rolling Z-scores to returns, volatility, and volume. This ensures the model sees a \"high vol\" or \"high return\" signal relative to the current local market context rather than absolute values.\n2.  **Improving Generalization via XGBoost Hyperparams:** \n    - Reducing `max_depth` to 4 to prevent complex overfitting.\n    - Increasing `min_child_weight` to 20 to ensure patterns are supported by a larger sample size.\n    - Adding L2 regularization (`reg_lambda=10.0`) to promote weight stability across regimes.\n    - Lowering the `learning_rate` to 0.07 for more conservative updates.\n3.  **Refining interactions:** Using volatility-normalized momentum (Sharpe-style) which is more robust than simple multiplication.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:57:35.512466",
+  "llm_cost": 0.0067835,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 58,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "shorter_regime_invariant_features",
+  "patch_description": "This edit targets the core failure mode: the model\u2019s signal decays almost completely by validation, which strongly suggests the learned patterns are too regime-specific and too dependent on longer horizons. I\u2019m shifting the feature set toward short-memory, regime-invariant, and regime-change descriptors.\n\nKey ideas:\n- Replace long lookbacks like 60/200 with shorter 5\u201320 bar windows where possible.\n- Add rolling z-scores for returns, volatility, volume, and price position so the model learns relative state rather than absolute levels.\n- Add \u201cchange in market character\u201d features such as volatility trend, efficiency trend, autocorrelation trend, and dispersion trend.\n- Keep the feature count comfortably under 80 and maintain only past data.\n- Preserve existing orderbook/funding support, but encode them through shorter-window normalization too.\n\nI\u2019m also making a small hyperparameter adjustment to slightly increase model capacity while reducing over-regularization. This should help lift prediction variance and slope without pushing too hard into overfit.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:26:40.235757",
+  "llm_cost": 0.037948499999999996,
+  "llm_model": "gpt-5.4-mini"
+}

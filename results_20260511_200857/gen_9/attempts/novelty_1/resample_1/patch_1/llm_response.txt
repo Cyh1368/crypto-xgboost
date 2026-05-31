@@ -1,0 +1,66 @@
+CODE>` is at the end. Yes.
+
+    *   Wait, I'll make sure `<NAME>` and `<DESCRIPTION>` are there. Yes.
+
+    *   Wait, I'll make sure the code is inside the `CODE` block. Yes.
+
+    *   Wait, I'll make sure the markers `EVOLVE-BLOCK-START` and `EVOLVE-BLOCK-END` are there. Yes.
+
+    *   Wait, I'll make sure the code outside the markers is not changed. Yes.
+
+    *   Wait, I'll make sure the file still runs. Yes.
+
+    *   Wait, I'll make sure the total feature count is <= 80.
+    *   Let's count:
+        1. ret_1
+        2. ret_2
+        3. ret_3
+        4. ret_6
+        5. ret_12
+        6. ret_24
+        7. ret_48
+        8. vol_10
+        9. vol_30
+        10. rsi_14
+        11. macd_signal
+        12. bb_pct
+        13. atr_norm
+        14. volume_ratio_5
+        15. volume_ratio_20
+        16. vwap_dev
+        17. hour_sin
+        18. hour_cos
+        19. dow_sin
+        20. is_weekend
+        21. funding_rate
+        22. funding_8h_ma
+        23. obi_tau1
+        24. obi_tau3
+        25. body
+        26. upper_shadow
+        27. lower_shadow
+        28. vol_regime
+        29. price_speed
+        30. rsi_diff
+        31. volume_zscore_20
+        32. ret_1_lag1
+        33. close_dist_ema20
+        34. volume_ratio_60
+        35. high_low_ratio
+        36. ret_5
+        37. vol_60
+        38. ret_1_sq
+        39. ret_1_sign
+    *   Total: 39. Well within 80.
+
+    *   Okay, let's go.
+
+    *   Wait, I'll make sure `df.index.hour` and `df.index.dayofweek` are used correctly. Yes, assuming `df.index` is a DatetimeIndex.
+
+    *   Wait, I'll make sure `df.apply` is used correctly. Yes.
+
+    *   Wait, I'll make sure `df.columns` is used correctly. Yes.
+
+    *   Wait, I'll make sure `df.pct_change` and `df.rolling` are used correctly. Yes.
+
+    

@@ -1,0 +1,14 @@
+{
+  "generation": 25,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_conditional_features",
+  "patch_description": "This edit targets the exact failure mode shown by the metrics: the model still has decent train/test directional skill, but the learned slope collapses on validation, which strongly suggests the signal is not being expressed in a regime-robust way.\n\nI\u2019m proposing two coordinated changes:\n\n1. **Make the model slightly less over-regularized**\n   The current XGB setup is still too conservative for this task. A modest increase in tree depth and a reduction in `min_child_weight`, `reg_alpha`, and `reg_lambda` should help the model retain useful slope without exploding overfit. I also slightly lower the learning rate and raise estimators so the model can fit the more nuanced regime-conditional interactions.\n\n2. **Add explicit regime-conditional versions of the strongest short-horizon features**\n   The current feature set already has regime descriptors, but they are not strongly used to modulate the predictive features. To address the second regime shift, I\u2019m adding gated interaction terms:\n   - momentum under high/low volatility\n   - efficiency under high/low volatility\n   - autocorrelation under high/low volatility\n   - a compact momentum \u00d7 volatility-regime interaction using both a continuous rank and a binary gate\n\nThese features stay within the \u201cpast data only\u201d constraint, remain under the 80-feature cap, and directly encode the idea that the same market pattern can mean different things in different volatility regimes. That should help preserve slope into validation while also giving the model more expressive power, which should improve `pred_std_ratio` and reduce mean-collapse.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:55:53.151924",
+  "llm_cost": 0.0253095,
+  "llm_model": "gpt-5.4-mini"
+}

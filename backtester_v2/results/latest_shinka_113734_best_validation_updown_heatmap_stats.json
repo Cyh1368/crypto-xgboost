@@ -1,0 +1,40 @@
+{
+  "input_predictions": "backtester_v2/results/latest_shinka_113734_best_validation_predictions.csv",
+  "plot": "backtester_v2/results/latest_shinka_113734_best_validation_updown_heatmap.png",
+  "n_classified": 2999,
+  "accuracy": 0.5255085028342781,
+  "actual_up": 1543,
+  "actual_down": 1456,
+  "predicted_up": 1628,
+  "predicted_down": 1371,
+  "counts": {
+    "Predicted Down": {
+      "Actual Down": 702,
+      "Actual Up": 669
+    },
+    "Predicted Up": {
+      "Actual Down": 754,
+      "Actual Up": 874
+    }
+  },
+  "row_percent": {
+    "Predicted Down": {
+      "Actual Down": 48.214286,
+      "Actual Up": 43.357097
+    },
+    "Predicted Up": {
+      "Actual Down": 51.785714,
+      "Actual Up": 56.642903
+    }
+  },
+  "overall_percent": {
+    "Predicted Down": {
+      "Actual Down": 23.407803,
+      "Actual Up": 22.307436
+    },
+    "Predicted Up": {
+      "Actual Down": 25.141714,
+      "Actual Up": 29.143048
+    }
+  }
+}

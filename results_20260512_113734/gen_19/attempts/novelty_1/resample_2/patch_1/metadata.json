@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 7,
+  "patch_name": "regime_adaptive_features_with_shorter_windows",
+  "patch_description": "The core problem is that val_slope (0.006) is only 8.2% of train_slope (0.074), indicating severe regime-specific overfitting. The model learns patterns that work in training but collapse in validation.\n\nMy strategy addresses this through three coordinated changes:\n\n1. **Shorter lookback windows (5-20 bars instead of 20-200)**: The current features use windows like rolling(200), rolling(60), shift(60) which capture regime-specific patterns that don't transfer. Shorter windows (5-20 bars) decay faster but are more robust across regime shifts.\n\n2. **Rolling z-score normalization**: Instead of raw values, normalize features within their recent distribution. A 1% move in low-vol vs high-vol regimes has different predictive power. Z-scoring within rolling windows makes features regime-invariant.\n\n3. **Rate-of-change features**: Instead of measuring absolute levels (vol_regime, trend_strength), measure how these are CHANGING (vol_regime.diff(), autocorr trend). These capture transitions between regimes rather than static regime states.\n\n4. **Reduce model complexity**: Lower n_estimators from 400\u2192240, increase min_child_weight from 1\u21925, add modest regularization. This forces the model to learn only the most robust patterns that generalize.\n\n5. **Feature interaction pruning**: Keep only the most generalizable interaction (momentum \u00d7 vol_regime) as a single multiplicative term, which empirically generalizes better than separate features.\n\nThe key insight: we're not trying to predict returns in a specific regime, but to predict returns across regime transitions. Features must measure relative deviations and rates of change, not absolute levels.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:54:29.296810",
+  "llm_cost": 0.134295,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

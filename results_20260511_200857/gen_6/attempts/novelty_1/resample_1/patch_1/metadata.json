@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "increase_expressivity_and_technical_features",
+  "patch_description": "The model failed because its predictions \"collapsed towards the mean\" (pred_std_ratio=0.0091), which is far below the required 0.15 threshold. This typically occurs when a model is either too under-expressive or too heavily regularized given the signal-to-noise ratio of the data. \n\nTo fix this, I made the following adjustments:\n1.  **Increased XGBoost Expressivity:** I raised the `learning_rate` from 0.01 to 0.05 and increased `max_depth` from 4 to 6. I significantly lowered `min_child_weight` from 10 to 1, which allows the model to create more granular splits and capture more variance in the target. I also increased `n_estimators` with a longer `early_stopping_rounds` to ensure the model converges on more complex patterns.\n2.  **Enhanced Feature Engineering:** I expanded the feature set to better capture momentum and mean-reversion. I added distance-from-moving-average features (MA Dist), more granular return lags (log-returns), MACD histogram, and normalized volume z-scores. \n3.  **Removed Potential Bottlenecks:** I removed the slow `df.apply` OBI logic to ensure execution stays well within the 3-minute constraint, focusing on high-quality vectorized OHLCV and funding features instead.\n4.  **Improved Robustness:** Added ffill() and better cleaning to handle NaNs consistently.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:10:28.155538",
+  "llm_cost": 0.008128,
+  "llm_model": "gemini-3-flash-preview"
+}

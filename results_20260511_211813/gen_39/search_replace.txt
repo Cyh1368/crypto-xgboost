@@ -1,0 +1,51 @@
+edit_name
+expressivity_boost_v1
+</edit_name>
+
+<DESCRIPTION>
+The current model is suffering from prediction collapse (pred_std_ratio = 0.0349), which indicates it is being too conservative and regularized. To fix this, I am increasing the model's expressivity by:
+1. Increasing `learning_rate` from 0.03 to 0.08 and `max_depth` from 7 to 8.
+2. Significantly reducing regularization (`reg_lambda` from 0.5 to 0.01, `reg_alpha` to 0.0, and `min_child_weight` to 1).
+3. Increasing `colsample_bytree` to 0.8 to allow trees to consider more features.
+4. Adding new features that capture volatility regimes (`vol_zscore_100`), price extremes (`dist_high_100`, `dist_low_100`), and momentum velocity. These features provide more "punchy" signals that help the model predict variance more effectively.
+5. Adjusting `CLIP_PERCENTILE` to 98 to focus the model on predictable variance rather than extreme outliers.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 2,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.6,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+=======
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 8,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+>>>>>>> REPLACE

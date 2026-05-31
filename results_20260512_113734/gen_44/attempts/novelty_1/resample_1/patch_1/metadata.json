@@ -1,0 +1,14 @@
+{
+  "generation": 44,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover version combines the strongest ideas from the prior experiments while aiming to reduce regime fragility and prediction collapse.\n\nMain changes:\n- Uses shorter lookbacks more aggressively for momentum, volatility, volume, and trend-state features.\n- Adds rolling z-scores and ranks to make features more regime-invariant.\n- Focuses on rate-of-change features for volatility, efficiency, and trend character.\n- Keeps a compact feature set well under the 80-feature limit for efficiency and reduced overfitting.\n- Uses a slightly less constrained XGBoost setup than the current baseline to improve predictive slope and prediction spread on validation.\n\nThe implementation remains fully past-only, preserves the original inputs/outputs, and keeps the required EVOLVE-BLOCK markers intact.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:07:40.319796",
+  "llm_cost": 0.040839,
+  "llm_model": "gpt-5.4-mini"
+}

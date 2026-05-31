@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_transition_focus",
+  "patch_description": "This edit targets the two main failure modes: slope collapse on the validation regime and prediction collapse toward the mean.\n\nOn the model side, I reduce over-regularization and use a slightly shallower but more persistent booster so XGBoost can retain signal without memorizing train-specific quirks.\n\nOn the feature side, I replace the current broader state-feature mix with a more compact set centered on:\n- short lookbacks only\n- rolling z-scores for regime invariance\n- rate-of-change features for market character\n- explicit change-of-character signals\n- a few multiplicative interactions, especially momentum \u00d7 volatility regime\n\nThis is designed to improve val slope and pred_std_ratio while keeping feature count well below the 80-feature limit and maintaining past-only computation.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:17:16.549829",
+  "llm_cost": 0.0399225,
+  "llm_model": "gpt-5.4-mini"
+}

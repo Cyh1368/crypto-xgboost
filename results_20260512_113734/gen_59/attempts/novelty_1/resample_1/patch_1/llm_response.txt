@@ -1,0 +1,113 @@
+<NAME>
+multiscale_regime_shift
+</NAME>
+
+<DESCRIPTION>
+This edit targets the core failure mode: the model’s slope collapses in the newest regime because it relies too much on absolute-state features and not enough on regime-invariant, short-memory signals.
+
+The feature changes add:
+- longer rolling return z-scores at 40/60/80 bars, which are more stable across volatility regimes than raw returns,
+- explicit regime-shift deltas between short and long z-scores, so the model can detect when the market character is changing rather than only its current level,
+- a short-horizon momentum × volatility-regime interaction that is easier to transfer across regimes than raw momentum alone.
+
+To keep feature count bounded and reduce low-value periodicity noise, the time-of-day features are removed. This makes room for the new regime features while staying comfortably under the 80-feature limit.
+
+The hyperparameter changes slightly increase expressivity while keeping regularization present:
+- a bit more depth and trees,
+- lower min_child_weight,
+- slightly weaker regularization,
+- slightly slower learning with more boosting rounds.
+
+This is intended to recover slope without reverting to the very overfit, regime-specific behavior seen earlier.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 300,
+    "max_depth": 4,
+    "min_child_weight": 3,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.85,
+    "subsample": 0.90,
+    "colsample_bytree": 0.88,
+    "learning_rate": 0.07,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 45,
+}
+
+CLIP_PERCENTILE = 98
+MIN_PRED_STD_RATIO = 0.15
+=======
+XGB_PARAMS = {
+    "n_estimators": 380,
+    "max_depth": 5,
+    "min_child_weight": 2,
+    "reg_alpha": 0.02,
+    "reg_lambda": 0.65,
+    "subsample": 0.88,
+    "colsample_bytree": 0.84,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 97
+MIN_PRED_STD_RATIO = 0.18
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Short returns and rolling z-scores ---
+    for lag in [1, 2, 3, 5, 8, 13]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    for w in [8, 13, 20]:
+        m = ret_1.rolling(w).mean()
+        s = ret_1.rolling(w).std()
+        feat[f"ret_z_{w}"] = (ret_1 - m) / (s + eps)
+=======
+    # --- Short returns and rolling z-scores ---
+    for lag in [1, 2, 3, 5, 8, 13]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    for w in [8, 13, 20, 40, 60, 80]:
+        m = ret_1.rolling(w).mean()
+        s = ret_1.rolling(w).std()
+        feat[f"ret_z_{w}"] = (ret_1 - m) / (s + eps)
+
+    feat["ret_z_20_minus_60"] = feat["ret_z_20"] - feat["ret_z_60"]
+    feat["ret_z_40_minus_80"] = feat["ret_z_40"] - feat["ret_z_80"]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    feat["mom_x_volreg"] = ret_3 * vol_regime
+    feat["mom_x_volfast"] = ret_3 * vol_regime_fast
+    feat["momentum_vol_interaction"] = ret_3 * vol_10
+    feat["momentum_vol_z"] = ret_3 / (vol_10 + eps)
+    feat["momentum_z_20"] = (ret_3 - ret_3.rolling(20).mean()) / (ret_3.rolling(20).std() + eps)
+=======
+    feat["mom_x_volreg"] = ret_3 * vol_regime
+    feat["mom_x_volfast"] = ret_3 * vol_regime_fast
+    feat["momentum_vol_interaction"] = ret_3 * vol_10
+    feat["momentum_vol_z"] = ret_3 / (vol_10 + eps)
+    feat["momentum_z_20"] = (ret_3 - ret_3.rolling(20).mean()) / (ret_3.rolling(20).std() + eps)
+    feat["mom_z_short_regime"] = feat["ret_z_8"] * feat["vol_regime_fast"]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Time features ---
+    hour = df.index.hour
+    dow = df.index.dayofweek
+    feat["hour_sin"] = np.sin(2 * np.pi * hour / 24.0)
+    feat["hour_cos"] = np.cos(2 * np.pi * hour / 24.0)
+    feat["dow_sin"] = np.sin(2 * np.pi * dow / 7.0)
+    feat["is_weekend"] = (dow >= 5).astype(float)
+=======
+    # --- Time features ---
+    dow = df.index.dayofweek
+    feat["is_weekend"] = (dow >= 5).astype(float)
+>>>>>>> REPLACE
+</DIFF>

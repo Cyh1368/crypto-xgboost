@@ -1,0 +1,87 @@
+<NAME>
+structural_regime_tuning
+</NAME>
+
+<DESCRIPTION>
+The current model shows a significant improvement in `pred_std_ratio` (0.0322 vs 0.0063 in previous iterations) but suffers from low validation directional accuracy (`val_DA=0.5025`). This suggests that while the added features (candle structure, z-scores) are providing more expressivity, the model is overfitting to noise or failing to capture broader market regimes.
+
+I am proposing the following changes:
+1. **Hyperparameter Tuning**: Increase `max_depth` to 6 and `learning_rate` to 0.05 to maintain expressivity, while significantly increasing `min_child_weight` (7) and `reg_lambda` (1.5) to improve generalization and validation performance.
+2. **Target Clipping**: Reduce `CLIP_PERCENTILE` to 95. This helps the model focus on the core distribution of returns rather than being skewed by extreme outliers, which often improves directional accuracy.
+3. **Structural Features**: Add features that capture the price's relationship to long-term averages and trend efficiency:
+    - `ema_20_dist` & `ema_100_dist`: Distance from short and medium-term EMAs to capture mean-reversion potential.
+    - `efficiency_ratio_14`: Kaufman's Efficiency Ratio to distinguish between trending and range-bound markets.
+    - `adx_14`: A simplified Average Directional Index to quantify trend strength.
+    - `price_speed_3`: ATR-normalized price velocity.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 450,
+    "max_depth": 4,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.02,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+=======
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 6,
+    "min_child_weight": 7,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 95          # clip targets at this percentile (both tails)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Price location within recent range
+    roll_high_20 = high.rolling(20).max()
+    roll_low_20 = low.rolling(20).min()
+    feat['range_pos_20'] = (close - roll_low_20) / ((roll_high_20 - roll_low_20) + 1e-9)
+    feat['range_width_20'] = (roll_high_20 - roll_low_20) / (close + 1e-9)
+
+    # Cross-regime signal: vol regime × momentum
+=======
+    # Price location within recent range
+    roll_high_20 = high.rolling(20).max()
+    roll_low_20 = low.rolling(20).min()
+    feat['range_pos_20'] = (close - roll_low_20) / ((roll_high_20 - roll_low_20) + 1e-9)
+    feat['range_width_20'] = (roll_high_20 - roll_low_20) / (close + 1e-9)
+
+    # Structural Trend and Mean Reversion
+    feat['ema_20_dist'] = (close - close.ewm(span=20).mean()) / (close + 1e-9)
+    feat['ema_100_dist'] = (close - close.ewm(span=100).mean()) / (close + 1e-9)
+    feat['efficiency_ratio_14'] = (close - close.shift(14)).abs() / (close.diff().abs().rolling(14).sum() + 1e-9)
+    feat['price_speed_3'] = (close - close.shift(3)) / (feat['atr_14'] + 1e-9)
+
+    # Simplified ADX / Trend Strength
+    up_move = high.diff().clip(lower=0)
+    down_move = (-low.diff()).clip(lower=0)
+    plus_dm = ((up_move > down_move) * up_move).rolling(14).mean()
+    minus_dm = ((down_move > up_move) * down_move).rolling(14).mean()
+    feat['adx_14'] = (plus_dm - minus_dm).abs() / (plus_dm + minus_dm + 1e-9)
+
+    # Cross-regime signal: vol regime × momentum
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 30,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "regime_boost",
+  "patch_description": "The current model is still underfitting in the sense that predictions are too close to the mean, which is reflected in the low `pred_std_ratio` and the collapse penalty. I\u2019m proposing two coordinated changes:\n\n1. **Increase model expressivity while keeping regularization moderate**:\n   - slightly deeper trees\n   - more estimators with a lower learning rate\n   - weaker `min_child_weight`, `reg_alpha`, and `reg_lambda`\n   - a bit more randomness via subsampling\n   This should help XGBoost fit the directional structure more strongly without making the overfit gap explode.\n\n2. **Add regime-conditioned features and short-horizon signal features**:\n   - shorter return horizons and return acceleration\n   - realized-volatility percentile / z-score style regime indicators\n   - trend-strength direction features\n   - candle anatomy features\n   - volume-price interaction features\n   - a couple of funding/orderbook interaction terms\n   - a lightweight interaction between momentum and regime\n   These are designed to help the model separate trend, mean-reversion, and high-volatility states, which is often crucial for 15-minute perp futures.\n\nThe feature count remains comfortably under the 80-feature limit, and all features use only past data or contemporaneous bar data available at the close of the bar.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:24:18.212797",
+  "llm_cost": 0.0299775,
+  "llm_model": "gpt-5.4-mini"
+}

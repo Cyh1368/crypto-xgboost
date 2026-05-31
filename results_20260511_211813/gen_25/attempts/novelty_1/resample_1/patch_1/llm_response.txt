@@ -1,0 +1,111 @@
+<NAME>
+reduce_regularization_for_expressivity
+</NAME>
+
+<DESCRIPTION>
+The previous model suffered from a high 'collapse penalty' (pred_std_ratio = 0.026, far below the 0.15 threshold), meaning its predictions were too conservative and shrunk toward the mean. 
+
+This proposal:
+1. Significanty reduces regularization (min_child_weight, reg_alpha, reg_lambda) and increases the learning rate (0.015 -> 0.05) to increase model expressivity and force a higher prediction variance.
+2. Increases CLIP_PERCENTILE from 95 to 98 to retain more information from the tails of the distribution.
+3. Adds 'momentum persistence' (streak_5) and 'vwap distance' normalized by ATR to provide clearer mean-reversion and trend-continuation signals.
+4. Optimizes the OBI calculation to avoid slow row-wise apply() calls, ensuring execution time stays within limits.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 15,
+    "reg_alpha": 0.5,
+    "reg_lambda": 2.0,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.015,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 95          # clip targets at this percentile (both tails)
+=======
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 5,
+    "min_child_weight": 2,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Mean-reversion and stationarity structure
+    ema_20 = close.ewm(span=20, adjust=False).mean()
+    feat['dist_ema_20'] = (close - ema_20) / (feat['atr_14'] + 1e-9)
+    feat['dist_ema_long'] = (close - close.ewm(span=100, adjust=False).mean()) / (feat['atr_14'] + 1e-9)
+    feat['roll_autocorr_10'] = ret_1.rolling(10).corr(ret_1.shift(1))
+    feat['rsi_z_30'] = (feat['rsi_14'] - feat['rsi_14'].rolling(30).mean()) / (feat['rsi_14'].rolling(30).std() + 1e-9)
+    feat['vol_trend_5_20'] = feat['vol_5'] / (feat['vol_20'] + 1e-9)
+    feat['rel_vol_10_60'] = volume.rolling(10).mean() / (volume.rolling(60).mean() + 1e-9)
+
+    feat['momentum_fast'] = (ret_1 * 0.7 + ret_3 * 0.3)
+=======
+    # Mean-reversion and stationarity structure
+    ema_20 = close.ewm(span=20, adjust=False).mean()
+    feat['dist_ema_20'] = (close - ema_20) / (feat['atr_14'] + 1e-9)
+    feat['dist_ema_long'] = (close - close.ewm(span=100, adjust=False).mean()) / (feat['atr_14'] + 1e-9)
+    feat['dist_vwap_atr'] = (close - vwap) / (feat['atr_14'] + 1e-9)
+    feat['roll_autocorr_10'] = ret_1.rolling(10).corr(ret_1.shift(1))
+    feat['rsi_z_30'] = (feat['rsi_14'] - feat['rsi_14'].rolling(30).mean()) / (feat['rsi_14'].rolling(30).std() + 1e-9)
+    feat['vol_trend_5_20'] = feat['vol_5'] / (feat['vol_20'] + 1e-9)
+    feat['rel_vol_10_60'] = volume.rolling(10).mean() / (volume.rolling(60).mean() + 1e-9)
+    feat['streak_5'] = (ret_1 > 0).astype(int).rolling(5).sum() - (ret_1 < 0).astype(int).rolling(5).sum()
+
+    feat['momentum_fast'] = (ret_1 * 0.7 + ret_3 * 0.3)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Orderbook (if real data available) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row, tau=1):
+            try:
+                bids = np.array(row['bids'])
+                asks = np.array(row['asks'])
+                bid_vol = np.sum(bids[:, 1] * np.exp(-tau * np.arange(len(bids))))
+                ask_vol = np.sum(asks[:, 1] * np.exp(-tau * np.arange(len(asks))))
+                return (bid_vol - ask_vol) / (bid_vol + ask_vol + 1e-9)
+            except Exception:
+                return 0.0
+        feat['obi_tau1'] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat['obi_tau3'] = df.apply(lambda r: obi(r, 3), axis=1)
+=======
+    # --- Orderbook (if real data available) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def get_obi_series(bids_col, asks_col, tau=1):
+            obi_list = []
+            weights = np.exp(-tau * np.arange(10))
+            for b, a in zip(bids_col, asks_col):
+                try:
+                    bv = np.sum(np.array(b)[:10, 1] * weights[:len(b)])
+                    av = np.sum(np.array(a)[:10, 1] * weights[:len(a)])
+                    obi_list.append((bv - av) / (bv + av + 1e-9))
+                except: obi_list.append(0.0)
+            return obi_list
+        feat['obi_tau1'] = get_obi_series(df['bids'], df['asks'], 1)
+        feat['obi_tau3'] = get_obi_series(df['bids'], df['asks'], 3)
+>>>>>>> REPLACE
+
+</DIFF>

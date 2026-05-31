@@ -1,0 +1,56 @@
+<NAME>
+regime_adaptive_efficiency_model
+</NAME>
+
+<DESCRIPTION>
+This algorithm implements a novel approach centered on "Multi-Horizon Efficiency and Volatility-Normalized Momentum." Drawing inspiration from Kaufman's Efficiency Ratio (ER), it distinguishes between "clean" trending moves and "noisy" mean-reverting regimes. Key innovations include:
+1. **Efficiency-Weighted Momentum**: Interacting Kaufman's ER with multi-horizon returns to identify high-conviction trend continuations.
+2. **Volatility-Adjusted Momentum (VAM)**: Normalizing returns by rolling volatility to create a Sharpe-like signal per bar, reducing noise in high-volatility regimes.
+3. **Microstructure Divergence**: Using Orderbook Imbalance (OBI) and its rate of change, interacted with trend strength, to capture leading signals of price exhaustion.
+4. **Expressive Hyperparameters**: To combat the "collapse toward mean" warning, I've significantly reduced regularization (reg_lambda, reg_alpha) and increased the learning rate and model depth, forcing the model to be more "opinionated" while maintaining generalization through subsampling.
+5. **Regime-Conditioned Interactions**: Explicitly modeling the interaction between volatility regimes, trend efficiency, and candle anatomy to capture non-linear market dynamics.
+</DESCRIPTION>
+
+<CODE>
+```python
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.07,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98.5
+MIN_PRED_STD_RATIO = 0.15
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix using strictly past data (shifted by 1).
+    Focuses on Efficiency Ratios, Volatility-Adjusted Momentum, and Microstructure.
+    """
+    feat = pd.DataFrame(index=df.index)
+    eps = 1e-9
+
+    close = df['close'].astype(float)
+    high = df['high'].astype(

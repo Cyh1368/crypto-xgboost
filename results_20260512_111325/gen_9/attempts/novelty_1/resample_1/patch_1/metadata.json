@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "short_regime_invariant_features",
+  "patch_description": "This edit attacks the main failure mode directly: the model\u2019s slope collapses out-of-sample because many current features are absolute-level regime dependent and use long lookbacks that decay across regimes.\n\nI\u2019m proposing two coordinated changes:\n\n1. Feature engineering:\n   - Shift to shorter windows (mostly 3\u201324 bars) so signals adapt faster.\n   - Add rolling z-scored versions of returns and volume so the model sees regime-normalized inputs instead of raw magnitude.\n   - Add short-horizon trend/efficiency/volatility-change features to capture the *rate of change* in market character.\n   - Keep a small number of robust interaction terms, especially momentum \u00d7 volatility regime.\n   - Remove some long lookback / redundant features to stay well under the 80-feature limit.\n\n2. XGBoost regularization:\n   - Make the model slightly more conservative in tree depth but more robust via higher min_child_weight and moderate regularization.\n   - Reduce n_estimators and learning rate a bit to limit training-set specialization while keeping enough capacity for short-horizon nonlinearities.\n\nThis is designed to improve val slope and pred_std_ratio without pushing train-val gap too wide.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:15:49.516688",
+  "llm_cost": 0.02468925,
+  "llm_model": "gpt-5.4-mini"
+}

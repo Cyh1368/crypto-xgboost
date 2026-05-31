@@ -1,0 +1,14 @@
+{
+  "generation": 39,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_crossover",
+  "patch_description": "This version cross-breeds the stronger parts of the prior programs with a bias toward shorter-horizon, regime-invariant features and explicit regime-shift tracking. It keeps the feature count compact while adding rolling z-scores, volatility/trend change signals, and a few robust multiplicative interactions that tend to generalize better than raw absolute-level features.\n\nOn the model side, it slightly increases expressivity versus the current collapsed setup while reducing unnecessary regularization pressure, aiming to improve validation slope and prediction dispersion without overfitting too hard.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:58:54.071205",
+  "llm_cost": 0.039184500000000004,
+  "llm_model": "gpt-5.4-mini"
+}

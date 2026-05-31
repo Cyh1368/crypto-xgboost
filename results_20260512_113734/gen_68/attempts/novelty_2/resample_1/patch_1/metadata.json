@@ -1,0 +1,14 @@
+{
+  "generation": 68,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This version crosses the strongest ideas from the prior programs while targeting the main failure mode: prediction collapse and regime-specific slope decay.\n\nKey changes:\n- Uses shorter lookback windows more aggressively, so features decay faster and are less tied to stale market regimes.\n- Adds rolling z-score normalization for returns, momentum, volume, and price-location features to improve regime invariance.\n- Emphasizes regime-change features such as volatility trend, efficiency trend, autocorrelation trend, and rank-based regime indicators.\n- Keeps the strongest interaction terms, especially momentum \u00d7 volatility regime and volume \u00d7 price-position interactions.\n- Simplifies the feature set to stay comfortably under the 80-feature cap and reduce noise.\n- Adjusts XGBoost to be a bit more expressive than the current collapsed model, while still controlling overfit with sensible regularization and early stopping.\n\nThe interface, inputs, outputs, and past-only constraint are preserved.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:39:14.309476",
+  "llm_cost": 0.041868,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 65,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_shift_xgb",
+  "patch_description": "This crossover keeps the strongest ideas from the prior variants while simplifying the feature set toward short-horizon, regime-invariant signals.  \nKey changes:\n- shorter lookbacks dominate the feature space\n- rolling z-scores and ranks are used to reduce regime dependence\n- explicit \u201cmarket character change\u201d features are included: volatility trend, efficiency trend, autocorrelation trend\n- momentum \u00d7 volatility and volume \u00d7 price-location interactions are preserved because they generalized better than raw level features alone\n- model regularization is relaxed slightly to reduce prediction collapse while keeping overfit in check\n\nThe result is designed to improve validation slope and prediction dispersion without exceeding the feature budget or using any future data.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:38:23.155653",
+  "llm_cost": 0.041175,
+  "llm_model": "gpt-5.4-mini"
+}

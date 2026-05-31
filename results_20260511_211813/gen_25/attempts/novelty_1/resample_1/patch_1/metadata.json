@@ -1,0 +1,14 @@
+{
+  "generation": 25,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "reduce_regularization_for_expressivity",
+  "patch_description": "The previous model suffered from a high 'collapse penalty' (pred_std_ratio = 0.026, far below the 0.15 threshold), meaning its predictions were too conservative and shrunk toward the mean. \n\nThis proposal:\n1. Significanty reduces regularization (min_child_weight, reg_alpha, reg_lambda) and increases the learning rate (0.015 -> 0.05) to increase model expressivity and force a higher prediction variance.\n2. Increases CLIP_PERCENTILE from 95 to 98 to retain more information from the tails of the distribution.\n3. Adds 'momentum persistence' (streak_5) and 'vwap distance' normalized by ATR to provide clearer mean-reversion and trend-continuation signals.\n4. Optimizes the OBI calculation to avoid slow row-wise apply() calls, ensuring execution time stays within limits.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:23:43.817780",
+  "llm_cost": 0.012775,
+  "llm_model": "gemini-3-flash-preview"
+}

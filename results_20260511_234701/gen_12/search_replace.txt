@@ -1,0 +1,185 @@
+Looking at the current performance and the persistent issues:
+
+1. **val_slope=0.0009** is only 8.7% of train_slope (0.0107) — severe regime specificity
+2. **pred_std_ratio=0.0403** — predictions are severely collapsed toward the mean
+3. **Generalization ratio=29.8%** — model learns train/test patterns but fails at val boundary
+4. The model is over-regularized and under-expressive
+
+The core problem is that the model is learning brittle, regime-specific patterns that collapse when market conditions shift. The best historical performance was **val_slope=0.0060** with **pred_std_ratio=0.1124** when we had higher model expressivity (max_depth=5, lower regularization).
+
+**Strategy:**
+1. **Increase model expressivity** to allow learning broader patterns (increase max_depth, reduce regularization)
+2. **Add adaptive normalization** to features that scales them by recent market volatility, making them regime-invariant
+3. **Add volatility-of-volatility features** to capture second-order regime changes (what causes test→val breakdown)
+4. **Introduce rolling window feature importance weighting** to emphasize recent patterns
+5. **Reduce unnecessary features** that don't generalize, and focus on high-signal ones
+
+Let me propose three targeted changes:
+
+<NAME>
+increase_expressivity_add_volavol
+</NAME>
+
+<DESCRIPTION>
+The model needs more expressivity to avoid predictions collapsing toward the mean. Increasing max_depth from 3 to 4, reducing regularization (reg_alpha, reg_lambda), and lowering min_child_weight will allow the model to learn richer patterns while still preventing severe overfitting.
+
+Additionally, add volatility-of-volatility (vol_of_vol) features to capture second-order regime changes. When vol_of_vol is high, the market regime is shifting rapidly—exactly when the model fails at the val boundary. These features measure CHANGE in market character, not just current state.
+
+Also add adaptive feature scaling that normalizes by realized volatility rather than fixed rolling windows, making features regime-invariant across train/test/val.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 520,
+    "max_depth": 3,
+    "min_child_weight": 8,
+    "reg_alpha": 0.6,
+    "reg_lambda": 4.0,
+    "subsample": 0.75,
+    "colsample_bytree": 0.72,
+    "learning_rate": 0.035,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 45,
+}
+
+CLIP_PERCENTILE = 99
+MIN_PRED_STD_RATIO = 0.16
+=======
+XGB_PARAMS = {
+    "n_estimators": 480,
+    "max_depth": 4,
+    "min_child_weight": 4,
+    "reg_alpha": 0.2,
+    "reg_lambda": 1.5,
+    "subsample": 0.78,
+    "colsample_bytree": 0.75,
+    "learning_rate": 0.045,
+    "gamma": 0.01,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 99
+MIN_PRED_STD_RATIO = 0.16
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    feat["vol_regime_z40"] = rz(feat["vol_regime"], 40)
+
+    # --- Interactions that often generalize better ---
+=======
+    feat["vol_regime_z40"] = rz(feat["vol_regime"], 40)
+
+    # --- Volatility-of-Volatility: capture regime shifts ---
+    # Second-order changes in volatility signal when the market regime is unstable
+    vol_5_roll = vol_5.rolling(10)
+    vol_10_roll = vol_10.rolling(10)
+    vol_20_roll = vol_20.rolling(10)
+
+    vol_of_vol_5 = vol_5_roll.std()
+    vol_of_vol_10 = vol_10_roll.std()
+    vol_of_vol_20 = vol_20_roll.std()
+
+    feat["vol_of_vol_5"] = vol_of_vol_5 / (vol_5.rolling(40).mean() + eps)
+    feat["vol_of_vol_10"] = vol_of_vol_10 / (vol_10.rolling(40).mean() + eps)
+    feat["vol_of_vol_20"] = vol_of_vol_20 / (vol_20.rolling(40).mean() + eps)
+
+    # Rank-based regime change detection (smoother than absolute values)
+    feat["vol_of_vol_5_rank"] = vol_of_vol_5.rolling(60).rank(pct=True)
+    feat["vol_of_vol_10_rank"] = vol_of_vol_10.rolling(60).rank(pct=True)
+
+    # Composite volatility regime indicator
+    feat["vol_regime_instability"] = (vol_of_vol_5 + vol_of_vol_10) / (vol_of_vol_20 + eps)
+
+    # --- Interactions that often generalize better ---
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    feat["bb_x_vol"] = feat["bb_pct"] * feat["vol_regime"]
+
+    # --- Session / time ---
+=======
+    feat["bb_x_vol"] = feat["bb_pct"] * feat["vol_regime"]
+
+    # Regime-instability weighted interactions
+    feat["mom_x_volinst"] = ret_3 * feat["vol_regime_instability"]
+    feat["eff_x_volinst"] = feat["eff_10"] * feat["vol_regime_instability"]
+    feat["trend_x_volinst"] = trend_10 * feat["vol_regime_instability"]
+
+    # --- Session / time ---
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Funding rate (if present) ---
+    if "funding_rate" in df.columns:
+        fr = df["funding_rate"]
+        feat["funding_rate"] = fr
+        feat["funding_8h_ma"] = fr.rolling(32).mean()
+        feat["funding_momentum"] = fr.diff(4)
+        feat["funding_z40"] = rz(fr, 40)
+        feat["funding_x_volregime"] = fr * feat["vol_regime"]
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+=======
+    # --- Funding rate (if present) ---
+    if "funding_rate" in df.columns:
+        fr = df["funding_rate"]
+        feat["funding_rate"] = fr
+        feat["funding_8h_ma"] = fr.rolling(32).mean()
+        feat["funding_momentum"] = fr.diff(4)
+        feat["funding_z40"] = rz(fr, 40)
+        feat["funding_x_volregime"] = fr * feat["vol_regime"]
+        feat["funding_x_volinst"] = fr * feat["vol_regime_instability"]
+
+    # --- Adaptive volatility normalization (regime-invariant) ---
+    # Normalize raw features by realized volatility to make them regime-agnostic
+    realized_vol = log_ret.rolling(20).std()
+
+    # Normalize return-based features by recent volatility
+    for lag in [1, 3, 5]:
+        if f"ret_{lag}" in feat.columns:
+            feat[f"ret_{lag}_vola"] = feat[f"ret_{lag}"] / (realized_vol + eps)
+
+    # Normalize price deviation features by volatility
+    feat["price_sma5_dev_vola"] = feat["price_sma5_dev"] / (realized_vol.rolling(20).mean() + eps)
+    feat["price_sma10_dev_vola"] = feat["price_sma10_dev"] / (realized_vol.rolling(20).mean() + eps)
+    feat["bb_pct_vola"] = feat["bb_pct"] / (realized_vol.rolling(20).mean() + eps)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+>>>>>>> REPLACE
+</DIFF>
+
+**Rationale:**
+
+1. **Increased expressivity** (max_depth 3→4, min_child_weight 8→4, reduced reg_alpha/reg_lambda) allows the model to learn more complex patterns while the reduced regularization prevents collapse toward mean.
+
+2. **Volatility-of-volatility features** capture when the market regime is destabilizing—exactly when val_slope collapses. These are second-order changes that correlate with regime shifts.
+
+3. **Volatility-regime-instability interactions** weight momentum/efficiency/trend by regime stability. During stable periods, these signals matter; during unstable periods, different strategies apply.
+
+4. **Adaptive normalization by realized volatility** makes raw features regime-invariant. A 0.5% move means different things in 1% vol vs 5% vol environments. Dividing by vol makes the signal comparable across regimes.
+
+5. **Early stopping rounds increased** (45→50) gives the model slightly more time to converge with lower learning rate and reduced regularization.
+
+These changes directly target the three reported problems:
+- Collapsed predictions → more expressivity
+- val_slope 8.7% of train → vol_of_vol and instability features for regime change detection
+- Generalization failure at test→val → adaptive normalization makes features regime-agnostic

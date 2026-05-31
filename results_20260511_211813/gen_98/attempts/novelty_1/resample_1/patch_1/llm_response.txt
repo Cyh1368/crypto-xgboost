@@ -1,0 +1,114 @@
+<NAME>
+lagged_regime_boost
+</NAME>
+
+<DESCRIPTION>
+This update aims to fix the current “prediction collapse” symptom by making the tree ensemble a bit more expressive while keeping regularization moderate. The main issue in the latest results is that `pred_std_ratio` is still low, which means the model is too conservative and not separating bullish/bearish cases enough.
+
+On the feature side, I’m adding a compact set of strictly past-only, lagged regime/momentum features. These are designed to help XGBoost learn when trend-following vs mean-reversion behavior is more likely, especially across changing volatility conditions. I also shift the orderbook/funding inputs by one bar to make the past-only constraint explicit and to reduce any chance of same-bar leakage.
+
+The feature count remains comfortably below 80, and the added calculations are lightweight enough to stay within runtime limits.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 900,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.05,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+=======
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    # --- Past-only lagged regime stack ---
+    ret1 = close.pct_change(1)
+    ret1_l1 = ret1.shift(1)
+    ret1_l3 = ret1.shift(3)
+    ret1_l6 = ret1.shift(6)
+
+    feat['ret_mom_3'] = ret1_l1.rolling(3).mean()
+    feat['ret_mom_6'] = ret1_l1.rolling(6).mean()
+    feat['ret_mom_12'] = ret1_l1.rolling(12).mean()
+    feat['ret_mom_accel'] = feat['ret_mom_3'] - feat['ret_mom_12']
+
+    feat['vol_10_past'] = log_ret.shift(1).rolling(10).std()
+    feat['vol_20_past'] = log_ret.shift(1).rolling(20).std()
+    feat['vol_60_past'] = log_ret.shift(1).rolling(60).std()
+    feat['vol_slope_20_60'] = feat['vol_20_past'] / (feat['vol_60_past'] + 1e-9)
+    feat['vol_change_10'] = feat['vol_20_past'].diff(10)
+
+    feat['trend_past_12'] = (close.shift(1) / close.shift(13) - 1) * 10000
+    feat['trend_past_24'] = (close.shift(1) / close.shift(25) - 1) * 10000
+    feat['trend_dir_past_12'] = np.sign(feat['trend_past_12'])
+    feat['trend_dir_past_24'] = np.sign(feat['trend_past_24'])
+
+    feat['bb_pct_past'] = (close.shift(1) - close.shift(1).rolling(20).mean()) / (2 * close.shift(1).rolling(20).std() + 1e-9)
+    feat['price_sma20_dev_past'] = (close.shift(1) - close.shift(1).rolling(20).mean()) / (close.shift(1).rolling(20).mean() + 1e-9)
+    feat['price_sma50_dev_past'] = (close.shift(1) - close.shift(1).rolling(50).mean()) / (close.shift(1).rolling(50).mean() + 1e-9)
+
+    feat['mom_x_vol'] = feat['ret_mom_6'] * feat['vol_20_past']
+    feat['mom_x_regime'] = feat['ret_mom_6'] * feat['vol_regime']
+    feat['meanrev_x_regime'] = feat['price_sma20_dev_past'] * feat['vol_regime_fast']
+    feat['range_x_trend'] = feat['hl_range_ma'] * feat['trend_dir_20']
+
+    feat['rolling_sharpe_20'] = log_ret.shift(1).rolling(20).mean() / (log_ret.shift(1).rolling(20).std() + 1e-9)
+    feat['rolling_sharpe_60'] = log_ret.shift(1).rolling(60).mean() / (log_ret.shift(1).rolling(60).std() + 1e-9)
+
+    # Explicitly lag any optional exogenous inputs by one bar
+    if 'bids' in df.columns and 'asks' in df.columns:
+        feat['obi_tau1'] = feat['obi_tau1'].shift(1)
+        feat['obi_tau3'] = feat['obi_tau3'].shift(1)
+
+    if 'funding_rate' in df.columns:
+        feat['funding_rate'] = feat['funding_rate'].shift(1)
+        feat['funding_8h_ma'] = feat['funding_8h_ma'].shift(1)
+        feat['funding_momentum'] = feat['funding_momentum'].shift(1)
+        feat['funding_x_volregime'] = feat['funding_x_volregime'].shift(1)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+>>>>>>> REPLACE
+</DIFF>

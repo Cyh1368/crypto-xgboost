@@ -1,0 +1,14 @@
+{
+  "generation": 50,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "regime_boosted_features",
+  "patch_description": "This edit aims to reduce prediction collapse by adding a small set of higher-signal, regime-aware features while keeping the feature count under the 80-feature cap. The current feature set is already decent on DA but still too mean-reverting in prediction space (`pred_std_ratio` is low). To address that, I\u2019m adding:\n\n- shorter-horizon return acceleration and trend persistence features\n- normalized breakout / compression indicators\n- a couple of regime interaction terms that let XGBoost separate trend-following from mean-reversion conditions more cleanly\n- a lightweight \u201cintrabar position vs volatility\u201d feature that often helps perpetual futures on 15m bars\n\nAll of these are past-only and explicitly shifted where needed. This should give the model more expressive separation without violating the no-lookahead constraint. I also leave the feature count safely below 80 by slightly trimming redundant windows.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:29:04.708628",
+  "llm_cost": 0.01943325,
+  "llm_model": "gpt-5.4-mini"
+}

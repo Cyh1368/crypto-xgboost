@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "regime_robust_z_scoring",
+  "patch_description": "The primary issue is a massive slope collapse (0.074 to 0.006) and prediction compression (std ratio 0.11), indicating the model is over-relying on absolute price moves and volatility levels that shifted between the training and validation periods. \n\n1.  **Hyperparameters**: Reduced `max_depth` to 4 and substantially increased `min_child_weight` to 20. This prevents the model from splitting on small clusters of noise, forcing it to find features that carry weight across large portions of the data. Increased `reg_lambda` to 10.0 to further dampen outlier sensitivity.\n2.  **Z-Score Normalization**: Replaced absolute historical returns with rolling Z-scores (period 20 and 60). This transforms \"a 0.5% move\" into \"a +2.0 sigma move,\" which generalizes significantly better across high and low volatility regimes.\n3.  **Volatility Ratio**: Switched from absolute volatility to volatility decay/expansion (fast/slow ratios), which is more indicative of regime changes than absolute log-returns.\n4.  **Shorter Lookbacks**: Removed long-term ranking (200-bar) which often acts as a lagging indicator of past regimes.\n5.  **Target Clipping**: Kept clipping at 98% but ensured the model has enough expressivity through a lower learning rate (0.05) and more estimators to find the signal.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:56:25.098254",
+  "llm_cost": 0.0074645,
+  "llm_model": "gemini-3-flash-preview"
+}

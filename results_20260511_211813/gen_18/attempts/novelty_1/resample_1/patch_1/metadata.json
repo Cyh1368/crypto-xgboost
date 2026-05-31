@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_stack_xgb",
+  "patch_description": "I took inspiration from the existing program\u2019s emphasis on classic technical indicators, volatility, volume, and regime awareness, but replaced the mostly low-signal, heavily regularized setup with a more expressive \u201cregime stack\u201d feature design.\n\nThe new approach builds a compact set of past-only features that are explicitly organized around:\n- multi-horizon momentum and mean-reversion tension,\n- volatility compression/expansion,\n- candle anatomy and range efficiency,\n- robust rolling normalization using only prior bars,\n- regime-conditioned interactions between trend, volatility, and volume,\n- optional orderbook/funding signals transformed into stable imbalance and surprise measures.\n\nCompared with the original, this version avoids relying on a few raw indicators and instead creates a broader but still controlled feature space that helps XGBoost detect when short-term directional edges are more likely to flip or persist. I also loosened regularization and increased tree capacity so the model is less likely to collapse toward the mean, which should raise predicted dispersion while keeping the feature count under the limit.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:21:28.133829",
+  "llm_cost": 0.0163425,
+  "llm_model": "gpt-5.4-mini"
+}

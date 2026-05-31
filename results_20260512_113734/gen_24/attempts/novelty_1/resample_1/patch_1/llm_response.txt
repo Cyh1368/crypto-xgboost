@@ -1,0 +1,94 @@
+<NAME>
+regime_short_horizon_boost
+</NAME>
+
+<DESCRIPTION>
+This edit targets the two main failure modes: prediction collapse and regime fragility. I reduce over-regularization slightly so XGBoost can express more slope, while keeping depth moderate to avoid overfit. On the feature side, I add more regime-invariant short-horizon signals: rolling z-scored volatility, rolling z-scored trend, and a compact volatility-adjusted momentum interaction. These are designed to survive the train→test→val regime shift better than absolute-level indicators. The new features are all causal and keep the total feature count safely below the 80-feature limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 250,
+    "max_depth": 4,
+    "min_child_weight": 5,
+    "reg_alpha": 0.5,
+    "reg_lambda": 1.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.12,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 320,
+    "max_depth": 4,
+    "min_child_weight": 3,
+    "reg_alpha": 0.15,
+    "reg_lambda": 0.75,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 45,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Volatility trend (rate of change)
+    vol_5 = log_ret.rolling(5).std()
+    vol_20 = log_ret.rolling(20).std()
+    feat['vol_trend_5'] = vol_5.pct_change(5)
+    feat['vol_trend_20'] = vol_20.pct_change(10)
+=======
+    # Volatility trend (rate of change)
+    vol_5 = log_ret.rolling(5).std()
+    vol_10 = log_ret.rolling(10).std()
+    vol_20 = log_ret.rolling(20).std()
+    feat['vol_trend_5'] = vol_5.pct_change(5)
+    feat['vol_trend_10'] = vol_10.pct_change(5)
+    feat['vol_trend_20'] = vol_20.pct_change(10)
+    feat['vol_z_20'] = (vol_20 - vol_20.rolling(20).mean()) / (vol_20.rolling(20).std() + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Momentum × Volatility interactions (single robust feature) ---
+    ret_3 = close.pct_change(3)
+    vol_10 = log_ret.rolling(10).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_10
+
+    # Z-scored momentum for regime invariance
+    ret_3_mean = ret_3.rolling(20).mean()
+    ret_3_std = ret_3.rolling(20).std()
+    feat['momentum_z_20'] = (ret_3 - ret_3_mean) / (ret_3_std + 1e-9)
+=======
+    # --- Momentum × Volatility interactions (single robust feature) ---
+    ret_3 = close.pct_change(3)
+    vol_10 = log_ret.rolling(10).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_10
+    feat['momentum_vol_regime'] = ret_3 * feat['vol_regime']
+    feat['momentum_vol_z'] = ret_3 / (vol_10 + 1e-9)
+
+    # Z-scored momentum for regime invariance
+    ret_3_mean = ret_3.rolling(20).mean()
+    ret_3_std = ret_3.rolling(20).std()
+    feat['momentum_z_20'] = (ret_3 - ret_3_mean) / (ret_3_std + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+=======
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['efficiency_chg_10'] = feat['efficiency_10'].pct_change(5)
+>>>>>>> REPLACE
+</DIFF>

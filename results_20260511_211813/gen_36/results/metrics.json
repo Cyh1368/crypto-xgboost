@@ -1,0 +1,17 @@
+{
+  "combined_score": -0.3975357110980236,
+  "public": {
+    "combined_score": -0.3975,
+    "val_da": 0.5157,
+    "test_da": 0.4809,
+    "train_da": 0.5601,
+    "pred_std_ratio": 0.0599,
+    "overfit_gap": 0.0444
+  },
+  "private": {
+    "collapse_penalty": 0.4504,
+    "overfit_penalty": 0.0,
+    "invert_penalty": 0.0
+  },
+  "text_feedback": "val_DA=0.5157  test_DA=0.4809  train_DA=0.5601\npred_std_ratio=0.0599  overfit_gap=0.0444\npenalties \u2192 collapse=0.450  overfit=0.000  invert=0.000\nSCORE=-0.3975\nWARNING: predictions collapsed toward mean \u2014 increase model expressivity or remove regularization."
+}

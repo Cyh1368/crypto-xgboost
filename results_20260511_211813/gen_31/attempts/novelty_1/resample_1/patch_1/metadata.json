@@ -1,0 +1,14 @@
+{
+  "generation": 31,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_lagged_expansion",
+  "patch_description": "The current model is still collapsing toward the mean, which usually means the trees are too constrained and the feature space does not provide enough separable structure. I would address this in two complementary ways:\n\n1. Loosen the XGBoost bias slightly:\n   - reduce `min_child_weight` and regularization,\n   - increase tree count a bit,\n   - use a slightly higher learning rate with more expressive trees.\n   This should increase prediction variance without pushing into heavy overfit, since the current train/val gap is small.\n\n2. Add a small set of regime-conditioned lagged features:\n   - short-horizon return and volatility ratios,\n   - volatility-adjusted momentum,\n   - trend slope proxy,\n   - rolling correlation between volume and returns,\n   - candlestick body/wick structure,\n   - normalized mean-reversion distance and range position.\n   These are all past-only and help the model distinguish when momentum vs reversion is more likely. The feature count remains comfortably below the 80-feature limit.\n\nI am also slightly tightening the target clipping from 99 to 98.5 to reduce extreme-label noise while keeping enough signal.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:24:00.148293",
+  "llm_cost": 0.01899075,
+  "llm_model": "gpt-5.4-mini"
+}

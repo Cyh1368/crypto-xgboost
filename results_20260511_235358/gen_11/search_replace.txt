@@ -1,0 +1,108 @@
+<NAME>
+regime_invariant_z_scores_and_regularization
+</NAME>
+
+<DESCRIPTION>
+The model currently suffers from 'slope collapse' and poor generalization across the test-validation boundary, indicating that it is learning regime-specific patterns that do not hold in the most recent market data.
+
+To address this, I am implementing the following strategies:
+1. **Regime-Invariant Features**: Adding features that normalize price action and volatility against their own recent history. Specifically:
+   - `vol_z_100`: Z-score of current volatility relative to the last 100 periods.
+   - `mom_z_10`: Momentum (10-period return) scaled by the current volatility, making a 1% move in low-vol regimes comparable to a 1% move in high-vol regimes.
+   - `price_z_40`: Z-score of price relative to its 40-period moving average and standard deviation.
+   - `autocorr_10`: Rolling 10-period autocorrelation of returns to identify trending vs. mean-reverting regimes.
+2. **Momentum-Efficiency Interaction**: Adding an interaction between momentum and market efficiency (Kaufman's Efficiency Ratio). Momentum is generally more reliable in high-efficiency (trending) regimes.
+3. **Increased Regularization**: Reducing `max_depth` to 3 and significantly increasing `min_child_weight` and `reg_lambda`. This forces the XGBoost model to find broader, more robust patterns that are less likely to disappear during regime shifts.
+4. **Slower Learning**: Reducing the `learning_rate` and `n_estimators` to prevent the model from over-fitting the training regime's noise.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 240,
+    "max_depth": 4,
+    "min_child_weight": 6,
+    "reg_alpha": 0.25,
+    "reg_lambda": 2.0,
+    "subsample": 0.85,
+    "colsample_bytree": 0.75,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 35,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 200,
+    "max_depth": 3,
+    "min_child_weight": 12,
+    "reg_alpha": 0.5,
+    "reg_lambda": 5.0,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 30,
+}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Regime features ---
+    realized_vol_20 = vol_20
+    realized_vol_40 = log_ret.rolling(40).std()
+    feat['vol_regime'] = realized_vol_20 / (realized_vol_20.rolling(100).mean() + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_20 / (realized_vol_40 + 1e-9)
+    feat['vol_rank_100'] = realized_vol_20.rolling(100).rank(pct=True)
+    trend_10 = close.pct_change(10)
+    trend_20 = close.pct_change(20)
+    feat['trend_dir_10'] = np.sign(trend_10)
+    feat['trend_dir_20'] = np.sign(trend_20)
+    feat['trend_strength_10'] = trend_10.abs() * 10000
+    feat['trend_strength_20'] = trend_20.abs() * 10000
+
+    # --- Interaction: momentum × regime ---
+    feat['momentum_vol_interaction'] = feat['mom_3'] * feat['vol_regime']
+    feat['momentum_regime_fast'] = feat['mom_3'] * feat['vol_regime_fast']
+
+    # --- Efficiency / autocorrelation proxy ---
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['efficiency_trend'] = feat['efficiency_10'] - feat['efficiency_20']
+=======
+    # --- Regime features ---
+    realized_vol_20 = vol_20
+    realized_vol_40 = log_ret.rolling(40).std()
+    feat['vol_regime'] = realized_vol_20 / (realized_vol_20.rolling(100).mean() + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_20 / (realized_vol_40 + 1e-9)
+    feat['vol_rank_100'] = realized_vol_20.rolling(100).rank(pct=True)
+
+    # Regime-invariant transformations
+    v_ma_100 = vol_10.rolling(100).mean()
+    v_sd_100 = vol_10.rolling(100).std()
+    feat['vol_z_100'] = (vol_10 - v_ma_100) / (v_sd_100 + 1e-9)
+    feat['autocorr_10'] = log_ret.rolling(10).corr(log_ret.shift(1))
+    feat['mom_z_10'] = (close / close.shift(10) - 1) / (vol_10 * np.sqrt(10) + 1e-9)
+    feat['price_z_40'] = (close - close.rolling(40).mean()) / (close.rolling(40).std() + 1e-9)
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+
+    trend_10 = close.pct_change(10)
+    trend_20 = close.pct_change(20)
+    feat['trend_dir_10'] = np.sign(trend_10)
+    feat['trend_dir_20'] = np.sign(trend_20)
+    feat['trend_strength_10'] = trend_10.abs() * 10000
+    feat['trend_strength_20'] = trend_20.abs() * 10000
+
+    # --- Interaction: momentum × regime ---
+    feat['momentum_vol_interaction'] = feat['mom_3'] * feat['vol_regime']
+    feat['momentum_regime_fast'] = feat['mom_3'] * feat['vol_regime_fast']
+    feat['mom_eff_interaction'] = feat['mom_3'] * feat['efficiency_10']
+
+    # --- Efficiency / autocorrelation proxy ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['efficiency_trend'] = feat['efficiency_10'] - feat['efficiency_20']
+>>>>>>> REPLACE
+</DIFF>

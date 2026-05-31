@@ -1,0 +1,74 @@
+<NAME>
+adaptive_expressivity_boost
+</NAME>
+
+<DESCRIPTION>
+The current model is severely over-regularized, causing predictions to collapse toward the mean (pred_std_ratio=0.035, train_slope=0.0076). The primary issue is excessive regularization combined with insufficient model capacity.
+
+Analysis of the problem:
+1. The model has max_depth=3, min_child_weight=10, reg_lambda=8.0, reg_alpha=1.5, and gamma=0.2 - all extremely conservative
+2. This heavy regularization is destroying the model's ability to learn even the training patterns
+3. The slope collapse (val_slope=0.0016, train_slope=0.0076) indicates the model cannot express directional predictions
+4. The good news: generalization_ratio=85.4% means what little the model learns does generalize well
+
+Strategy:
+1. Significantly increase model expressivity by reducing regularization and increasing depth
+2. Add more estimators but with a higher learning rate to maintain training speed
+3. Keep min_child_weight moderate to preserve some generalization
+4. The features are already well-designed with z-score normalization and short lookbacks, so we mainly need to let the model use them
+
+Expected outcome:
+- Train slope should increase from 0.0076 to at least 0.020 (3x improvement)
+- Pred_std_ratio should increase from 0.035 to at least 0.10 (3x improvement)
+- With the strong feature engineering already in place, the generalization ratio should remain good (>60%)
+- Target: val_slope >= 0.020, val_DA >= 0.520
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 260,
+    "max_depth": 3,
+    "min_child_weight": 10,
+    "reg_alpha": 1.5,
+    "reg_lambda": 8.0,
+    "gamma": 0.2,
+    "subsample": 0.72,
+    "colsample_bytree": 0.72,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 35,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 350,
+    "max_depth": 5,
+    "min_child_weight": 4,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "gamma": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.10,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+=======
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+CLIP_PERCENTILE = 95
+MIN_PRED_STD_RATIO = 0.18
+=======
+CLIP_PERCENTILE = 97
+MIN_PRED_STD_RATIO = 0.15
+>>>>>>> REPLACE
+</DIFF>

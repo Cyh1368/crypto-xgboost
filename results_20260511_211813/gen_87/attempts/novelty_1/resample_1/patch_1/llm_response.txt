@@ -1,0 +1,234 @@
+Looking at the performance metrics across all prior attempts, I can see a consistent pattern:
+
+1. **Collapse penalty is the dominant issue** (0.41-0.62): The model is predicting too close to the mean, with `pred_std_ratio` stuck in the 0.03-0.07 range despite various regularization adjustments.
+
+2. **Overfit gap is growing** (0.056 in current): The train_DA (0.573) is significantly ahead of val_DA (0.517), suggesting the model is learning noise rather than signal.
+
+3. **The feature set is bloated**: With 60+ features, many of which are redundant (multiple regime interactions, multiple momentum accelerations), the model struggles to find true signal.
+
+4. **Regularization paradox**: Reducing regularization (reg_lambda from 0.02→0.005) helped slightly but didn't solve the core issue. The problem isn't just regularization—it's that the signal-to-noise ratio in the features is poor.
+
+## Root Cause Analysis
+
+The current approach adds more interaction features hoping to capture suppressed signals, but this actually:
+- Increases dimensionality without improving signal quality
+- Makes regularization harder to tune (need to balance many weak signals)
+- Causes the model to average predictions toward zero when no strong signal exists
+
+## Solution Strategy
+
+I'll implement a **three-pronged approach**:
+
+1. **Aggressive feature pruning**: Keep only the highest-quality, most orthogonal features
+2. **Stronger regularization with better hyperparameters**: Use L1 (alpha) to force feature selection, combined with higher lambda
+3. **Simpler, cleaner feature engineering**: Focus on core momentum/volatility/regime signals without redundant interactions
+
+The key insight: **pred_std_ratio improves when the model has fewer, higher-quality features to work with**, because it can make confident predictions on the strongest signals rather than averaging weak ones.
+
+<NAME>
+aggressive_prune_and_regularize
+</NAME>
+
+<DESCRIPTION>
+This edit implements aggressive feature pruning combined with stronger regularization to combat prediction collapse. The strategy:
+
+1. **Reduce feature count from 60+ to ~35**: Keep only the most orthogonal, non-redundant features. Remove:
+   - Redundant momentum acceleration features (keep only ret_accel_12_6)
+   - Duplicate regime interactions (keep only core vol_regime and trend interactions)
+   - Weak binary regime signals that don't add orthogonal information
+   - Redundant RSI variants
+
+2. **Strengthen regularization**: Increase reg_alpha to 0.01 (L1 penalty) to force feature selection, and reg_lambda to 0.03 to prevent overfitting. This combination helps the model learn which features truly matter.
+
+3. **Adjust hyperparameters for smaller feature set**:
+   - Reduce max_depth from 7 to 5 (smaller trees fit smaller feature sets better)
+   - Reduce n_estimators from 1000 to 600 (fewer trees prevent overfitting with strong regularization)
+   - Increase learning_rate from 0.06 to 0.08 (compensate for fewer estimators)
+
+4. **Loosen clipping slightly**: CLIP_PERCENTILE from 98→97 to keep more gradient signal while still limiting extreme outliers.
+
+The rationale: With fewer, cleaner features and stronger regularization, the model will make more confident predictions on the signals that matter, improving pred_std_ratio while maintaining validation accuracy.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.005,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.06,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # allow model to see larger moves to prevent mean collapse
+MIN_PRED_STD_RATIO = 0.15     # target a healthier prediction standard deviation
+=======
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.03,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.08,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 97          # balanced clipping: preserve signal while limiting extreme outliers
+MIN_PRED_STD_RATIO = 0.12     # realistic target with aggressive regularization
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    vol_regime = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+    feat['vol_regime'] = vol_regime
+    feat['trend_x_regime'] = feat['trend_strength_60'] / (vol_regime + 1e-9)
+    feat['ret1_x_regime'] = ret1 * vol_regime
+
+    # Regime-conditional momentum interactions (capture signal suppressed by regularization)
+    feat['ret6_x_vol_regime'] = close.pct_change(6) * vol_regime
+    feat['ret12_x_vol_regime'] = close.pct_change(12) * vol_regime
+    feat['ret3_x_trend_strength'] = close.pct_change(3) * (feat['trend_strength_60'] / 10000.0)
+
+    # Adaptive momentum scaled by recent volatility
+    recent_vol = log_ret.rolling(10).std()
+    feat['adaptive_ret6'] = close.pct_change(6) / (recent_vol + 1e-9)
+    feat['adaptive_ret12'] = close.pct_change(12) / (recent_vol + 1e-9)
+
+    # Volatility-adjusted RSI (regime-conditional oscillator)
+    rsi_14 = feat['rsi_14']
+    feat['rsi_14_vol_adjusted'] = rsi_14 / (vol_regime + 1e-9)
+
+    # --- High-contrast binary regime signals (create natural tree splits) ---
+    # Momentum regime: strong positive vs negative momentum
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+    feat['momentum_positive'] = (ret_6 > 0).astype(float)
+    feat['momentum_strong'] = (ret_6.abs() > ret_6.rolling(20).std()).astype(float)
+    feat['momentum_regime'] = np.sign(ret_6) * feat['momentum_strong']
+
+    # Volatility regime binary (high vs low)
+    vol_20_ma = log_ret.rolling(20).std()
+    vol_20_median = vol_20_ma.rolling(60).median()
+    feat['vol_high_binary'] = (vol_20_ma > vol_20_median).astype(float)
+    feat['vol_low_binary'] = (vol_20_ma < vol_20_median).astype(float)
+
+    # Trend regime: strong uptrend vs downtrend
+    sma_20 = close.rolling(20).mean()
+    sma_60 = close.rolling(60).mean()
+    feat['trend_up'] = ((close > sma_20) & (sma_20 > sma_60)).astype(float)
+    feat['trend_down'] = ((close < sma_20) & (sma_20 < sma_60)).astype(float)
+    feat['trend_regime'] = feat['trend_up'].astype(float) - feat['trend_down'].astype(float)
+
+    # --- Mean-reversion divergence signals ---
+    # Price deviation from SMA (mean reversion signal)
+    feat['price_dev_sma20'] = (close - sma_20) / (sma_20 + 1e-9)
+    feat['price_dev_sma60'] = (close - sma_60) / (sma_60 + 1e-9)
+
+    # RSI extremes (overbought/oversold)
+    feat['rsi_6_extreme'] = ((feat['rsi_6'] > 70) | (feat['rsi_6'] < 30)).astype(float)
+    feat['rsi_14_extreme'] = ((feat['rsi_14'] > 70) | (feat['rsi_14'] < 30)).astype(float)
+    feat['rsi_overbought'] = (feat['rsi_14'] > 70).astype(float)
+    feat['rsi_oversold'] = (feat['rsi_14'] < 30).astype(float)
+
+    # --- Momentum divergence and acceleration signals ---
+    # Momentum acceleration (2nd derivative)
+    feat['ret_accel_12_6'] = ret_12 - ret_6
+    feat['ret_accel_6_3'] = ret_6 - ret3
+
+    # Momentum reversal signal (momentum slowing down)
+    feat['momentum_slowing'] = (ret_6.abs() < ret_12.abs()).astype(float)
+    feat['momentum_accelerating'] = (ret_6.abs() > ret_12.abs()).astype(float)
+
+    # Momentum divergence from trend
+    feat['momentum_vs_trend'] = np.sign(ret_6) * feat['trend_regime']
+
+    # --- Volatility-scaled momentum with discrete thresholds ---
+    vol_20_std = log_ret.rolling(20).std()
+    vol_20_mean = vol_20_std.rolling(60).mean()
+    vol_normalized = vol_20_std / (vol_20_mean + 1e-9)
+
+    # High momentum in low vol (strong signal)
+    feat['strong_momentum_low_vol'] = (ret_6.abs() > ret_6.rolling(20).std()) & (vol_normalized < 1.0)
+    feat['strong_momentum_low_vol'] = feat['strong_momentum_low_vol'].astype(float)
+
+    # Weak momentum in high vol (noise)
+    feat['weak_momentum_high_vol'] = (ret_6.abs() < ret_6.rolling(20).std()) & (vol_normalized > 1.2)
+    feat['weak_momentum_high_vol'] = feat['weak_momentum_high_vol'].astype(float)
+
+    # --- Cross-regime interaction signals ---
+    # Momentum aligned with trend (strong signal)
+    feat['momentum_trend_aligned'] = np.sign(ret_6) * feat['trend_regime']
+
+    # Momentum against trend (reversal signal)
+    feat['momentum_trend_divergence'] = -np.sign(ret_6) * feat['trend_regime']
+=======
+    # --- Regime features (pruned to core signals) ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    vol_regime = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+    feat['vol_regime'] = vol_regime
+
+    # Core momentum-regime interaction (single, clean signal)
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+    feat['ret6_x_vol_regime'] = ret_6 * vol_regime
+
+    # Momentum acceleration (single core feature)
+    feat['ret_accel_12_6'] = ret_12 - ret_6
+
+    # Trend regime (clean binary signal)
+    sma_20 = close.rolling(20).mean()
+    sma_60 = close.rolling(60).mean()
+    feat['trend_regime'] = np.sign(sma_20 - sma_60)
+
+    # Price deviation from SMA (mean reversion signal)
+    feat['price_dev_sma20'] = (close - sma_20) / (sma_20 + 1e-9)
+
+    # RSI overbought/oversold (clean binary signals)
+    rsi_14 = feat['rsi_14']
+    feat['rsi_overbought'] = (rsi_14 > 70).astype(float)
+    feat['rsi_oversold'] = (rsi_14 < 30).astype(float)
+
+    # Momentum-trend alignment (single interaction)
+    feat['momentum_trend_aligned'] = np.sign(ret_6) * feat['trend_regime']
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Additional Expressivity Features ---
+    feat['log_vol'] = np.log1p(volume)
+    feat['vol_change_5'] = vol_regime.pct_change(5)
+    feat['vol_skew_20'] = log_ret.rolling(20).skew()
+    feat['tail_ratio'] = (high - low) / ((close - open_).abs() + 1e-9)
+    feat['vpt_20'] = (ret1 * volume).rolling(20).sum() / (vol_ma20 + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+=======
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+>>>>>>> REPLACE
+</DIFF>

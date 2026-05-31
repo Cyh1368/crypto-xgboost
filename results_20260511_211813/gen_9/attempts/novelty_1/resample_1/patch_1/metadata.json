@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "aggressive_regularization_reduction_with_interactions",
+  "patch_description": "The current model suffers from severe prediction collapse (pred_std_ratio=0.0185) despite achieving reasonable val_DA. This is caused by over-regularization that suppresses the model's expressivity.\n\nChanges:\n1. **Hyperparameters**: Dramatically reduce L1/L2 regularization (reg_lambda: 0.7\u21920.1, reg_alpha: 0.02\u21920.005), increase tree depth (5\u21926), reduce min_child_weight (4\u21922), add gamma (0\u21920.5) for split complexity control, increase learning_rate (0.03\u21920.05), reduce n_estimators (700\u2192600) since higher LR converges faster.\n\n2. **Features**: Add regime-conditional momentum interactions (momentum \u00d7 vol_regime, momentum \u00d7 trend_strength) and adaptive features that scale with volatility. These capture the signal that regularization was suppressing.\n\nThe goal is to push pred_std_ratio above 0.15 while maintaining val_DA \u2265 0.52.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:19:40.738374",
+  "llm_cost": 0.018864,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

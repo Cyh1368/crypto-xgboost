@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "rank_features_regime_invariant",
+  "patch_description": "The current program's slope collapses from train (0.0436) to val (0.0030), achieving only 6.9% slope retention\u2014well below the 25-30% target. The validation period represents a second regime shift where absolute feature values lose predictive power.\n\n**Core Strategy: Cross-sectional Rank Features**\n\nFollowing the recommendation, I'm implementing percentile-based ranking of key features within rolling windows. This creates truly distribution-invariant signals that should remain stable across regime shifts:\n\n1. **ret_3_rank_40**: Ranks 3-bar returns within 40-bar window. A 1% move in low-vol is equivalent to a 3% move in high-vol when both are at 80th percentile.\n\n2. **efficiency_10_rank_60**: Ranks market efficiency (directional move / total path length) within 60-bar window. Captures relative trending vs mean-reverting character independent of absolute volatility.\n\n3. **rsi_14_rank_40**: Already present but underweighted. Ranking RSI itself makes overbought/oversold levels regime-relative rather than absolute.\n\n4. **vol_rank_60**: Extended from vol_rank_40 to capture longer-term volatility percentile, making volatility regime features more stable.\n\n**Additional Improvements:**\n\n- Reduced feature count from ~95 to ~80 by removing redundant absolute-value features that failed in prior generations\n- Kept successful z-scored features (ret_z_8, ret_z_13, ret_z_21) which already provide some normalization\n- Maintained interaction terms (mom_x_volreg, momentum_vol_interaction) as they combine normalized signals\n- Slightly reduced regularization (lambda 1.25\u21921.15, alpha 0.10\u21920.08) to allow model to use these more stable features\n- Increased min_child_weight (4\u21925) to force higher-sample patterns that generalize better\n\nThis approach directly addresses the regime shift problem: when val period volatility or trend character differs from train, ranked features maintain their predictive power because they measure relative position in the current distribution rather than absolute levels.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:12:12.632161",
+  "llm_cost": 0.159726,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

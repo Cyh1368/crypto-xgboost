@@ -1,0 +1,267 @@
+<NAME>
+regime_invariant_zscore_and_interaction
+</NAME>
+
+<DESCRIPTION>
+The model suffers from severe slope collapse (0.0013 on val vs 0.018 on train) and prediction collapse (std ratio 0.06). This indicates the model is overfitting to noise and failing to generalize across market regimes. 
+
+I am proposing three key changes:
+1. **Regime-Invariant Normalization**: Increasing the Z-score rolling window from 15-20 to 100-200. A 15-bar window (3.75 hours) is too short and removes the actual signal, while a 100-200 bar window (25-50 hours) captures the "state" of the market relative to recent history without losing the trend.
+2. **Feature Interaction**: Adding a `momentum_vol_interaction` (Return * Volatility Regime). This allows the model to learn that momentum in a high-volatility regime has different predictive power than in a low-volatility regime.
+3. **Hyperparameter Tuning**: Reducing `max_depth` to 4 and increasing `min_child_weight` to 5 to force the model to learn more robust, higher-sample patterns. Lowering `reg_lambda` and `reg_alpha` to combat the "prediction collapse" and encourage the model to output a wider range of values (improving slope and std ratio).
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 350,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.1,
+    "reg_lambda": 0.5,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.2,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 450,
+    "max_depth": 4,
+    "min_child_weight": 5,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.2,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.18     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build regime-invariant features using short lookbacks and Z-score normalization.
+    All features must use only past data (no lookahead).
+    Returns a DataFrame aligned to df.index.
+    """
+    feat = pd.DataFrame(index=df.index)
+
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    log_ret = np.log(close / close.shift(1))
+
+    # Helper: Z-score within rolling window (regime-invariant)
+    def z_score_rolling(s, window=20):
+        mean = s.rolling(window).mean()
+        std = s.rolling(window).std()
+        return (s - mean) / (std + 1e-9)
+
+    # --- Short-lookback Returns (5-12 bars, Z-scored) ---
+    for lag in [1, 2, 3, 6, 12]:
+        ret = close.pct_change(lag)
+        feat[f'ret_{lag}'] = ret
+        feat[f'ret_z_{lag}'] = z_score_rolling(ret, 15)
+
+    # --- Short-lookback Volatility (5-15 bars) ---
+    for w in [5, 10, 15]:
+        vol = log_ret.rolling(w).std()
+        feat[f'vol_{w}'] = vol
+        feat[f'vol_z_{w}'] = z_score_rolling(vol, 20)
+
+    # --- Volatility Trend (rate of change, regime-change signal) ---
+    vol_5 = log_ret.rolling(5).std()
+    vol_15 = log_ret.rolling(15).std()
+    feat['vol_trend_5_15'] = (vol_5 - vol_15) / (vol_15 + 1e-9)
+    feat['vol_accel'] = vol_5.diff(3)
+
+    # --- RSI (short periods for faster adaptation) ---
+    for period in [6, 9]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        feat[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+
+    # --- Bollinger Bands (short window) ---
+    bb_mid = close.rolling(10).mean()
+    bb_std = close.rolling(10).std()
+    feat['bb_pct'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+    feat['bb_pct_z'] = z_score_rolling(feat['bb_pct'], 15)
+
+    # --- ATR (short window) ---
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+    feat['atr_10'] = tr.rolling(10).mean()
+    feat['atr_norm'] = feat['atr_10'] / (close + 1e-9)
+
+    # --- MACD (short spans for faster response) ---
+    ema8 = close.ewm(span=8, adjust=False).mean()
+    ema17 = close.ewm(span=17, adjust=False).mean()
+    macd = ema8 - ema17
+    feat['macd_signal'] = macd - macd.ewm(span=6, adjust=False).mean()
+    feat['macd_z'] = z_score_rolling(macd, 20)
+
+    # --- Volume (short lookback) ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_10'] = volume / (volume.rolling(10).mean() + 1e-9)
+    feat['vol_ratio_z'] = z_score_rolling(feat['volume_ratio_5'], 15)
+
+    # --- Session / Time ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # --- Short-term Trend & Efficiency ---
+    trend_10 = (close / close.shift(10) - 1) * 10000
+    feat['trend_dir_10'] = np.sign(trend_10)
+    feat['trend_strength_10'] = np.abs(trend_10)
+
+    # --- Efficiency Trend (rate of change in price efficiency) ---
+    efficiency_5 = (close - close.shift(5)).abs() / (close.diff().abs().rolling(5).sum() + 1e-9)
+    efficiency_10 = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+    feat['efficiency_5'] = efficiency_5
+    feat['efficiency_trend'] = (efficiency_5 - efficiency_10) / (efficiency_10 + 1e-9)
+
+    # --- Short-term Mean Reversion ---
+    sma_5 = close.rolling(5).mean()
+    sma_10 = close.rolling(10).mean()
+    feat['price_sma5_dev'] = (close - sma_5) / (sma_5 + 1e-9)
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['sma_cross_5_10'] = (sma_5 - sma_10) / (sma_10 + 1e-9)
+
+    # --- Momentum × Volatility (regime-adaptive) ---
+    ret_3 = close.pct_change(3)
+    vol_10 = log_ret.rolling(10).std()
+    feat['momentum_vol_adj'] = ret_3 / (vol_10 + 1e-9)
+    feat['momentum_z'] = z_score_rolling(ret_3, 15)
+
+    # --- Volume × Price Position ---
+    vol_ratio = volume / (volume.rolling(10).mean() + 1e-9)
+    feat['volume_price_pressure'] = vol_ratio * feat['price_sma5_dev']
+
+    # --- Candle Structure ---
+    feat['candle_body_ratio'] = (close - df['open']).abs() / ((high - low) + 1e-9)
+    feat['upper_wick_ratio'] = (high - df[['open', 'close']].max(axis=1)) / ((high - low) + 1e-9)
+    feat['lower_wick_ratio'] = (df[['open', 'close']].min(axis=1) - low) / ((high - low) + 1e-9)
+
+    # --- Close Position in Short Range ---
+    low_10 = low.rolling(10).min()
+    high_10 = high.rolling(10).max()
+    feat['close_position_10'] = (close - low_10) / (high_10 - low_10 + 1e-9)
+
+    # --- Return Acceleration (regime-change signal) ---
+    feat['ret_accel_3'] = close.pct_change(1).diff(3)
+
+    # --- Orderbook (if available) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row, tau=1):
+            try:
+                bids = np.array(row['bids'])
+                asks = np.array(row['asks'])
+                bid_vol = np.sum(bids[:, 1] * np.exp(-tau * np.arange(len(bids))))
+                ask_vol = np.sum(asks[:, 1] * np.exp(-tau * np.arange(len(asks))))
+                return (bid_vol - ask_vol) / (bid_vol + ask_vol + 1e-9)
+            except Exception:
+                return 0.0
+        feat['obi_tau1'] = df.apply(lambda r: obi(r, 1), axis=1)
+
+    # --- Funding Rate (if available) ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_momentum'] = fr.diff(2)
+        feat['funding_z'] = z_score_rolling(fr, 20)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+=======
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build regime-invariant features using Z-score normalization and interactions.
+    """
+    feat = pd.DataFrame(index=df.index)
+    close, volume, high, low = df['close'], df['volume'], df['high'], df['low']
+    log_ret = np.log(close / close.shift(1))
+
+    def z_score(s, window=100):
+        return (s - s.rolling(window).mean()) / (s.rolling(window).std() + 1e-9)
+
+    # --- Returns & Momentum (Z-scored over longer window for stability) ---
+    for lag in [1, 4, 12]:
+        ret = close.pct_change(lag)
+        feat[f'ret_z_{lag}'] = z_score(ret, 200)
+
+    # --- Volatility Regime ---
+    vol_20 = log_ret.rolling(20).std()
+    vol_100 = log_ret.rolling(100).std()
+    feat['vol_z_20'] = z_score(vol_20, 100)
+    feat['vol_regime'] = vol_20 / (vol_100 + 1e-9)
+
+    # --- Feature Interactions ---
+    feat['mom_vol_interaction'] = close.pct_change(4) * feat['vol_regime']
+    feat['mom_vol_adj'] = close.pct_change(4) / (vol_20 + 1e-9)
+
+    # --- Technical Indicators ---
+    # RSI
+    delta = close.diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    feat['rsi_14'] = 100 - 100 / (1 + gain / (loss + 1e-9))
+    
+    # Bollinger Bands
+    bb_mid = close.rolling(20).mean()
+    bb_std = close.rolling(20).std()
+    feat['bb_pct'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+
+    # ATR
+    tr = pd.concat([high - low, (high - close.shift(1)).abs(), (low - close.shift(1)).abs()], axis=1).max(axis=1)
+    feat['atr_norm'] = tr.rolling(14).mean() / (close + 1e-9)
+
+    # --- Volume & Efficiency ---
+    feat['rel_vol_z'] = z_score(volume / (volume.rolling(20).mean() + 1e-9), 100)
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['close_pos_20'] = (close - low.rolling(20).min()) / (high.rolling(20).max() - low.rolling(20).min() + 1e-9)
+
+    # --- Time & Structure ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+    feat['candle_body_ratio'] = (close - df['open']).abs() / ((high - low) + 1e-9)
+
+    # --- Conditional Data ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row):
+            try:
+                b, a = np.array(row['bids']), np.array(row['asks'])
+                bv, av = np.sum(b[:, 1]), np.sum(a[:, 1])
+                return (bv - av) / (bv + av + 1e-9)
+            except: return 0.0
+        feat['obi_simple'] = df.apply(obi, axis=1)
+
+    if 'funding_rate' in df.columns:
+        feat['funding_rate'] = df['funding_rate']
+        feat['funding_z'] = z_score(df['funding_rate'], 100)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan).dropna()
+    return feat
+>>>>>>> REPLACE

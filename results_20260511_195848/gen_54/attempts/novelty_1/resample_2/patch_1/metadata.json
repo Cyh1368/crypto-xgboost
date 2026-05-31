@@ -1,0 +1,14 @@
+{
+  "generation": 54,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse_increase_expressivity_lower_reg_alpha",
+  "patch_description": "The validation error indicates the predictions collapse toward the mean, reflected by an extremely low pred_std_ratio (0.0091), which is much below the threshold 0.15. This means the model is underfitting and not capturing signal, possibly due to too strong regularization and/or insufficient model expressivity.\n\nRoot cause:\n- The current reg_alpha=0.1 imposes L1 regularization that may be too strong given the feature set, causing coefficients to shrink towards zero.\n- Model max_depth=4 and n_estimators=300 with low learning_rate=0.01 may be too conservative and slow to learn.\n\nFix:\n- Reduce reg_alpha from 0.1 to 0 to reduce L1 penalization.\n- Slightly increase max_depth from 4 to 6 to allow more complex splits.\n- Increase learning_rate to 0.03 to speed up convergence.\n- Keep early_stopping_rounds to prevent overfitting.\nThese changes aim to increase model expressivity and reduce regularization to avoid collapsing predictions.\n\nNo code logic errors in feature building were visible, so no changes made there.\n\nThis fix addresses the \"collapse toward mean\" issue as recommended by the warning.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:07:19.199467",
+  "llm_cost": 0.0041548,
+  "llm_model": "gpt-4.1-mini"
+}

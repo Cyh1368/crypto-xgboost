@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_zscore_boost",
+  "patch_description": "The core strategy addresses the \"slope collapse\" and \"regime shift\" problems by implementing a strictly regime-invariant feature set. \n\nInstead of absolute values or global scaling, I use **locally adaptive z-score normalization** for nearly every feature. Features are transformed based on their rolling mean and standard deviation over a 200-bar window. This ensures that a \"high volume spike\" or \"strong momentum\" is defined relative to the immediate market context (2 days of history), rather than the absolute levels of the training set.\n\nKey Innovations:\n1.  **Regime Character Features**: Included an Efficiency Ratio trend and Volatility Acceleration to detect when the market transitions from trending to mean-reverting.\n2.  **Momentum-Vol Interaction**: Momentum is normalized by local volatility (a rolling Sharpe-like measure), which is a more robust predictor across different volatility regimes.\n3.  **Regularization Shift**: To combat the slope collapse (predictions being too small), I simplified the trees (`max_depth=3`) while significantly increasing the population required for a split (`min_child_weight=80`). This forces the model to ignore regime-specific noise and focus on high-confidence, global patterns.\n4.  **Temporal Consistency**: Added Short-Mid-Long lookback horizons (12, 48, 144 bars) to capture multi-timeframe structures.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:58:21.588652",
+  "llm_cost": 0.013406999999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

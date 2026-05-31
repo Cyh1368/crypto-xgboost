@@ -1,0 +1,14 @@
+{
+  "generation": 65,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "increase_expressivity_and_microstructure",
+  "patch_description": "This edit aims to address the \"predictions collapsed toward mean\" warning by increasing model expressivity and adding higher-resolution features. \n1.  **Hyperparameters**: Increased `max_depth` to 6, `learning_rate` to 0.05, and `n_estimators` to 1000, while reducing regularization (`reg_lambda` and `min_child_weight`). This allows the model to capture more complex patterns and move away from the mean.\n2.  **Volatility Features**: Added `vol_of_vol_24` and `skew_20` to capture the stability and asymmetry of the volatility regime.\n3.  **Range Features**: Added `dist_max_48` and `dist_min_48` to provide the model with context regarding the current price's position relative to the 12-hour high/low.\n4.  **Volume Features**: Added `log_vol` to capture the raw scale of activity, which can be useful for regime identification.\n5.  **Interaction Features**: Added `vol_weighted_mom` to combine price momentum with relative volume intensity.\n6.  **Optimization**: Replaced the `apply`-based OBI calculation with a faster list comprehension to ensure execution stays within the 3-minute limit.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:33:21.202860",
+  "llm_cost": 0.0185265,
+  "llm_model": "gemini-3-flash-preview"
+}

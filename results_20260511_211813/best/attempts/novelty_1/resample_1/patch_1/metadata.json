@@ -1,0 +1,14 @@
+{
+  "generation": 53,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "deregularize_and_accelerate",
+  "patch_description": "The model is suffering from severe prediction collapse (pred_std_ratio=0.08) despite increasingly complex features. This indicates the regularization is too aggressive, suppressing the model's ability to express market signals. The solution is to:\n\n1. Eliminate L2 regularization (reg_lambda=0) and L1 regularization (reg_alpha=0) to allow full expressivity\n2. Increase learning_rate from 0.05 to 0.15 for faster convergence and stronger signal capture\n3. Reduce n_estimators from 1200 to 400 to prevent overfitting when regularization is removed\n4. Set max_depth to 5 for a balance between capturing interactions and avoiding noise fitting\n5. Tighten early_stopping to 50 rounds to prevent training collapse\n6. Remove 3-4 weakest features (vol_zscore_100, rolling_sharpe_14, momentum_consistency_12) that likely add noise\n\nThis approach trades off against train overfitting (which is acceptable) in exchange for unlocking pred_std_ratio and val_DA.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:29:54.945605",
+  "llm_cost": 0.028935999999999996,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

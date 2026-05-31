@@ -1,0 +1,148 @@
+Looking at the performance metrics, I can see two key issues:
+
+1. **Prediction collapse** (pred_std_ratio=0.0931): The model is still predicting too close to the mean despite loosening regularization. This suggests the features lack sufficient signal or the model can't extract it effectively.
+
+2. **Overfitting** (overfit_gap=0.1188): train_DA=0.6363 vs val_DA=0.5175 indicates the model is memorizing training patterns that don't generalize. The current regularization (reg_alpha=0.0, reg_lambda=0.05) is too loose.
+
+3. **Trend**: Previous attempts show that pred_std_ratio consistently stays low (0.03-0.09) across all configurations, suggesting the feature set may lack discriminative power or the model architecture needs adjustment.
+
+## Strategy
+
+1. **Increase regularization** to combat overfitting while maintaining expressivity
+2. **Add regime-aware features** that condition predictions on market state (volatility regime, trend strength)
+3. **Add lagged target features** (past prediction errors) to help the model learn what it's missing
+4. **Reduce model depth** slightly to prevent overfitting while keeping estimators high
+5. **Adjust clipping** to preserve more signal in the target
+
+The key insight is that the model needs both:
+- Better regularization to prevent overfitting
+- More informative features that capture regime-dependent patterns
+- Features that help the model understand when it should make strong vs. weak predictions
+
+<NAME>
+regime_aware_features_with_regularization
+</NAME>
+
+<DESCRIPTION>
+This edit addresses both overfitting and prediction collapse by:
+
+1. **Increasing regularization** (reg_lambda from 0.05 to 0.25, reg_alpha from 0.0 to 0.005) to reduce overfitting gap while maintaining some model expressivity.
+
+2. **Reducing max_depth** from 7 to 6 and adjusting learning_rate to 0.04 to prevent the model from fitting noise.
+
+3. **Adding regime-aware features** that explicitly encode market state:
+   - Volatility regime classification (high/normal/low)
+   - Trend strength indicator
+   - Momentum-volatility interaction features
+   - These help the model make regime-conditional predictions
+
+4. **Adding lagged features** that capture recent prediction patterns:
+   - Recent return momentum with different decay weights
+   - Volatility persistence features
+   - These provide additional signal for the model to learn from
+
+5. **Adjusting CLIP_PERCENTILE** from 95 to 96 to preserve slightly more signal in extreme moves.
+
+The rationale: Previous attempts show pred_std_ratio stuck around 0.03-0.09 despite feature engineering. This suggests the model needs explicit regime indicators to know when to make strong predictions. Combined with tighter regularization, this should improve both generalization and prediction variance.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 95
+MIN_PRED_STD_RATIO = 0.15
+=======
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.005,
+    "reg_lambda": 0.25,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.04,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 96
+MIN_PRED_STD_RATIO = 0.15
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    feat["vol_ratio_2_8"] = log_ret.rolling(2).std() / (rv_8 + 1e-9)
+
+    # A smooth compression/expansion state
+    feat["vol_state"] = np.tanh((feat["vol_ratio_8_96"] - 1.0) * 1.5)
+=======
+    feat["vol_ratio_2_8"] = log_ret.rolling(2).std() / (rv_8 + 1e-9)
+
+    # A smooth compression/expansion state
+    feat["vol_state"] = np.tanh((feat["vol_ratio_8_96"] - 1.0) * 1.5)
+
+    # ── Regime classification features
+    vol_percentile_20 = rv_24.rolling(96).apply(lambda x: (x[-1] > np.percentile(x, 66)).astype(float), raw=False)
+    feat["vol_regime_high"] = vol_percentile_20
+    feat["vol_regime_low"] = (rv_24 < rv_24.rolling(96).quantile(0.33)).astype(float)
+
+    # Trend strength: how aligned are the EMAs?
+    ema_alignment = ((ema_fast > ema_mid).astype(float) + (ema_mid > ema_slow).astype(float)) / 2.0
+    feat["trend_strength"] = ema_alignment * np.abs(feat["trend_ratio"]) / (np.abs(feat["trend_ratio"]).rolling(20).mean() + 1e-9)
+
+    # Momentum persistence: weighted recent returns
+    feat["momentum_decay_3"] = (r1 * 0.5 + r3 * 0.3 + r6 * 0.2)
+    feat["momentum_decay_6"] = (r3 * 0.4 + r6 * 0.35 + r12 * 0.25)
+
+    # Volatility persistence
+    feat["vol_persistence"] = rv_8 / (rv_8.rolling(24).mean() + 1e-9)
+
+    # Regime-conditional momentum: momentum strength depends on vol regime
+    feat["momentum_in_high_vol"] = feat["momentum_decay_3"] * feat["vol_regime_high"]
+    feat["momentum_in_low_vol"] = feat["momentum_decay_3"] * feat["vol_regime_low"]
+
+    # Trend-vol interaction: trend strength in different vol regimes
+    feat["trend_in_high_vol"] = feat["trend_strength"] * feat["vol_regime_high"]
+    feat["trend_in_low_vol"] = feat["trend_strength"] * feat["vol_regime_low"]
+=======
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    feat["breakout_pressure"] = feat["range_pos_20"] * (feat["volume_ratio_5"] - 1.0)
+
+    # ── Orderbook features, if present
+=======
+    feat["breakout_pressure"] = feat["range_pos_20"] * (feat["volume_ratio_5"] - 1.0)
+
+    # ── Additional signal features for regime-aware prediction
+    # Mean reversion signal: how far from recent mean?
+    feat["price_z_20"] = (close - close.rolling(20).mean()) / (close.rolling(20).std() + 1e-9)
+    feat["price_z_60"] = (close - close.rolling(60).mean()) / (close.rolling(60).std() + 1e-9)
+
+    # Volatility of volatility: meta-volatility
+    feat["vol_of_vol_8"] = rv_8.rolling(20).std() / (rv_8.rolling(20).mean() + 1e-9)
+
+    # ── Orderbook features, if present
+>>>>>>> REPLACE
+</DIFF>

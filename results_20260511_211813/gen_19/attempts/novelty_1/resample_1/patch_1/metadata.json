@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "regime_shifted_features",
+  "patch_description": "This edit aims to address the main remaining failure mode: prediction collapse toward the mean. The current model already has decent DA, but `pred_std_ratio` is still too low, which usually means the tree ensemble is not seeing enough separable structure after scaling and regularization.\n\nI\u2019m proposing two complementary changes:\n\n1. **Loosen the XGBoost regularization slightly and increase model capacity carefully**\n   - Lower `min_child_weight` and `gamma` so trees can split on smaller but useful micro-signals.\n   - Reduce `reg_lambda` a bit and increase `n_estimators` modestly with a slightly lower learning rate, which often improves out-of-sample DA while avoiding a sharp overfit jump.\n   - This should help increase prediction dispersion without making the model unstable.\n\n2. **Add a small set of strictly past-only regime and shape features**\n   - Use `shift(1)` before rolling statistics so the features are explicitly lagged.\n   - Add short-horizon return dispersion, skew-ish candle structure, rolling slope, and volume surprise features.\n   - Add a couple of regime-conditioned interactions that are useful in 15-minute crypto perp data, especially when momentum and volatility regimes differ.\n   - Keep feature count well below 80.\n\nOverall, the goal is to increase expressivity enough to lift `pred_std_ratio` above the collapse zone while preserving the current ~0.53 DA level or better.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:21:45.772344",
+  "llm_cost": 0.027822,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb_crossover",
+  "patch_description": "This crossover version blends the stronger parts of the prior implementations while targeting the main failure mode: regime-specific features that lose slope on the validation period.\n\nKey changes:\n- Shifts feature emphasis toward shorter lookbacks and faster-decaying market structure.\n- Adds rolling z-score / normalized versions of momentum, volatility, volume, and range features to make them more regime-invariant.\n- Includes explicit regime-change features such as volatility trend, autocorrelation trend, and efficiency trend.\n- Keeps the feature count safely below 80 while preserving the strongest robust signals.\n- Uses a slightly less collapsed XGBoost configuration: moderate depth, lower regularization than the most constrained versions, and enough estimators for expressivity without overfitting too hard.\n- Preserves the original program interface and behavior outside the evolved blocks.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:44:25.691162",
+  "llm_cost": 0.030039000000000003,
+  "llm_model": "gpt-5.4-mini"
+}

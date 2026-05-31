@@ -1,0 +1,7 @@
+{
+  "combined_score": -10.0,
+  "public": {
+    "error": "name 'CLIP_PERCENTILE' is not defined"
+  },
+  "private": {}
+}

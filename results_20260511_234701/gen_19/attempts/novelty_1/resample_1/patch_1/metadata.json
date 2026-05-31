@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_zscoring",
+  "patch_description": "The model suffers from a severe slope collapse (0.074 to 0.006) and a standard deviation decay at the validation boundary, indicating the learned patterns are bound to the specific volatility or trend regimes of the training data.\n\nI am proposing the following changes:\n1.  **Regime-Invariant Features:** Systematizing the use of rolling Z-scores for returns, volatility, volume, and technical indicators (RSI, BB, VWAP). This ensures that a \"large\" move is defined relative to the current local window, making features invariant to market-wide volatility shifts.\n2.  **Character-Change Features:** Including Kaufman's Efficiency Ratio and Volatility Ratios to capture the change in market character (trending vs. mean-reverting), which is essential for generalizing across different crypto market regimes.\n3.  **Balanced Regularization:** The current program uses an extremely high learning rate (0.15) and no regularization (min_child_weight=1, reg=0), which explains the high train Pearson (0.48) and low validation (0.05). I will lower the depth, increase min_child_weight significantly, and add L2 regularization to force the model to identify robust signals.\n4.  **Std Ratio Management:** To improve the pred_std_ratio, we focus on standardized return features that maintain high variance in their predictive values without overfitting the noise.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:51:05.237279",
+  "llm_cost": 0.027546,
+  "llm_model": "gemini-3-flash-preview"
+}

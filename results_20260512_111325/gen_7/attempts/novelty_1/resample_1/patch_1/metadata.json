@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This version crosses the stronger parts of both prior implementations: it keeps the regime-adaptive rolling z-score idea, adds shorter lookback signals and feature-rate-of-change terms, but trims overly long, regime-specific windows that likely caused slope collapse out-of-sample. I also reduce model complexity and regularization pressure so the regressor can keep more predictive variance, while staying within the same interface and runtime constraints. The feature set remains under 80 columns and uses only past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:15:02.109160",
+  "llm_cost": 0.026390999999999998,
+  "llm_model": "gpt-5.4-mini"
+}

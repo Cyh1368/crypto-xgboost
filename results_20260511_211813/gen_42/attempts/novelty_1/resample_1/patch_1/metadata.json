@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "reduce_regularization_add_regime_features",
+  "patch_description": "The current model is severely over-regularized (reg_lambda=0.7, reg_alpha=0.02, min_child_weight=4), causing pred_std_ratio=0.0185 and collapse penalty=0.658. This is the dominant failure mode.\n\nThe best prior run (score -0.16) achieved pred_std_ratio=0.058 by:\n1. Reducing reg_lambda from 0.7 to 0.02\n2. Reducing reg_alpha from 0.02 to 0.001\n3. Reducing min_child_weight from 4 to 1\n4. Increasing learning_rate from 0.03 to 0.08\n5. Adding binary regime signals and momentum interactions\n\nI will apply these changes plus add high-contrast regime features that create natural tree splits, which empirically improved DA in prior runs.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:27:11.503043",
+  "llm_cost": 0.040047,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

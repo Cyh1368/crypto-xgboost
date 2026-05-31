@@ -1,0 +1,8 @@
+{
+  "combined_score": -10.0,
+  "public": {
+    "error": "invalid syntax (main.py, line 29)"
+  },
+  "private": {},
+  "text_feedback": "invalid syntax (main.py, line 29)"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse",
+  "patch_description": "The program is suffering from severe **prediction collapse** (pred_std_ratio=0.0091, well below the MIN_PRED_STD_RATIO=0.15 threshold). This means the model is predicting values very close to the mean, losing all signal.\n\nRoot causes identified:\n1. **Excessive regularization**: reg_alpha=0.1 and reg_lambda=1.0 are too strong, combined with high min_child_weight=10, which severely constrains the model's ability to learn patterns.\n2. **Too few estimators**: n_estimators=300 with learning_rate=0.01 may not be enough to overcome regularization.\n3. **Feature engineering issues**: The build_features() function drops NaN rows, which can misalign indices between features and targets, causing data leakage or loss of training samples.\n4. **Subsample too low**: subsample=0.6 further reduces model expressivity.\n\nThe fix:\n1. Dramatically reduce regularization (reg_alpha \u2192 0.01, reg_lambda \u2192 0.1)\n2. Reduce min_child_weight from 10 to 1 to allow more flexible splits\n3. Increase n_estimators to 500 and learning_rate to 0.05 for better learning\n4. Increase subsample to 0.8 for more stable training\n5. Fix feature engineering to preserve index alignment by filling NaN values instead of dropping rows\n6. Add more predictive features and interactions to give the model stronger signals",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:09:20.896596",
+  "llm_cost": 0.016438,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

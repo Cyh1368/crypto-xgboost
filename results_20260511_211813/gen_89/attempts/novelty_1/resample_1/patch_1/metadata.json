@@ -1,0 +1,14 @@
+{
+  "generation": 89,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_regime_ensemble",
+  "patch_description": "The core insight from analyzing prior programs is that **prediction collapse** (pred_std_ratio ~0.07) is the dominant failure mode across all attempts. The model is learning to predict near the mean, losing signal expressivity. \n\nKey observations from context programs:\n1. All attempts suffer from collapse despite varying regularization\u2014suggesting the issue is not just hyperparameters but **feature signal quality and model capacity allocation**.\n2. Programs with lower regularization (reg_lambda < 0.15) and higher learning rates (0.06-0.08) achieve slightly better pred_std_ratio (~0.09), but still collapse.\n3. The feature engineering is comprehensive but treats all features equally\u2014no adaptive weighting by regime or signal strength.\n\n**Novel approach: Adaptive Regime-Conditional Feature Scaling + Ensemble Decomposition**\n\nInstead of a single monolithic XGBoost model, I implement:\n1. **Regime-aware feature normalization**: Compute volatility regime (high/low/mid) and apply regime-specific z-score scaling to features. High-vol regimes get different feature emphasis than low-vol regimes.\n2. **Signal-strength filtering**: Pre-compute feature importance proxies (correlation with lagged targets) and boost high-signal features during scaling.\n3. **Ensemble decomposition**: Train separate lightweight XGBoost models for each regime, then blend predictions based on regime probability. This allows the model to learn regime-specific patterns without overfitting.\n4. **Aggressive regularization reduction + higher learning rate**: With regime decomposition handling complexity, reduce L2 regularization and increase learning rate to allow more expressive trees.\n5. **Dynamic target clipping**: Clip targets based on regime-specific percentiles rather than global percentile, preserving signal in high-vol regimes.\n\nThis approach differs fundamentally from prior attempts by:\n- Decomposing the problem into regime-specific sub-problems (not just adding regime features)\n- Using regime-conditional feature scaling to amplify signal in each regime\n- Allowing higher model capacity per regime while maintaining overall regularization\n- Preserving more extreme values in high-volatility regimes where they carry signal",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:45:18.608149",
+  "llm_cost": 0.05544,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

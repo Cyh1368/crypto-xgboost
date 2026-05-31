@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_invariant_zscore_v2",
+  "patch_description": "This iteration focuses on solving the 'slope collapse' and 'prediction collapse' issues by implementing strictly regime-invariant features and adjusting model expressivity. \n\nKey improvements:\n1.  **Rolling Z-Score Normalization**: Most features (returns, RSI, volume, volatility) are now normalized using rolling z-scores (window of 30-60 bars). This ensures that a \"1-sigma\" move in a low-volatility regime is treated similarly to a \"1-sigma\" move in a high-volatility regime, preventing the model from over-weighting high-volatility training periods.\n2.  **Market Character Features**: Added Kaufman Efficiency Ratio and Volatility Ratios (short-term vs long-term) to capture the \"state\" of the market (trending vs. mean-reverting) independently of price scale.\n3.  **Increased Model Expressivity**: To counter the \"collapse toward mean\" warning, I reduced L2 regularization (`reg_lambda`) and increased the `learning_rate`. I also set `min_child_weight` to a moderate level (12) to balance between robustness and the ability to capture distinct market patterns.\n4.  **Feature Interactions**: Retained and refined the `momentum * volatility_regime` interaction, which helps the model scale its directional conviction based on current market activity.\n5.  **Target Clipping**: Adjusted `CLIP_PERCENTILE` to 96 to focus the model on the most reliable 96% of the distribution, reducing the influence of extreme tail events that often degrade generalization.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:47:13.723609",
+  "llm_cost": 0.015151000000000001,
+  "llm_model": "gemini-3-flash-preview"
+}

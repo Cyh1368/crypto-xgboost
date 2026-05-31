@@ -1,0 +1,17 @@
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 700,       # increased estimators for more capacity
+    "max_depth": 6,            # allow deeper trees to capture complexity
+    "min_child_weight": 1,     # keep low to allow splits
+    "reg_alpha": 0.0,          # remove L1 regularization to allow more expressivity
+    "reg_lambda": 0.0,         # remove L2 regularization
+    "subsample": 1.0,          # use full samples for training
+    "colsample_bytree": 1.0,   # use all features each tree
+    "learning_rate": 0.05,     # keep learning rate for good convergence speed
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 30,
+}
+# EVOLVE-BLOCK-END

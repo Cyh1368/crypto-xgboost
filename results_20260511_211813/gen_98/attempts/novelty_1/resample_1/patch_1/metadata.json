@@ -1,0 +1,14 @@
+{
+  "generation": 98,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "lagged_regime_boost",
+  "patch_description": "This update aims to fix the current \u201cprediction collapse\u201d symptom by making the tree ensemble a bit more expressive while keeping regularization moderate. The main issue in the latest results is that `pred_std_ratio` is still low, which means the model is too conservative and not separating bullish/bearish cases enough.\n\nOn the feature side, I\u2019m adding a compact set of strictly past-only, lagged regime/momentum features. These are designed to help XGBoost learn when trend-following vs mean-reversion behavior is more likely, especially across changing volatility conditions. I also shift the orderbook/funding inputs by one bar to make the past-only constraint explicit and to reduce any chance of same-bar leakage.\n\nThe feature count remains comfortably below 80, and the added calculations are lightweight enough to stay within runtime limits.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:46:14.030360",
+  "llm_cost": 0.02382675,
+  "llm_model": "gpt-5.4-mini"
+}

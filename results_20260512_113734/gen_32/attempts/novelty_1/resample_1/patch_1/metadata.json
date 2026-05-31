@@ -1,0 +1,14 @@
+{
+  "generation": 32,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_crossover",
+  "patch_description": "This version crosses over the strongest ideas from the prior programs while keeping the feature set compact and fast.\n\nMain changes:\n- Emphasizes shorter lookbacks (5\u201320 bars) to reduce regime overfitting.\n- Adds rolling z-scored returns, volatility, volume, and price-location features for regime invariance.\n- Adds explicit regime-change features: volatility trend, efficiency trend, autocorrelation trend.\n- Keeps the best interaction terms, especially momentum \u00d7 volatility regime and volume \u00d7 price position.\n- Uses slightly more expressive XGBoost settings with less restrictive regularization to combat prediction collapse.\n- Preserves the same inputs, outputs, and overall program structure, while staying safely under the feature-count limit.\n\nThe goal is to improve validation slope and prediction spread without sacrificing the current directional accuracy gains.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:56:39.794772",
+  "llm_cost": 0.0400785,
+  "llm_model": "gpt-5.4-mini"
+}

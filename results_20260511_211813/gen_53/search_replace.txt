@@ -1,0 +1,99 @@
+Looking at the performance metrics across all iterations, I can see a clear pattern:
+
+1. **All attempts have `pred_std_ratio` < 0.10** (0.01 → 0.08), indicating severe **prediction collapse** toward the mean
+2. **val_DA hovers around 0.51-0.53**, barely above random (0.50)
+3. **collapse penalty dominates the score** (0.335-0.708), causing negative combined scores
+4. Despite adding more features and increasing depth, the model still predicts near-constant values
+
+## Root Cause Analysis
+
+The problem is **excessive regularization and insufficient signal capture**:
+- `reg_lambda` values (0.01-0.5) are too high for sparse market signals
+- Low `learning_rate` (0.02-0.05) combined with high regularization suppresses feature importance
+- The model is **over-regularized relative to the signal-to-noise ratio** in 15-min perp futures
+- Features are good but the model can't express them effectively
+
+## Solution Strategy
+
+1. **Dramatically reduce regularization** (reg_lambda → 0, reg_alpha → 0) to allow model expressivity
+2. **Increase learning_rate** to 0.15 for faster convergence and stronger signals
+3. **Reduce n_estimators** to avoid overfitting with low regularization
+4. **Adjust max_depth to 5** for a sweet spot: deep enough for interactions, shallow enough to avoid noise
+5. **Tighten early_stopping** to prevent training artifacts when using low regularization
+6. **Remove weakest features** (vol_zscore_100, rolling_sharpe_14, momentum_consistency_12) that may be adding noise rather than signal
+
+The strategy is: **less regularization + faster learning + fewer but stronger features = higher pred_std_ratio and better generalization**.
+
+<NAME>
+deregularize_and_accelerate
+</NAME>
+
+<DESCRIPTION>
+The model is suffering from severe prediction collapse (pred_std_ratio=0.08) despite increasingly complex features. This indicates the regularization is too aggressive, suppressing the model's ability to express market signals. The solution is to:
+
+1. Eliminate L2 regularization (reg_lambda=0) and L1 regularization (reg_alpha=0) to allow full expressivity
+2. Increase learning_rate from 0.05 to 0.15 for faster convergence and stronger signal capture
+3. Reduce n_estimators from 1200 to 400 to prevent overfitting when regularization is removed
+4. Set max_depth to 5 for a balance between capturing interactions and avoiding noise fitting
+5. Tighten early_stopping to 50 rounds to prevent training collapse
+6. Remove 3-4 weakest features (vol_zscore_100, rolling_sharpe_14, momentum_consistency_12) that likely add noise
+
+This approach trades off against train overfitting (which is acceptable) in exchange for unlocking pred_std_ratio and val_DA.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency ---
+    feat['momentum_consistency_12'] = np.sign(log_ret).rolling(12).sum()
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['rolling_sharpe_14'] = log_ret.rolling(14).mean() / (log_ret.rolling(14).std() + 1e-9)
+    feat['vol_zscore_100'] = (volume - volume.rolling(100).mean()) / (volume.rolling(100).std() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+=======
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+>>>>>>> REPLACE
+</DIFF>

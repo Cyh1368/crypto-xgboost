@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "increase_expressivity_and_features",
+  "patch_description": "The model was suffering from \"prediction collapse,\" where it predicted values too close to the mean, resulting in a very low `pred_std_ratio` (0.0193 vs target 0.15). This was caused by excessive regularization and insufficient model expressivity. \n\nThe fix involves:\n1. Increasing `learning_rate` (0.04 -> 0.12) and `max_depth` (6 -> 7) to allow the model to capture more complex patterns.\n2. Significantly reducing regularization (`reg_lambda` 1.5 -> 0.05, `reg_alpha` 0.05 -> 0.0) and `min_child_weight` (1) to encourage the model to make more confident predictions.\n3. Expanding the feature set to include more granular lags, momentum indicators, and volatility-adjusted returns (Sharpe-like features) to provide stronger signals.\n4. Adding interaction features (e.g., return * volatility) to help the model identify regime-dependent signals.\n5. Ensuring the feature count stays under the 80-feature limit while maximizing predictive power.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-11T20:11:57.081805",
+  "llm_cost": 0.0044395,
+  "llm_model": "gemini-3-flash-preview"
+}

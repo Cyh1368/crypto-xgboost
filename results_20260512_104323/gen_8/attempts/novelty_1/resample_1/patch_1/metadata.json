@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "shorter_lookbacks_zscore_normalization",
+  "patch_description": "The primary issue is that val_slope collapses to 0.006 (8.2% of train_slope), indicating features that work in training don't generalize to the validation period. This suggests regime-specific patterns.\n\nMy strategy addresses this through three coordinated changes:\n\n1. **Shorter lookback windows**: Reduce long lookback periods (60, 200) to shorter ones (5-20 bars). Shorter windows adapt faster to regime changes and decay less across time periods.\n\n2. **Rolling z-score normalization**: Instead of raw values, compute z-scores within rolling windows. This makes features regime-invariant - a \"high RSI\" means the same thing regardless of whether we're in a bull or bear market.\n\n3. **Rate-of-change features**: Add features that measure how market character is changing (volatility trend, momentum acceleration) rather than absolute levels. These tend to be more stable across regimes.\n\n4. **Reduce model complexity**: Lower n_estimators from 400 to 200 and increase min_child_weight from 1 to 5. This forces the model to learn only robust patterns with high sample support, preventing overfitting to training-period quirks.\n\n5. **Feature interaction**: Add a simple momentum \u00d7 volatility_regime multiplicative term that often generalizes better than either feature alone.\n\nThe key insight: instead of measuring \"price is X% above 60-bar MA\" (regime-dependent), we measure \"price is Z standard deviations above its recent average\" (regime-independent).",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:45:36.631953",
+  "llm_cost": 0.09814800000000001,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

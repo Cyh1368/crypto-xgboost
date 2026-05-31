@@ -1,0 +1,14 @@
+{
+  "generation": 42,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_aware_xgb_crossover",
+  "patch_description": "This crossover keeps the strongest ideas from the prior scripts while targeting the main failure mode: train-to-validation slope collapse under a second regime shift. I combined the most transferable short-horizon and regime-change features from the better-performing variants, while removing longer, more regime-specific lookbacks that likely overfit the earlier market state.\n\nKey changes:\n- Shorter, more regime-invariant windows dominate the feature set.\n- Added rolling z-score normalization for returns, volatility, volume, and price position.\n- Added change-of-character features: volatility trend, autocorrelation trend, efficiency trend, dispersion trend.\n- Added multiplicative interactions that often generalize better than standalone components.\n- Kept feature count safely under 80 and used only past data.\n- Tuned XGBoost to be a bit more expressive than the heavily regularized runs, while still controlling overfit.\n\nThe goal is to improve validation slope and prediction dispersion without regressing DA too much.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T11:59:52.659774",
+  "llm_cost": 0.039699750000000006,
+  "llm_model": "gpt-5.4-mini"
+}

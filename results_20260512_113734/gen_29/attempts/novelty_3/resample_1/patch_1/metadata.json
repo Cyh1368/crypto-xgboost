@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 3,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "add_cross_sectional_rank_features",
+  "patch_description": "The current program achieves a slope_ratio of 19.9%, which is the best so far, but still far from the target of 25%+. The primary issue is that features are regime-specific - they work well in training but degrade in validation.\n\nThe recommendation suggests adding cross-sectional rank features within rolling windows to enhance regime invariance. While the current program already has `vol_rank_60`, we should extend this ranking approach to other key features. Ranking transforms absolute values into percentile positions within a rolling window, making them distribution-invariant across regime shifts.\n\nI will add three new rank-based features:\n1. `ret_3_rank_40` - ranks 3-period returns within a 40-bar window\n2. `efficiency_10_rank_60` - ranks 10-period efficiency within a 60-bar window  \n3. `rsi_14_rank_40` - ranks RSI(14) within a 40-bar window\n\nThese features should be more stable across regime shifts than their raw counterparts because they measure relative position rather than absolute level. A 1% return might be extreme in low-vol regimes but normal in high-vol regimes - the rank captures this context automatically.\n\nThe window sizes (40-60 bars) are chosen to be:\n- Long enough to capture meaningful distribution shifts\n- Short enough to stay responsive to recent market character\n- Aligned with the successful `vol_rank_60` already in use\n\nThis maintains the 80-feature limit while adding genuinely regime-invariant signals that should improve the slope_ratio without sacrificing the excellent generalization_ratio (96.0%).",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:36:15.462628",
+  "llm_cost": 0.109692,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

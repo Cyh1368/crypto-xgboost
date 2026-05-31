@@ -1,0 +1,14 @@
+{
+  "generation": 68,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover version blends the strongest parts of the prior implementations while targeting the main failure mode: slope collapse on the validation regime.  \nKey changes:\n- Emphasizes shorter lookbacks and faster-decaying signals to improve regime transfer.\n- Adds rolling z-score and rank-normalized features for regime invariance.\n- Adds explicit \u201cchange in market character\u201d features: volatility trend, efficiency trend, trend-change, and regime shifts.\n- Keeps the feature count compact and below the limit, while preserving strong signal families from the best prior scripts.\n- Uses a slightly less constrained XGBoost setup to reduce prediction collapse and improve output variance without overfitting too aggressively.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:38:06.848731",
+  "llm_cost": 0.0414585,
+  "llm_model": "gpt-5.4-mini"
+}

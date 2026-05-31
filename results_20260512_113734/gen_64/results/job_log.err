@@ -1,0 +1,2 @@
+/home/chengyou1368/crypto-xgboost/results_20260512_113734/gen_64/main.py:248: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  feat["funding_x_volregime"] = fr * feat["vol_regime_10_20"]

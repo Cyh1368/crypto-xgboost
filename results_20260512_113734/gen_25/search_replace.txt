@@ -1,0 +1,90 @@
+<NAME>
+regime_conditional_features
+</NAME>
+
+<DESCRIPTION>
+This edit targets the exact failure mode shown by the metrics: the model still has decent train/test directional skill, but the learned slope collapses on validation, which strongly suggests the signal is not being expressed in a regime-robust way.
+
+I’m proposing two coordinated changes:
+
+1. **Make the model slightly less over-regularized**
+   The current XGB setup is still too conservative for this task. A modest increase in tree depth and a reduction in `min_child_weight`, `reg_alpha`, and `reg_lambda` should help the model retain useful slope without exploding overfit. I also slightly lower the learning rate and raise estimators so the model can fit the more nuanced regime-conditional interactions.
+
+2. **Add explicit regime-conditional versions of the strongest short-horizon features**
+   The current feature set already has regime descriptors, but they are not strongly used to modulate the predictive features. To address the second regime shift, I’m adding gated interaction terms:
+   - momentum under high/low volatility
+   - efficiency under high/low volatility
+   - autocorrelation under high/low volatility
+   - a compact momentum × volatility-regime interaction using both a continuous rank and a binary gate
+
+These features stay within the “past data only” constraint, remain under the 80-feature cap, and directly encode the idea that the same market pattern can mean different things in different volatility regimes. That should help preserve slope into validation while also giving the model more expressive power, which should improve `pred_std_ratio` and reduce mean-collapse.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 520,
+    "max_depth": 3,
+    "min_child_weight": 6,
+    "reg_alpha": 0.15,
+    "reg_lambda": 1.2,
+    "subsample": 0.85,
+    "colsample_bytree": 0.75,
+    "learning_rate": 0.06,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 45,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 700,
+    "max_depth": 4,
+    "min_child_weight": 3,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.8,
+    "subsample": 0.88,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.04,
+    "gamma": 0.02,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # Market character change via interactions
+    feat["momentum_vol_interaction"] = ret_3 * vol_20
+    feat["momentum_regime"] = ret_3 / (vol_20 + eps)
+    feat["momentum_regime_fast"] = ret_3 * (vol_10 / (vol_20 + eps))
+    feat["volume_price_pressure"] = feat["volume_ratio_20"] * feat["price_sma10_dev"]
+    feat["volume_bb_interaction"] = feat["volume_ratio_20"] * feat["bb_pct_20"]
+    feat["trend_vol_interaction"] = feat["sma_5_20_cross"] * feat["vol_trend_10_20"]
+=======
+    # Market character change via interactions
+    feat["momentum_vol_interaction"] = ret_3 * vol_20
+    feat["momentum_regime"] = ret_3 / (vol_20 + eps)
+    feat["momentum_regime_fast"] = ret_3 * (vol_10 / (vol_20 + eps))
+    feat["volume_price_pressure"] = feat["volume_ratio_20"] * feat["price_sma10_dev"]
+    feat["volume_bb_interaction"] = feat["volume_ratio_20"] * feat["bb_pct_20"]
+    feat["trend_vol_interaction"] = feat["sma_5_20_cross"] * feat["vol_trend_10_20"]
+
+    # Regime-conditional feature gating to reduce train→val slope collapse
+    high_vol = (feat["vol_regime_rank"] > 0.65).astype(float)
+    low_vol = (feat["vol_regime_rank"] < 0.35).astype(float)
+    vol_shift = feat["vol_trend_20_40"]
+
+    feat["mom_high_vol"] = ret_3 * high_vol
+    feat["mom_low_vol"] = ret_3 * low_vol
+    feat["eff_high_vol"] = feat["efficiency_10"] * high_vol
+    feat["eff_low_vol"] = feat["efficiency_10"] * low_vol
+    feat["autocorr_high_vol"] = feat["autocorr_5"] * high_vol
+    feat["autocorr_low_vol"] = feat["autocorr_5"] * low_vol
+    feat["mom_vol_shift"] = ret_3 * vol_shift
+    feat["eff_vol_shift"] = feat["eff_trend"] * vol_shift
+>>>>>>> REPLACE
+</DIFF>

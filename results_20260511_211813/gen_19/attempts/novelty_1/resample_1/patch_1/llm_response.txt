@@ -1,0 +1,232 @@
+<NAME>
+regime_shifted_features
+</NAME>
+
+<DESCRIPTION>
+This edit aims to address the main remaining failure mode: prediction collapse toward the mean. The current model already has decent DA, but `pred_std_ratio` is still too low, which usually means the tree ensemble is not seeing enough separable structure after scaling and regularization.
+
+I’m proposing two complementary changes:
+
+1. **Loosen the XGBoost regularization slightly and increase model capacity carefully**
+   - Lower `min_child_weight` and `gamma` so trees can split on smaller but useful micro-signals.
+   - Reduce `reg_lambda` a bit and increase `n_estimators` modestly with a slightly lower learning rate, which often improves out-of-sample DA while avoiding a sharp overfit jump.
+   - This should help increase prediction dispersion without making the model unstable.
+
+2. **Add a small set of strictly past-only regime and shape features**
+   - Use `shift(1)` before rolling statistics so the features are explicitly lagged.
+   - Add short-horizon return dispersion, skew-ish candle structure, rolling slope, and volume surprise features.
+   - Add a couple of regime-conditioned interactions that are useful in 15-minute crypto perp data, especially when momentum and volatility regimes differ.
+   - Keep feature count well below 80.
+
+Overall, the goal is to increase expressivity enough to lift `pred_std_ratio` above the collapse zone while preserving the current ~0.53 DA level or better.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.02,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.08,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 96          # preserve more signal variance for stronger gradients
+MIN_PRED_STD_RATIO = 0.08     # lower threshold to reduce collapse penalty
+=======
+XGB_PARAMS = {
+    "n_estimators": 1100,
+    "max_depth": 5,
+    "min_child_weight": 2,
+    "reg_alpha": 0.0005,
+    "reg_lambda": 0.01,
+    "subsample": 0.9,
+    "colsample_bytree": 0.95,
+    "learning_rate": 0.05,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 97          # keep more target variance while still limiting extreme tails
+MIN_PRED_STD_RATIO = 0.10     # slightly stricter floor while improving dispersion
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    log_ret = np.log(close / close.shift(1))
+    ret1 = close.pct_change(1)
+    ret3 = close.pct_change(3)
+
+    # --- Returns / momentum ---
+    for lag in [1, 3, 6, 12, 24, 48]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+    feat['ret_accel_3_1'] = ret1 - ret3 / 3.0
+    feat['mom_ratio_12_48'] = (close.pct_change(12) + 1e-9) / (close.pct_change(48).abs() + 1e-9)
+
+    # Momentum acceleration (higher-order derivative)
+    feat['ret_accel_6_3'] = close.pct_change(6) - close.pct_change(3)
+
+    # --- Volatility / range ---
+    for w in [5, 20, 60]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+    feat['atr_14'] = tr.rolling(14).mean()
+    feat['atr_norm'] = feat['atr_14'] / close
+    feat['range_pct'] = (high - low) / (close + 1e-9)
+    feat['close_pos_20'] = (close - close.rolling(20).min()) / (close.rolling(20).max() - close.rolling(20).min() + 1e-9)
+=======
+    # strictly past-only base series for windowed features
+    close_l1 = close.shift(1)
+    volume_l1 = volume.shift(1)
+    high_l1 = high.shift(1)
+    low_l1 = low.shift(1)
+
+    log_ret = np.log(close_l1 / close_l1.shift(1))
+    ret1 = close_l1.pct_change(1)
+    ret3 = close_l1.pct_change(3)
+
+    # --- Returns / momentum ---
+    for lag in [1, 3, 6, 12, 24, 48]:
+        feat[f'ret_{lag}'] = close_l1.pct_change(lag)
+    feat['ret_accel_3_1'] = ret1 - ret3 / 3.0
+    feat['mom_ratio_12_48'] = (close_l1.pct_change(12) + 1e-9) / (close_l1.pct_change(48).abs() + 1e-9)
+
+    # Momentum acceleration (higher-order derivative)
+    feat['ret_accel_6_3'] = close_l1.pct_change(6) - close_l1.pct_change(3)
+
+    # --- Volatility / range ---
+    for w in [5, 20, 60]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+    tr = pd.concat([
+        high_l1 - low_l1,
+        (high_l1 - close_l1.shift(1)).abs(),
+        (low_l1 - close_l1.shift(1)).abs()
+    ], axis=1).max(axis=1)
+    feat['atr_14'] = tr.rolling(14).mean()
+    feat['atr_norm'] = feat['atr_14'] / close_l1
+    feat['range_pct'] = (high_l1 - low_l1) / (close_l1 + 1e-9)
+    feat['close_pos_20'] = (close_l1 - close_l1.rolling(20).min()) / (close_l1.rolling(20).max() - close_l1.rolling(20).min() + 1e-9)
+    feat['ret_std_20'] = ret1.rolling(20).std()
+    feat['ret_slope_10'] = ret1.rolling(10).mean()
+    feat['candle_body_1'] = (close_l1 - close_l1.shift(1)) / (high_l1 - low_l1 + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Oscillators / trend ---
+    for period in [6, 14]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        feat[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+
+    bb_mid = close.rolling(20).mean()
+    bb_std = close.rolling(20).std()
+    feat['bb_pct'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+    ema12 = close.ewm(span=12, adjust=False).mean()
+    ema26 = close.ewm(span=26, adjust=False).mean()
+    macd = ema12 - ema26
+    feat['macd_signal'] = macd - macd.ewm(span=9, adjust=False).mean()
+
+    # --- Volume / flow ---
+    vol_ma5 = volume.rolling(5).mean()
+    vol_ma20 = volume.rolling(20).mean()
+    feat['volume_ratio_5'] = volume / (vol_ma5 + 1e-9)
+    feat['volume_ratio_20'] = volume / (vol_ma20 + 1e-9)
+    feat['volume_z_20'] = (volume - vol_ma20) / (volume.rolling(20).std() + 1e-9)
+    feat['vol_x_ret1'] = feat['volume_ratio_5'] * ret1
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+=======
+    # --- Oscillators / trend ---
+    for period in [6, 14]:
+        delta = close_l1.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        feat[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+
+    bb_mid = close_l1.rolling(20).mean()
+    bb_std = close_l1.rolling(20).std()
+    feat['bb_pct'] = (close_l1 - bb_mid) / (2 * bb_std + 1e-9)
+    ema12 = close_l1.ewm(span=12, adjust=False).mean()
+    ema26 = close_l1.ewm(span=26, adjust=False).mean()
+    macd = ema12 - ema26
+    feat['macd_signal'] = macd - macd.ewm(span=9, adjust=False).mean()
+
+    # --- Volume / flow ---
+    vol_ma5 = volume_l1.rolling(5).mean()
+    vol_ma20 = volume_l1.rolling(20).mean()
+    feat['volume_ratio_5'] = volume_l1 / (vol_ma5 + 1e-9)
+    feat['volume_ratio_20'] = volume_l1 / (vol_ma20 + 1e-9)
+    feat['volume_z_20'] = (volume_l1 - vol_ma20) / (volume_l1.rolling(20).std() + 1e-9)
+    feat['vol_x_ret1'] = feat['volume_ratio_5'] * ret1
+    vwap = (close_l1 * volume_l1).rolling(20).sum() / (volume_l1.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close_l1 - vwap) / (close_l1 + 1e-9)
+    feat['volume_surprise'] = volume_l1 / (volume_l1.rolling(50).mean() + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    vol_regime = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+    feat['vol_regime'] = vol_regime
+    feat['trend_x_regime'] = feat['trend_strength_60'] / (vol_regime + 1e-9)
+    feat['ret1_x_regime'] = ret1 * vol_regime
+
+    # Regime-conditional momentum interactions (capture signal suppressed by regularization)
+    feat['ret6_x_vol_regime'] = close.pct_change(6) * vol_regime
+    feat['ret12_x_vol_regime'] = close.pct_change(12) * vol_regime
+    feat['ret3_x_trend_strength'] = close.pct_change(3) * (feat['trend_strength_60'] / 10000.0)
+
+    # Adaptive momentum scaled by recent volatility
+    recent_vol = log_ret.rolling(10).std()
+    feat['adaptive_ret6'] = close.pct_change(6) / (recent_vol + 1e-9)
+    feat['adaptive_ret12'] = close.pct_change(12) / (recent_vol + 1e-9)
+
+    # Volatility-adjusted RSI (regime-conditional oscillator)
+    rsi_14 = feat['rsi_14']
+    feat['rsi_14_vol_adjusted'] = rsi_14 / (vol_regime + 1e-9)
+=======
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close_l1 / close_l1.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    vol_regime = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+    feat['vol_regime'] = vol_regime
+    feat['trend_x_regime'] = feat['trend_strength_60'] / (vol_regime + 1e-9)
+    feat['ret1_x_regime'] = ret1 * vol_regime
+
+    # Regime-conditional momentum interactions
+    feat['ret6_x_vol_regime'] = close_l1.pct_change(6) * vol_regime
+    feat['ret12_x_vol_regime'] = close_l1.pct_change(12) * vol_regime
+    feat['ret3_x_trend_strength'] = close_l1.pct_change(3) * (feat['trend_strength_60'] / 10000.0)
+
+    # Adaptive momentum scaled by recent volatility
+    recent_vol = log_ret.rolling(10).std()
+    feat['adaptive_ret6'] = close_l1.pct_change(6) / (recent_vol + 1e-9)
+    feat['adaptive_ret12'] = close_l1.pct_change(12) / (recent_vol + 1e-9)
+
+    # Volatility-adjusted RSI (regime-conditional oscillator)
+    rsi_14 = feat['rsi_14']
+    feat['rsi_14_vol_adjusted'] = rsi_14 / (vol_regime + 1e-9)
+    feat['vol_x_price_slope'] = feat['ret_slope_10'] * vol_regime
+    feat['rsi_x_volume'] = feat['rsi_14'] * feat['volume_z_20']
+>>>>>>> REPLACE
+</DIFF>

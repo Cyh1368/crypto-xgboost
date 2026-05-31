@@ -1,0 +1,58 @@
+<NAME>
+structural_regime_divergence
+</NAME>
+
+<DESCRIPTION>
+This implementation addresses the "prediction collapse" issue by significantly increasing model expressivity and introducing features that capture structural market shifts. 
+
+Key innovations:
+1. **Expressivity Boost**: Reduced `min_child_weight` to 2 and `reg_lambda` to 0.1, while increasing `max_depth` to 6. This forces the model to capture more granular signals rather than defaulting to the mean.
+2. **Structural Divergence Features**: Added "Efficiency Ratio" (Kaufman) and "Volatility of Volatility" to distinguish between trending and noisy regimes.
+3. **Relative State Normalization**: Implemented rolling Z-scores and ranks for returns and volume to make the model invariant to absolute price levels while sensitive to local anomalies.
+4. **Microstructure Dynamics**: Introduced "Price Velocity" and "Volume Force" to capture the momentum of capital flow rather than just price action.
+5. **Target Sensitivity**: Adjusted `CLIP_PERCENTILE` to 95 to focus the model on the most predictable part of the return distribution, reducing the impact of fat-tailed noise that often causes XGBoost to collapse toward zero.
+</DESCRIPTION>
+
+<CODE>
+```python
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.02,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 95          # Focus on the core distribution to avoid mean-collapse
+MIN_PRED_STD_RATIO = 0.15     # Target ratio for prediction expressivity
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix focusing on structural regime shifts and momentum divergence.
+    """
+    feat = pd.DataFrame(index=df.index)
+    
+    close = df['close'].astype(float)
+    high = df['high'].astype(float)
+    low = df['low'].astype(float)
+    open_ = df['open'].

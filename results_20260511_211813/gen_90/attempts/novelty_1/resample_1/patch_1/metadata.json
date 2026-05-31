@@ -1,0 +1,14 @@
+{
+  "generation": 90,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "aggressive_deregularization_v2",
+  "patch_description": "The current program achieves val_DA=0.5292 with pred_std_ratio=0.0437, indicating severe prediction collapse toward the mean. The warning explicitly states \"predictions collapsed toward mean \u2014 increase model expressivity or remove regularization.\"\n\nAnalysis of prior attempts:\n- All programs show pred_std_ratio between 0.02-0.06, indicating consistent collapse\n- Best score was -0.24 with pred_std_ratio=0.0556 (still collapsed but slightly better)\n- Regularization parameters (reg_lambda, reg_alpha) have been high across attempts\n- Shallow trees (max_depth=5-7) combined with high regularization suffocate model expressivity\n\nKey insight: The collapse penalty dominates the score (-0.25 with collapse=0.532). To break through, we need to:\n\n1. **Drastically reduce regularization**: Set reg_alpha=0.0, reg_lambda=0.05 (down from 0.6)\n2. **Increase tree depth**: max_depth=8 (up from 5) to allow more complex splits\n3. **Lower min_child_weight**: 1 (down from 3) to allow finer splits\n4. **Increase learning rate**: 0.08 (up from 0.03) to allow stronger updates\n5. **Reduce early stopping patience**: 40 rounds to avoid over-regularization via early stopping\n6. **Increase estimators**: 1200 to compensate for higher learning rate\n7. **Prune weak features**: Remove redundant interaction terms that add noise without signal\n8. **Tighten feature engineering**: Focus on core predictive features, remove weak interactions\n\nThe goal is to push pred_std_ratio above 0.10+ while maintaining val_DA >= 0.52.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:45:06.721786",
+  "llm_cost": 0.040485,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

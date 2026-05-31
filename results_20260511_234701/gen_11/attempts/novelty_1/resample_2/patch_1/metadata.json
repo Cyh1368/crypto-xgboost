@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "fix_regime_shift_with_adaptive_scaling",
+  "patch_description": "The current model suffers from:\n1. **Critical bug**: `feat['ret_3']` is used but never defined, causing NaN propagation\n2. **Over-regularization**: reg_alpha=0.5, reg_lambda=2.0 are too aggressive, collapsing predictions to mean\n3. **Regime-specific features**: Features use absolute levels (vol, RSI, BB%) which have different meanings in different market regimes\n4. **Missing rate-of-change signals**: No features capturing how market character is CHANGING, which is needed to bridge the test\u2192val regime shift\n\nSolution:\n- Define missing ret_3 feature\n- Reduce regularization (reg_alpha=0.05, reg_lambda=0.2) to restore expressivity\n- Add adaptive z-score normalization: features are z-scored within rolling windows, making them regime-invariant\n- Add explicit rate-of-change features: vol_trend, efficiency_trend, regime_momentum\n- Increase model capacity (max_depth=4, n_estimators=500) to learn more complex patterns\n- Simplify feature set to remove redundant interactions that may be causing overfitting",
+  "error_msg": "Attempted to edit outside EVOLVE-BLOCK regions\n\nFound text: '# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500'\nAt position: 211\n\nContext around found text:\n     Line   8: sys.path.append(os.path.join(os.path.dirname(__file__), '..'))\n     Line   9: \n     Line  10: \n >>> Line  11: # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n     Line  12: # EVOLVE-BLOCK-START  (hyperparameters)\n     Line  13: XGB_PARAMS = {\n     Line  14:     \"n_estimators\": 700,\n\nThis text was found in an immutable (non-editable) region.\n\nAvailable editable regions (EVOLVE-BLOCK content):\n  Region 1 (chars 279-815):\n    (hyperparameters)\n    XGB_PARAMS = {\n        \"n_estimators\": 700,\n    ... (16 more lines)\n\n  Region 2 (chars 904-6661):\n    (feature engineering)\n    def build_features(df: pd.DataFrame) -> pd.DataFrame:\n        \"\"\"\n    ... (133 more lines)\n\nSuggestions:\n1. Move your edit to within an EVOLVE-BLOCK region\n2. Check if similar code exists in the editable regions above\n3. Ensure your search text targets code within # EVOLVE-BLOCK-START/END markers",
+  "timestamp": "2026-05-11T23:49:28.231822",
+  "llm_cost": 0.026334000000000003,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

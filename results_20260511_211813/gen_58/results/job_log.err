@@ -1,0 +1,2 @@
+/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: divide by zero encountered in log10
+  result = getattr(ufunc, method)(*inputs, **kwargs)

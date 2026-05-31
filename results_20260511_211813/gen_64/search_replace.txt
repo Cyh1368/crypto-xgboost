@@ -1,0 +1,68 @@
+<NAME>
+increase_expressivity_and_exhaustion_features
+</NAME>
+
+<DESCRIPTION>
+The model is still experiencing partial prediction collapse (pred_std_ratio = 0.11, targeted > 0.15). To address this, I am increasing the model's expressivity by increasing `max_depth` to 7 and `n_estimators` to 1000, while significantly lowering the `learning_rate` to 0.02 to allow for a more nuanced ensemble.
+
+On the feature engineering side, I am adding "Exhaustion" features that measure the price distance from 24-hour highs and lows normalized by ATR. These features help identify overextended regimes where mean reversion is likely. I am also adding a 'Volatility of Volatility' (V-Vol) metric and 'Money Flow Index' (MFI) to better capture the relationship between price pressure and volume, which are critical for out-of-sample directional accuracy in 15-minute crypto futures.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 5,
+    "reg_alpha": 0.05,
+    "reg_lambda": 1.0,
+    "subsample": 0.7,
+    "colsample_bytree": 0.6,
+    "learning_rate": 0.02,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+=======
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['v_vol_20'] = realized_vol_20.rolling(20).std() / (realized_vol_20.rolling(20).mean() + 1e-9)
+
+    # --- Exhaustion and Money Flow ---
+    feat['dist_24h_high'] = (high.rolling(96).max() - close) / (feat['atr_14'] + 1e-9)
+    feat['dist_24h_low'] = (close - low.rolling(96).min()) / (feat['atr_14'] + 1e-9)
+
+    typical_price = (high + low + close) / 3
+    mf = typical_price * volume
+    pos_mf = mf.where(typical_price > typical_price.shift(1), 0).rolling(14).sum()
+    neg_mf = mf.where(typical_price < typical_price.shift(1), 0).rolling(14).sum()
+    feat['mfi_14'] = 100 - (100 / (1 + (pos_mf / (neg_mf + 1e-9))))
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+>>>>>>> REPLACE
+</DIFF>

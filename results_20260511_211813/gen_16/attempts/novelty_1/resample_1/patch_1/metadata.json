@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "expressive_regularization_and_reversion",
+  "patch_description": "Increases model depth and tree count while tightening L1/L2 regularization to improve expressivity without overfitting. Adds EMA-based mean reversion, RSI stationarity, return autocorrelation, and funding momentum features.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:22:19.841886",
+  "llm_cost": 0.0097585,
+  "llm_model": "gemini-3-flash-preview"
+}

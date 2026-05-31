@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "rolling_short_regime_features",
+  "patch_description": "This edit targets the regime-shift problem directly by replacing long, regime-specific features with shorter-window, rolling z-scored features that are more invariant across volatility changes. It adds fast-decaying momentum/volatility/efficiency trend features and a momentum \u00d7 volatility-regime interaction, which should help preserve predictive slope in the validation regime. To reduce overfitting and prediction collapse, it also slightly regularizes the XGBoost model by lowering depth, lowering the learning rate, increasing `min_child_weight`, and adding modest L1/L2 penalties while keeping enough estimators for expressivity.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:42:33.650237",
+  "llm_cost": 0.01901475,
+  "llm_model": "gpt-5.4-mini"
+}

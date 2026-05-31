@@ -1,0 +1,14 @@
+{
+  "generation": 65,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_shift_xgb",
+  "patch_description": "This version uses a more regime-aware feature set built around short rolling windows, rolling z-scores, and explicit change-in-market-character signals. Instead of leaning on long-horizon absolute levels that tend to break across regime shifts, it emphasizes normalized short-term momentum, volatility change, efficiency change, and momentum\u00d7regime interactions. The XGBoost configuration is also made less over-regularized so the model can retain more slope on validation without collapsing toward the mean. Feature count is kept under the 80-feature cap, and all features use only past data.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:38:02.690265",
+  "llm_cost": 0.03793125,
+  "llm_model": "gpt-5.4-mini"
+}

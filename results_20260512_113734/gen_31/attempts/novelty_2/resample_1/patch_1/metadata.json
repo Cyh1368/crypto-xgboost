@@ -1,0 +1,14 @@
+{
+  "generation": 31,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "adaptive_regime_conditional_features",
+  "patch_description": "The current program shows a critical problem: val_slope is only 5.2% of train_slope, indicating severe regime-specific overfitting. The model learns patterns that work in training but collapse in validation. The best-performing prior program achieved 96.0% generalization ratio by using regime-conditional features.\n\nThe key insight is that momentum, efficiency, and autocorrelation features should be explicitly modulated by volatility regime indicators. Instead of treating these features as static, we create regime-conditional versions that adapt to market conditions:\n\n1. **High-volatility momentum features**: Multiply short-term returns by a high-vol indicator (vol_regime_rank > 0.7). In high-vol regimes, momentum patterns are stronger and more reliable.\n\n2. **Low-volatility efficiency features**: Multiply efficiency by a low-vol indicator (vol_regime_rank < 0.3). In low-vol regimes, mean reversion and efficiency patterns dominate.\n\n3. **Regime-specific autocorrelation**: Create separate autocorrelation features for high and low volatility periods, as persistence patterns differ dramatically across regimes.\n\nThis approach directly addresses the regime shift problem by making features explicitly regime-aware rather than assuming static relationships. The vol_regime_rank feature already exists in the codebase, so we can leverage it immediately.\n\nAdditionally, I'll reduce regularization slightly (reg_lambda from 0.5 to 0.4) to allow the model to learn these more nuanced regime-conditional patterns without being overly constrained.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:28:57.390031",
+  "llm_cost": 0.12732,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

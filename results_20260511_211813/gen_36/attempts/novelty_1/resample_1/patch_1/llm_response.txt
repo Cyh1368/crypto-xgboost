@@ -1,0 +1,110 @@
+<NAME>
+fix_lag_and_increase_expressivity
+</NAME>
+
+<DESCRIPTION>
+The current model's performance drop (from -0.15 to -0.57) is primarily due to an extra `shift(1)` applied to the base OHLCV series, which makes the features 1-bar stale relative to the target. I am reverting this shift to align with the successful prior programs. 
+
+Additionally, the model is suffering from "prediction collapse" (pred_std_ratio = 0.01), meaning it is underfitting and predicting the mean. I am increasing model expressivity by:
+1. Increasing `max_depth` and `learning_rate`.
+2. Reducing `reg_lambda` to allow the model to capture more signal.
+3. Adding high-signal features like `vol_cv_20`, `dist_h_100`, and `force_index_7`.
+4. Removing redundant feature definitions and the arbitrary `iloc[:, :80]` cap to ensure all signal-carrying features (like funding and orderbook) are preserved.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1100,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.12,
+    "subsample": 0.85,
+    "colsample_bytree": 0.82,
+    "learning_rate": 0.025,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 90,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 1100,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "gamma": 0.01,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Strict past-only base series
+    close = df['close'].shift(1)
+    open_ = df['open'].shift(1)
+    high = df['high'].shift(1)
+    low = df['low'].shift(1)
+    volume = df['volume'].shift(1)
+=======
+    # Use OHLCV from the bar that just closed (standard for predicting next bar)
+    close = df['close']
+    open_ = df['open']
+    high = df['high']
+    low = df['low']
+    volume = df['volume']
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat['ret_1'] = close.pct_change(1)
+    feat['ret_2'] = close.pct_change(2)
+    feat['ret_3'] = close.pct_change(3)
+    feat['ret_6'] = close.pct_change(6)
+
+    feat['ret_accel_3'] = feat['ret_1'] - feat['ret_3']
+=======
+    feat['ret_accel_3'] = feat['ret_1'] - feat['ret_3']
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate'].shift(1)
+=======
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+
+    # Keep feature count bounded
+    if feat.shape[1] > 80:
+        feat = feat.iloc[:, :80]
+
+    return feat
+=======
+    # Additional signal features
+    feat['vol_cv_20'] = close.rolling(20).std() / (close.rolling(20).mean() + 1e-9)
+    feat['dist_h_100'] = (high.rolling(100).max() - close) / (close + 1e-9)
+    feat['dist_l_100'] = (close - low.rolling(100).min()) / (close + 1e-9)
+    feat['force_index_7'] = (close.pct_change(1) * (volume / (volume.rolling(20).mean() + 1e-9))).rolling(7).mean()
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+
+    return feat
+>>>>>>> REPLACE
+</DIFF>

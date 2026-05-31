@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_normalized_microxgb",
+  "patch_description": "This version switches from a long-horizon indicator stack to a regime-normalized, short-memory feature model. The core idea is to make each input more stationary across market shifts by using rolling z-scores, rank transforms, and short-window rate-of-change features instead of raw absolute levels.\n\nCompared with the current implementation, this approach:\n- emphasizes 5\u201320 bar dynamics that decay faster but are more regime-robust,\n- normalizes price/volume/volatility features within rolling windows to reduce regime dependence,\n- adds explicit \u201cchange of market character\u201d features like volatility trend, efficiency trend, and autocorrelation trend,\n- uses compact interaction terms such as momentum \u00d7 volatility regime,\n- regularizes XGBoost more heavily and reduces model complexity to discourage memorizing train-only regimes.\n\nThe result should be less prediction collapse on validation, with better slope preservation and improved generalization across the second regime shift.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:39:01.327817",
+  "llm_cost": 0.01962075,
+  "llm_model": "gpt-5.4-mini"
+}

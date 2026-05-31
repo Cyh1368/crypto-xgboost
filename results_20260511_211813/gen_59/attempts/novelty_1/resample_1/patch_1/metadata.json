@@ -1,0 +1,14 @@
+{
+  "generation": 59,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "variance_oriented_rank_booster",
+  "patch_description": "To address the consistent \"prediction collapse\" warning and low `pred_std_ratio` in previous iterations, I am implementing a fundamentally different approach focused on **variance preservation** and **non-parametric signal processing**. \n\nKey innovations:\n1.  **Rolling Rank Scaling:** Unlike standard Z-scores, rolling percentile ranks (e.g., `rank(pct=True)`) are robust to the fat-tailed distributions of crypto returns, providing the XGBoost trees with consistent, scale-invariant split points across varying volatility regimes.\n2.  **Candle-Microstructure Dynamics:** I introduced features to measure \"wick-pressure\" and \"body-dominance,\" which capture reversal signals near liquidity pockets more effectively at 15-minute intervals.\n3.  **Variance-Target Alignment:** I increased the `CLIP_PERCENTILE` to 98 and significantly reduced the L1/L2 regularization (`reg_alpha`/`reg_lambda`). This forces the model to capture more signal variance, directly addressing the collapse toward the mean.\n4.  **Displacement Features:** These measure current price moves relative to the rolling volatility-adjusted high/low range, creating a cleaner signature of trend-exhaustion vs. breakout.\n\nThis combined strategy aims to push the `pred_std_ratio` above the critical threshold while maintaining a directional accuracy lead by focusing on price action shape rather than just raw return magnitudes.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:31:50.983833",
+  "llm_cost": 0.0203335,
+  "llm_model": "gemini-3-flash-preview"
+}

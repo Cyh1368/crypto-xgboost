@@ -1,0 +1,47 @@
+  @@@@@@@@@@@@@@@@@@@@@      ░██████╗██╗░░██╗██╗███╗░░██╗██╗░░██╗░█████╗░
+  @                   @      ██╔════╝██║░░██║██║████╗░██║██║░██╔╝██╔══██╗
+  @          @        @      ╚█████╗░███████║██║██╔██╗██║█████═╝░███████║
+  @    @@   @@  @@    @      ░╚═══██╗██╔══██║██║██║╚████║██╔═██╗░██╔══██║
+  @   @     @    @@   @      ██████╔╝██║░░██║██║██║░╚███║██║░╚██╗██║░░██║
+  @    @@  @    @     @      ╚═════╝░╚═╝░░╚═╝╚═╝╚═╝░░╚══╝╚═╝░░╚═╝╚═╝░░╚═╝
+  @        @          @      @@@@@@@@@@@@@@@
+  @                   @   @@                 @@@@@
+  @@@@@@@@@@@@@@@@@@@@ @@                       @  @@                 █▀▀
+                      @                          @@  @                ██▄
+                    @      @@                      @  @@
+                   @       @         @              @   @             █░█
+                   @                 @               @  @             ▀▄▀
+                     @@@@@          @     @           @  @
+                      @            @          @       @ @@            █▀█
+                   @@    @@     @@       @@   @        @              █▄█
+                  @@        @@         @     @         @
+                 @@       @@   @@       @@@@@          @        @@    █░░
+              @ @@                @                    @              █▄▄
+             @ @@@@@             @@ @@                 @      @@
+            @                  @       @@              @    @@        █░█
+       @@@@@@@@@@@@@@@@@@@@@@             @@@          @@@@@@@  @@    ▀▄▀
+       @     @         @                      @@         @@@  @@
+        @@               @                      @      @   @  @@      █▀▀
+          @@@@@@@@@@@@@@@@@@                   @    @   @   @@        ██▄
+                                               @  @  @   @
+                                               @  @  @@@@
+                                               @  @@
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - 🖥️  System resources detected:
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO -    • CPU cores: 16
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO -    • Memory: 7.6 GB
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - 🔧 Concurrency settings:
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO -    • Evaluation jobs: 4
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO -    • Proposal jobs: 6
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO -    • DB workers: 2
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO -    • Total threads: 12
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - Configured local numeric thread cap per eval process: 4
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - ASYNC EVOLUTION RUN STARTED
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - Max evaluation jobs: 4
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - Max proposal jobs: 6
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - Target generations: 150
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - Language: python
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - Results directory: results_20260511_234313
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - Log file: results_20260511_234313/evolution_run.log
+2026-05-11 23:43:13 - shinka.core.async_runner - INFO - ================================================================================

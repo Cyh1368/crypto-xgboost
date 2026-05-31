@@ -1,0 +1,85 @@
+<NAME>
+add_percentile_rank_features_for_distribution_invariance
+</NAME>
+
+<DESCRIPTION>
+The current program shows strong train performance (train_slope=0.0738) but severe degradation on validation (val_slope=0.0060, only 8.2% of train). This indicates features are regime-specific - they learn patterns based on absolute levels that don't transfer across market regimes.
+
+The best-performing prior program (combined_score=-2.06) already uses some rank-based features like `vol_rank_40`, `ret_rank_20`, `ret3_rank_30`, `rsi_14_rank_40`, and `hl_range_rank_40`. These percentile rank features are distribution-invariant - they capture relative position within a rolling window rather than absolute values.
+
+I will extend this successful pattern by adding percentile rank transformations for the most predictive raw features:
+
+1. **ret_3_rank_60**: Rank-normalize the 3-period return to make momentum signals regime-invariant
+2. **efficiency_20_rank_80**: Rank-normalize efficiency to capture relative trend quality independent of absolute efficiency levels
+3. **momentum_regime_rank_60**: Rank-normalize the momentum/volatility ratio to make this interaction stable across regimes
+4. **rsi_14_rank_60**: Add a longer-window rank of RSI to complement existing rank features
+
+These additions will:
+- Stay within the 80-feature budget (current program has ~62 features, adding 4 brings us to ~66)
+- Provide regime-invariant versions of key predictive signals
+- Potentially push slope_ratio from 8.2% toward 15-20% by reducing regime dependency
+- Build on the proven success of rank features in the best prior programs
+
+The key insight is that while absolute feature values change meaning across regimes (e.g., 2% vol is high in calm markets, low in turbulent ones), the percentile rank within a rolling window stays interpretable.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+=======
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    # --- Percentile rank features for distribution invariance ---
+    # These make key signals regime-invariant by capturing relative position
+    feat['ret_3_rank_60'] = ret_3.rolling(60).rank(pct=True)
+    feat['efficiency_20_rank_80'] = feat['efficiency_20'].rolling(80).rank(pct=True)
+    feat['momentum_regime_rank_60'] = feat['momentum_regime'].rolling(60).rank(pct=True)
+    feat['rsi_14_rank_60'] = feat['rsi_14'].rolling(60).rank(pct=True)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 350,
+    "max_depth": 4,
+    "min_child_weight": 3,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 45,
+}
+>>>>>>> REPLACE
+</DIFF>

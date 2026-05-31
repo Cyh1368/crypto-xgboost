@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_robust_features",
+  "patch_description": "The current model suffers from a 'collapsed' prediction state (pred_std_ratio = 0.01), meaning it is heavily underfitting or over-regularized, leading to a large penalty. \n\nTo fix this, I am:\n1. Increasing model expressivity: Raising `max_depth` to 6, increasing `learning_rate` to 0.05, and significantly reducing regularization (`min_child_weight`, `reg_lambda`).\n2. Improving feature signal: Implementing a more robust set of features including multi-horizon returns, volatility-normalized returns (Z-scores), candle anatomy, and volume dynamics.\n3. Ensuring strict causality: All features are explicitly derived from shifted data (`shift(1)`) to prevent any potential lookahead and ensure the model learns from truly past information.\n4. Refining target clipping: Lowering `CLIP_PERCENTILE` to 98.0 to reduce the influence of extreme outliers on the RMSE loss function.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:31:35.147525",
+  "llm_cost": 0.019673,
+  "llm_model": "gemini-3-flash-preview"
+}

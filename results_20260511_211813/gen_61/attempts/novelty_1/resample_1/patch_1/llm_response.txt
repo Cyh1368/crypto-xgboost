@@ -1,0 +1,112 @@
+<NAME>
+capacity_boost_and_lagged_signals
+</NAME>
+
+<DESCRIPTION>
+The previous model suffered from a significant prediction collapse (pred_std_ratio = 0.027), indicating it was underfitting the variance of the target. To counter this, I am dramatically increasing the model capacity by raising n_estimators and max_depth, while simultaneously lowering the learning rate to ensure stable convergence. I also increased CLIP_PERCENTILE to 98th percentile to retain more tail signals. 
+
+On the feature engineering side, I've added:
+1. Autoregressive features: Lagged returns (t-1, t-2) to capture short-term momentum or mean-reversion persistence.
+2. Distributional features: Rolling skewness (24h) to identify asymmetrical risk regimes.
+3. Lagged exogenous features: Lagged Order Book Imbalance (OBI) and Funding Rate to better capture lead-lag relationships which are often present in perp futures.
+These additions stay within the 80-feature limit while providing the model with more context to avoid simply predicting the mean.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.05,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 96
+=======
+XGB_PARAMS = {
+    "n_estimators": 1400,
+    "max_depth": 6,
+    "min_child_weight": 5,
+    "reg_alpha": 0.02,
+    "reg_lambda": 0.8,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.015,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 98
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["ret_accel_3"] = r1 - r3 / 3.0
+    feat["ret_accel_6"] = r3 - r6 / 2.0
+    feat["ret_accel_12"] = r6 - r12 / 2.0
+    feat["trend_stack"] = np.sign(r1) + np.sign(r3) + np.sign(r6) + np.sign(r12)
+=======
+    feat["ret_accel_3"] = r1 - r3 / 3.0
+    feat["ret_accel_6"] = r3 - r6 / 2.0
+    feat["ret_accel_12"] = r6 - r12 / 2.0
+    feat["trend_stack"] = np.sign(r1) + np.sign(r3) + np.sign(r6) + np.sign(r12)
+    feat["ret_1_lag1"] = r1.shift(1)
+    feat["ret_1_lag2"] = r1.shift(2)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+
+    # A smooth compression/expansion state
+=======
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+    feat["ret_skew_24"] = log_ret.rolling(96).skew()
+
+    # A smooth compression/expansion state
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        feat["obi_tau1"] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat["obi_tau3"] = df.apply(lambda r: obi(r, 3), axis=1)
+
+    # ── Funding features, if present
+=======
+        feat["obi_tau1"] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat["obi_tau3"] = df.apply(lambda r: obi(r, 3), axis=1)
+        feat["obi_lag1"] = feat["obi_tau1"].shift(1)
+
+    # ── Funding features, if present
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    if "funding_rate" in df.columns:
+        fr = df["funding_rate"].astype(float)
+        feat["funding_rate"] = fr
+        feat["funding_ma_8h"] = fr.rolling(32).mean()
+        feat["funding_chg_1"] = fr.diff(1)
+        feat["funding_chg_4"] = fr.diff(4)
+        feat["funding_z_32"] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+=======
+    if "funding_rate" in df.columns:
+        fr = df["funding_rate"].astype(float)
+        feat["funding_rate"] = fr
+        feat["funding_ma_8h"] = fr.rolling(32).mean()
+        feat["funding_chg_1"] = fr.diff(1)
+        feat["funding_chg_4"] = fr.diff(4)
+        feat["funding_z_32"] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+        feat["funding_lag1"] = fr.shift(1)
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_short_lookbacks",
+  "patch_description": "This edit targets the train\u2192validation slope collapse by making the feature set more regime-invariant and more local in time.\n\nKey ideas:\n- Shorten several lookbacks so the model relies more on recent micro-regime structure instead of long-lived patterns that decay across regime shifts.\n- Add rolling z-score features for returns, volatility, volume, and ATR so the same feature scale means roughly the same thing in low- and high-volatility periods.\n- Add rate-of-change features for volatility, efficiency, and autocorrelation proxies to capture whether market character is changing, not just its absolute level.\n- Add a compact momentum \u00d7 volatility-regime interaction, which often generalizes better than raw momentum and volatility separately.\n- Tighten XGBoost capacity slightly to reduce regime-specific overfitting: fewer trees, smaller depth, stronger child-weight / regularization, and a slightly lower learning rate.\n\nThis should help lift validation slope and correlation while keeping the DA gap under control.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:58:59.865626",
+  "llm_cost": 0.02563875,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "rolling_regime_features",
+  "patch_description": "This edit targets the core failure mode: the model\u2019s slope collapses on the validation regime because many current features encode absolute market levels over long windows, which are brittle under regime shift. I replace several long-horizon, level-based signals with shorter-horizon and rolling z-scored versions that are more regime-invariant.\n\nKey ideas:\n- use 5\u201320 bar windows more heavily, with fewer 60+ bar dependencies\n- add rolling z-score normalization for returns, volatility, volume, and price-location features\n- add short-term trend/volatility/efficiency change features, which capture the rate of change of market character\n- keep feature count comfortably below 80\n- preserve past-only computation and low runtime\n\nI also modestly reduce model complexity and add regularization to improve cross-regime generalization and reduce prediction collapse.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:55:16.785067",
+  "llm_cost": 0.02404575,
+  "llm_model": "gpt-5.4-mini"
+}

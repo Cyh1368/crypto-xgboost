@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "regime_invariant_robustness",
+  "patch_description": "This edit addresses the primary problem of slope collapse and prediction collapse by:\n1. Increasing regularization (min_child_weight=25, reg_lambda=15.0) and reducing tree depth to force the model to learn broader, more robust patterns that generalize across regimes.\n2. Introducing more regime-invariant features using local z-score normalization (mom_z_10, price_z_20, vol_z_60) and range-relative positioning (dist_range_20).\n3. Adding short-term autocorrelation and volume z-scores to capture changes in market character (mean-reversion vs trending).\n4. Adjusting the target clipping (97th percentile) and minimum prediction standard deviation ratio (0.18) to improve the model's signal-to-noise handling and expressivity.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:58:21.831349",
+  "llm_cost": 0.013697500000000001,
+  "llm_model": "gemini-3-flash-preview"
+}

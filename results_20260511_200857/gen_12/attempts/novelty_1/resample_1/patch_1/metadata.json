@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_fillna_type_and_expressivity",
+  "patch_description": "The bug was caused by an incompatible signature in `pd.DataFrame.fillna()`, where the `method` argument is deprecated/removed in newer versions of pandas. The fix replaces `.fillna(method='ffill')` and `.fillna(method='bfill')` with the modern `.ffill()` and `.bfill()` methods.\n\nAdditionally, to address the common failure mode of model collapse (where `pred_std_ratio` is too low), I loosened the regularization and increased model expressivity by reducing `min_child_weight` and adjusting `reg_lambda`/`reg_alpha`. I also expanded the feature set to include EMA-distance signals and momentum oscillators (total features = 34), which should provide stronger signals to reach the 0.52 Directional Accuracy (DA) target.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:12:01.384979",
+  "llm_cost": 0.009968,
+  "llm_model": "gemini-3-flash-preview"
+}

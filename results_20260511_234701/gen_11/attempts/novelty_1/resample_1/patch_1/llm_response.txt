@@ -1,0 +1,323 @@
+# Analysis
+
+The current program has **severely over-regularized** the model, causing it to collapse predictions toward the mean:
+- `pred_std_ratio=0.0146` (target ≥ 0.18) — predictions have almost no variance
+- `train_slope=0.0019`, `val_slope=0.0006` — model learned almost nothing
+- `train_r=0.1255` collapsed from prior 0.476
+- `collapse=1.483` penalty is massive
+
+The Z-score normalization strategy was sound, but the hyperparameters (`min_child_weight=20`, `reg_lambda=10.0`, `reg_alpha=0.5`, `learning_rate=0.05`) are **killing expressivity**.
+
+## Strategy
+
+1. **Reduce regularization dramatically** — the model needs freedom to learn patterns
+2. **Increase learning rate & estimators** — allow faster convergence and more complex patterns
+3. **Lower min_child_weight** — permit splits on smaller samples (regime-specific patterns may be rare)
+4. **Keep Z-score normalization** — it's regime-invariant and sound
+5. **Add short-window momentum features** — capture fast regime changes (5-15 bar windows instead of 20-100)
+6. **Add volatility trend features** — measure *rate of change* of vol, not just absolute level
+7. **Reduce feature count slightly** — focus on highest-signal features to avoid noise
+
+The key insight: the prior attempt was too conservative. We need to find the sweet spot where the model can learn regime-specific patterns (short lookbacks, momentum trends) while still generalizing (Z-scores, efficiency ratios, time features).
+
+<NAME>
+reduce_regularization_add_short_momentum
+</NAME>
+
+<DESCRIPTION>
+The current model is over-regularized (collapse=1.483, pred_std_ratio=0.0146). 
+Hyperparameters are killing expressivity: min_child_weight=20 is too high, 
+reg_lambda=10.0 is excessive, learning_rate=0.05 is too slow.
+
+This edit:
+1. Reduces regularization (reg_lambda → 1.0, reg_alpha → 0.1, min_child_weight → 5)
+2. Increases learning_rate to 0.10 and n_estimators to 600 for better convergence
+3. Adds short-window momentum features (5, 10 bars) to capture fast regime changes
+4. Adds volatility trend features (vol acceleration, vol momentum) to measure regime shifts
+5. Adds autocorrelation-based features to detect mean reversion vs trending
+6. Keeps Z-score normalization for regime invariance
+7. Removes some redundant long-window features to stay under 80 features
+
+Expected impact:
+- Predictions should have much higher variance (pred_std_ratio → 0.20+)
+- Model should learn faster with higher learning_rate
+- Short-window features capture regime-specific patterns
+- Volatility trends help detect when patterns are breaking down
+- val_slope should increase from 0.0006 to 0.015+
+- val_DA should improve to 0.525+
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 500,
+    "max_depth": 4,
+    "min_child_weight": 20,
+    "reg_alpha": 0.5,
+    "reg_lambda": 10.0,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.18     # minimum acceptable pred_std / actual_std
+# EVOLVE-BLOCK-END
+=======
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 5,
+    "min_child_weight": 5,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.10,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.18     # minimum acceptable pred_std / actual_std
+# EVOLVE-BLOCK-END
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build regime-invariant features using rolling Z-scores and normalized indicators.
+    """
+    feat = pd.DataFrame(index=df.index)
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    log_ret = np.log(close / close.shift(1))
+
+    def z_score(s, window=100):
+        return (s - s.rolling(window).mean()) / (s.rolling(window).std() + 1e-9)
+
+    # --- Returns (Z-scored for regime invariance) ---
+    for lag in [1, 4, 12]:
+        feat[f'ret_z_{lag}'] = z_score(close.pct_change(lag), 100)
+
+    # --- Volatility (Z-scored) ---
+    vol_20 = log_ret.rolling(20).std()
+    feat['vol_z_20'] = z_score(vol_20, 100)
+    feat['vol_regime'] = vol_20 / (vol_20.rolling(100).mean() + 1e-9)
+
+    # --- RSI ---
+    delta = close.diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    rs = gain / (loss + 1e-9)
+    feat['rsi_14'] = 100 - 100 / (1 + rs)
+
+    # --- Bollinger Bands & ATR ---
+    bb_mid = close.rolling(20).mean()
+    bb_std = close.rolling(20).std()
+    feat['bb_pct'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+    tr = pd.concat([high - low, (high - close.shift(1)).abs(), (low - close.shift(1)).abs()], axis=1).max(axis=1)
+    feat['atr_norm'] = tr.rolling(14).mean() / (close + 1e-9)
+
+    # --- Normalized MACD ---
+    ema12 = close.ewm(span=12, adjust=False).mean()
+    ema26 = close.ewm(span=26, adjust=False).mean()
+    macd = ema12 - ema26
+    feat['macd_norm'] = macd / (close.rolling(20).std() + 1e-9)
+
+    # --- Volume (Z-scored) ---
+    rel_vol = volume / (volume.rolling(20).mean() + 1e-9)
+    feat['rel_vol_z'] = z_score(rel_vol, 100)
+
+    # --- Candle Structure ---
+    feat['candle_body_ratio'] = (close - df['open']).abs() / ((high - low) + 1e-9)
+    feat['upper_wick_ratio'] = (high - df[['open', 'close']].max(axis=1)) / ((high - low) + 1e-9)
+    feat['lower_wick_ratio'] = (df[['open', 'close']].min(axis=1) - low) / ((high - low) + 1e-9)
+
+    # --- Range Position ---
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_pos_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+
+    # --- Efficiency & Momentum ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['mom_vol_adj'] = feat['ret_z_4'] / (vol_20 + 1e-9)
+
+    # --- Time Features ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # --- Orderbook & Funding (Conditional) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row, tau=1):
+            try:
+                bids, asks = np.array(row['bids']), np.array(row['asks'])
+                b_v = np.sum(bids[:, 1] * np.exp(-tau * np.arange(len(bids))))
+                a_v = np.sum(asks[:, 1] * np.exp(-tau * np.arange(len(asks))))
+                return (b_v - a_v) / (b_v + a_v + 1e-9)
+            except: return 0.0
+        feat['obi_tau1'] = df.apply(lambda r: obi(r, 1), axis=1)
+
+    if 'funding_rate' in df.columns:
+        feat['funding_rate'] = df['funding_rate']
+        feat['funding_mom'] = df['funding_rate'].diff(4)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan).dropna()
+    return feat
+# EVOLVE-BLOCK-END
+=======
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build regime-invariant features with short-window momentum and volatility trends.
+    Combines Z-score normalization with fast-reacting indicators to capture regime shifts.
+    """
+    feat = pd.DataFrame(index=df.index)
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    log_ret = np.log(close / close.shift(1))
+
+    def z_score(s, window=100):
+        return (s - s.rolling(window).mean()) / (s.rolling(window).std() + 1e-9)
+
+    # --- Short-window momentum (5, 10 bars) for regime-specific patterns ---
+    feat['ret_5'] = close.pct_change(5)
+    feat['ret_10'] = close.pct_change(10)
+    feat['ret_z_5'] = z_score(close.pct_change(5), 100)
+    feat['ret_z_10'] = z_score(close.pct_change(10), 100)
+    feat['ret_z_1'] = z_score(close.pct_change(1), 100)
+
+    # --- Volatility features ---
+    vol_5 = log_ret.rolling(5).std()
+    vol_10 = log_ret.rolling(10).std()
+    vol_20 = log_ret.rolling(20).std()
+    vol_60 = log_ret.rolling(60).std()
+    
+    feat['vol_5'] = vol_5
+    feat['vol_10'] = vol_10
+    feat['vol_z_20'] = z_score(vol_20, 100)
+    feat['vol_regime'] = vol_20 / (vol_20.rolling(100).mean() + 1e-9)
+    
+    # --- Volatility trends (rate of change of volatility) ---
+    feat['vol_accel_10'] = vol_10.diff(2)  # vol acceleration
+    feat['vol_trend_5'] = (vol_5 - vol_10) / (vol_10 + 1e-9)  # short vs medium vol
+    feat['vol_trend_10'] = (vol_10 - vol_20) / (vol_20 + 1e-9)  # medium vs long vol
+
+    # --- RSI (fast and standard) ---
+    delta = close.diff()
+    for period in [6, 14]:
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        feat[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+
+    # --- Bollinger Bands & ATR ---
+    bb_mid = close.rolling(20).mean()
+    bb_std = close.rolling(20).std()
+    feat['bb_pct'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+    tr = pd.concat([high - low, (high - close.shift(1)).abs(), (low - close.shift(1)).abs()], axis=1).max(axis=1)
+    feat['atr_norm'] = tr.rolling(14).mean() / (close + 1e-9)
+
+    # --- MACD (normalized) ---
+    ema12 = close.ewm(span=12, adjust=False).mean()
+    ema26 = close.ewm(span=26, adjust=False).mean()
+    macd = ema12 - ema26
+    feat['macd_norm'] = macd / (close.rolling(20).std() + 1e-9)
+
+    # --- Volume (Z-scored and raw ratio) ---
+    rel_vol = volume / (volume.rolling(20).mean() + 1e-9)
+    feat['rel_vol_z'] = z_score(rel_vol, 100)
+    feat['rel_vol_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+
+    # --- Candle Structure ---
+    feat['candle_body_ratio'] = (close - df['open']).abs() / ((high - low) + 1e-9)
+    feat['upper_wick_ratio'] = (high - df[['open', 'close']].max(axis=1)) / ((high - low) + 1e-9)
+    feat['lower_wick_ratio'] = (df[['open', 'close']].min(axis=1) - low) / ((high - low) + 1e-9)
+
+    # --- Range Position ---
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_pos_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+
+    # --- Efficiency & Momentum-Vol Interaction ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['mom_vol_adj_5'] = feat['ret_z_5'] / (vol_5 + 1e-9)
+    feat['mom_vol_adj_10'] = feat['ret_z_10'] / (vol_10 + 1e-9)
+
+    # --- Autocorrelation-based features (mean reversion signal) ---
+    ret_1 = close.pct_change(1)
+    feat['ret_autocorr_5'] = ret_1.rolling(5).apply(lambda x: x.autocorr() if len(x) > 1 else 0, raw=False)
+    feat['ret_autocorr_10'] = ret_1.rolling(10).apply(lambda x: x.autocorr() if len(x) > 1 else 0, raw=False)
+
+    # --- Time Features ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # --- Orderbook & Funding (Conditional) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row, tau=1):
+            try:
+                bids, asks = np.array(row['bids']), np.array(row['asks'])
+                b_v = np.sum(bids[:, 1] * np.exp(-tau * np.arange(len(bids))))
+                a_v = np.sum(asks[:, 1] * np.exp(-tau * np.arange(len(asks))))
+                return (b_v - a_v) / (b_v + a_v + 1e-9)
+            except: return 0.0
+        feat['obi_tau1'] = df.apply(lambda r: obi(r, 1), axis=1)
+
+    if 'funding_rate' in df.columns:
+        feat['funding_rate'] = df['funding_rate']
+        feat['funding_mom'] = df['funding_rate'].diff(4)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan).dropna()
+    return feat
+# EVOLVE-BLOCK-END
+>>>>>>> REPLACE
+
+</DIFF>
+
+## Rationale
+
+**Hyperparameter changes:**
+- `min_child_weight: 20 → 5` — allows splits on smaller samples; regime-specific patterns may be rare
+- `reg_lambda: 10.0 → 1.0` — massive reduction in L2 penalty; was killing all variance
+- `reg_alpha: 0.5 → 0.1` — reduce L1 penalty to allow more features to be active
+- `learning_rate: 0.05 → 0.10` — faster convergence, allows model to explore more patterns
+- `n_estimators: 500 → 600` — more trees to compensate for higher learning rate
+- `max_depth: 4 → 5` — slightly deeper trees to capture interactions
+- `subsample/colsample: 0.7 → 0.8` — less aggressive subsampling; we want to use more data
+
+**Feature engineering changes:**
+1. **Short-window momentum** (`ret_5`, `ret_10`, `ret_z_5`, `ret_z_10`): Capture fast regime-specific patterns that don't generalize across long periods
+2. **Volatility trends** (`vol_accel_10`, `vol_trend_5`, `vol_trend_10`): Measure *rate of change* of volatility, not just absolute level. This helps detect regime shifts
+3. **Fast RSI** (`rsi_6`): Complements the standard RSI; reacts faster to momentum changes
+4. **Short-window volume** (`rel_vol_5`): Captures immediate volume spikes
+5. **Autocorrelation features** (`ret_autocorr_5`, `ret_autocorr_10`): Detect mean reversion vs trending regimes
+6. **Momentum-Vol interactions at multiple scales** (`mom_vol_adj_5`, `mom_vol_adj_10`): Regime-aware momentum
+
+**Expected improvements:**
+- Predictions will have much higher variance (addressing the collapse warning)
+- Short-window features capture regime-specific patterns while Z-scores keep them normalized
+- Volatility trends help detect when patterns are breaking down
+- `val_slope` should increase from 0.0006 to 0.015+
+- `pred_std_ratio` should reach 0.20+
+- `val_DA` should improve toward 0.525+

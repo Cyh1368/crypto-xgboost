@@ -1,0 +1,72 @@
+<NAME>
+increase_expressivity_and_regime_features
+</NAME>
+
+<DESCRIPTION>
+The current model suffers from a 'collapse toward mean' (pred_std_ratio = 0.11, target >= 0.15) and validation DA is just above 0.51. To move the combined score towards positive territory, we must increase model expressivity while adding features that capture volatility regimes, as these often precede significant directional moves in 15m crypto futures.
+
+Changes:
+1. Increase `max_depth` to 6 and `n_estimators` to 750 to allow the model to capture more complex non-linear relationships, aiming to push the `pred_std_ratio` above 0.15.
+2. Add a small L2 regularization (`reg_lambda = 0.05`) to maintain stability given the increased depth.
+3. Add 'Choppiness Index' to identify ranging vs. trending regimes.
+4. Add 'Volatility Compression' (short-term vs. long-term ATR) to signal potential breakout periods.
+5. Add price 'Velocity' and 'Acceleration' to capture short-term momentum dynamics.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 750,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+=======
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    # --- Choppiness and Breakout Indicators ---
+    tr_sum_14 = tr.rolling(14).sum()
+    range_14 = high.rolling(14).max() - low.rolling(14).min()
+    feat['choppiness_14'] = 100 * np.log10(tr_sum_14 / (range_14 + 1e-9)) / np.log10(14)
+    feat['vol_compression'] = tr.rolling(5).mean() / (tr.rolling(20).mean() + 1e-9)
+
+    # --- Price Dynamics ---
+    feat['velocity_3'] = close.pct_change(1).rolling(3).mean()
+    feat['acceleration_3'] = feat['velocity_3'].diff(1)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+>>>>>>> REPLACE
+</DIFF>

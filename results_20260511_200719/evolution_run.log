@@ -1,0 +1,138 @@
+  @@@@@@@@@@@@@@@@@@@@@      ░██████╗██╗░░██╗██╗███╗░░██╗██╗░░██╗░█████╗░
+  @                   @      ██╔════╝██║░░██║██║████╗░██║██║░██╔╝██╔══██╗
+  @          @        @      ╚█████╗░███████║██║██╔██╗██║█████═╝░███████║
+  @    @@   @@  @@    @      ░╚═══██╗██╔══██║██║██║╚████║██╔═██╗░██╔══██║
+  @   @     @    @@   @      ██████╔╝██║░░██║██║██║░╚███║██║░╚██╗██║░░██║
+  @    @@  @    @     @      ╚═════╝░╚═╝░░╚═╝╚═╝╚═╝░░╚══╝╚═╝░░╚═╝╚═╝░░╚═╝
+  @        @          @      @@@@@@@@@@@@@@@
+  @                   @   @@                 @@@@@
+  @@@@@@@@@@@@@@@@@@@@ @@                       @  @@                 █▀▀
+                      @                          @@  @                ██▄
+                    @      @@                      @  @@
+                   @       @         @              @   @             █░█
+                   @                 @               @  @             ▀▄▀
+                     @@@@@          @     @           @  @
+                      @            @          @       @ @@            █▀█
+                   @@    @@     @@       @@   @        @              █▄█
+                  @@        @@         @     @         @
+                 @@       @@   @@       @@@@@          @        @@    █░░
+              @ @@                @                    @              █▄▄
+             @ @@@@@             @@ @@                 @      @@
+            @                  @       @@              @    @@        █░█
+       @@@@@@@@@@@@@@@@@@@@@@             @@@          @@@@@@@  @@    ▀▄▀
+       @     @         @                      @@         @@@  @@
+        @@               @                      @      @   @  @@      █▀▀
+          @@@@@@@@@@@@@@@@@@                   @    @   @   @@        ██▄
+                                               @  @  @   @
+                                               @  @  @@@@
+                                               @  @@
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - 🖥️  System resources detected:
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO -    • CPU cores: 16
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO -    • Memory: 7.6 GB
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - 🔧 Concurrency settings:
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO -    • Evaluation jobs: 4
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO -    • Proposal jobs: 6
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO -    • DB workers: 2
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO -    • Total threads: 12
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - Configured local numeric thread cap per eval process: 4
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - ASYNC EVOLUTION RUN STARTED
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - Max evaluation jobs: 4
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - Max proposal jobs: 6
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - Target generations: 100
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - Language: python
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - Results directory: results_20260511_200719
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - Log file: results_20260511_200719/evolution_run.log
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-11 20:07:19 - shinka.database.async_dbase - INFO - 🔧 AsyncDB initialized with 2 workers, 2 concurrent DB ops (WAL mode)
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - Copying initial program from evolve/initial.py
+2026-05-11 20:07:19 - shinka.core.async_runner - INFO - Starting initial program evaluation: results_20260511_200719/gen_0/main.py
+2026-05-11 20:07:19 - shinka.launch.local - INFO - Submitted local process with PID: 9810
+2026-05-11 20:07:19 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200719/gen_0/main.py --results_dir results_20260511_200719/gen_0/results
+2026-05-11 20:07:22 - shinka.core.async_runner - INFO - Initial program evaluation completed in 3.50s
+2026-05-11 20:07:23 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Initial program embedding computed (cost: $0.0000)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Initial program evaluated - correct: False, combined_score: -0.5160442537563001
+2026-05-11 20:07:23 - shinka.database.dbase - INFO - Program c201e923-f240-4e0c-89ee-c154fc44058c added to DB - score: -0.5160442537563001.
+                                 Program Evaluation Summary - Gen 0 | Total Cost: $0.00                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 0   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-0   │  ✗ Incorrect  │  -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+2026-05-11 20:07:23 - shinka.database.dbase - INFO - Creating copies of initial program c201e923-f240-4e0c-89ee-c154fc44058c for all islands
+2026-05-11 20:07:23 - shinka.database.islands - INFO - Created copy 12ba1c68... of program c201e923... for island 1
+2026-05-11 20:07:23 - shinka.database.islands - INFO - Created copy 354bbed2... of program c201e923... for island 2
+2026-05-11 20:07:23 - shinka.database.islands - INFO - Created copy 84fbe747... of program c201e923... for island 3
+2026-05-11 20:07:23 - shinka.database.islands - INFO - Created 3 copies of program c201e923... for islands 1-3
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Setup initial program: c201e923-f240-4e0c-89ee-c154fc44058c
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Generation 0 completed during setup
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Verifying database is ready for sampling...
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Database ready - 4 program(s) available for sampling
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Database verification completed - ready for proposal generation
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - 🔄 Job monitor task started
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=0.00s, evaluation_ewma=0.00s, timing_samples=0, active_proposals=0, running_jobs=0)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Starting 4 new proposals. Pipeline: 0/4 (running_jobs=0, active_proposals=0/6), Remaining completed work: 99 (completed=1/100, next_generation=1)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Started proposal task for generation 1 (cost: $0.0000)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Started proposal task for generation 2 (cost: $0.0000)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Started proposal task for generation 3 (cost: $0.0000)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Started proposal task for generation 4 (cost: $0.0000)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Generating proposal for generation 1
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Generating proposal for generation 2
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Generating proposal for generation 3
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Generating proposal for generation 4
+2026-05-11 20:07:23 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 12ba1c68-0a3a-4ac8-8d14-625f5165d2c4 (Gen: 0) [from 4 incorrect programs].
+              Parent & Context Sampling Summary - Gen 1 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-1   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 12ba1c68-0a3a-4ac8-8d14-625f5165d2c4 (Gen: 0)
+2026-05-11 20:07:23 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:07:23 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program c201e923-f240-4e0c-89ee-c154fc44058c (Gen: 0) [from 4 incorrect programs].
+2026-05-11 20:07:23 - shinka.llm.llm - INFO - ==> SAMPLING:
+  gpt-4.1-mini                     1.0000
+2026-05-11 20:07:23 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-4.1-mini', '1.0', '16384']
+              Parent & Context Sampling Summary - Gen 2 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-0   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program c201e923-f240-4e0c-89ee-c154fc44058c (Gen: 0)
+2026-05-11 20:07:23 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:07:23 - shinka.llm.llm - INFO - ==> SAMPLING:
+  gpt-4.1-mini                     1.0000
+2026-05-11 20:07:23 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-4.1-mini', '0.5', '16384']
+2026-05-11 20:07:23 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 354bbed2-4c43-45fd-a003-56392fbff93a (Gen: 0) [from 4 incorrect programs].
+              Parent & Context Sampling Summary - Gen 3 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-2   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 354bbed2-4c43-45fd-a003-56392fbff93a (Gen: 0)
+2026-05-11 20:07:23 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:07:23 - shinka.llm.llm - INFO - ==> SAMPLING:
+  gpt-4.1-mini                     1.0000
+2026-05-11 20:07:23 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-4.1-mini', '1.0', '16384']
+2026-05-11 20:07:23 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 12ba1c68-0a3a-4ac8-8d14-625f5165d2c4 (Gen: 0) [from 4 incorrect programs].
+              Parent & Context Sampling Summary - Gen 4 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-1   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 12ba1c68-0a3a-4ac8-8d14-625f5165d2c4 (Gen: 0)
+2026-05-11 20:07:23 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:07:23 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:07:23 - shinka.llm.llm - INFO - ==> SAMPLING:
+  gpt-4.1-mini                     1.0000
+2026-05-11 20:07:23 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-4.1-mini', '0.5', '16384']
+2026-05-11 20:07:30 - shinka.database.async_dbase - INFO - 🔧 Closing async database with monitoring...
+2026-05-11 20:07:30 - shinka.database.async_dbase - INFO - Async database closed

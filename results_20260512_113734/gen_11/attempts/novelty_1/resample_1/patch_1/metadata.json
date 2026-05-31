@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "short_regime_normalized_features",
+  "patch_description": "This edit targets the main failure mode: the model\u2019s slope collapses in the validation regime because the current feature set is dominated by absolute, long-horizon signals that do not survive regime shifts. I propose two coordinated changes:\n\n1. Make the booster less prone to fitting brittle, high-variance patterns by reducing depth/estimators and adding modest regularization.\n2. Rebuild features around short lookbacks, rolling z-scores, and change-of-regime signals. This emphasizes rate-of-change and normalized structure rather than absolute levels, which should improve cross-regime transfer and lift validation slope without inflating feature count.\n\nThe resulting feature set stays compact, uses only past data, and keeps all interactions causal.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:40:34.618502",
+  "llm_cost": 0.0264195,
+  "llm_model": "gpt-5.4-mini"
+}

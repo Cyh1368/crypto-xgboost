@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "increase_expressivity_and_prune_features",
+  "patch_description": "The model currently suffers from 'prediction collapse' (pred_std_ratio = 0.04, well below the 0.15 target), which heavily penalizes the combined score. To address this, I am increasing model expressivity and reducing regularization:\n1.  **XGBoost Hyperparameters**: Increased `max_depth` to 6, `learning_rate` to 0.06, and `n_estimators` to 1000. Reduced `min_child_weight` to 1 and `reg_lambda` to 0.1 to allow the model to capture more signal variance.\n2.  **Feature Pruning**: The current feature set (~90 features) exceeds the 80-feature limit, causing critical features like Orderbook Imbalance (OBI) and Funding Rates to be truncated. I removed redundant features (`logret_lag`, `mom_slope`, `ret_mean`) to bring the count under 80, ensuring all signals are utilized.\n3.  **Refined Windows**: Simplified volume and momentum windows to focus on the most impactful horizons while maintaining diversity.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:29:14.390156",
+  "llm_cost": 0.0089705,
+  "llm_model": "gemini-3-flash-preview"
+}

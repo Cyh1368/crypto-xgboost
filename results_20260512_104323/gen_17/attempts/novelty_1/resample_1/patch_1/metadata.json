@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_zscoring_and_robust_params",
+  "patch_description": "The primary issue is a severe slope collapse (0.074 to 0.006) and a low prediction standard deviation (0.11), indicating the model is overfitting to training-specific noise and predicting too close to the mean on unseen data.\n\nI am implementing three key improvements:\n1. **Regime-Invariant Features**: Applying rolling Z-score normalization to key indicators like RSI, Price Deviation, and Volatility. This makes the features relative to the local market environment (e.g., \"how high is RSI relative to the last 15 hours?\") rather than absolute, which generalizes better across market regimes.\n2. **Robust Hyperparameters**: Increasing `min_child_weight` from 1 to 12 and decreasing `max_depth` to 4. This forces the model to find patterns that apply to larger samples, preventing it from memorizing idiosyncratic training noise. I also added `reg_alpha` and `reg_lambda` for further regularization.\n3. **Consolidated Interactions**: Replacing multiple redundant momentum/volatility interactions with a few high-signal ones, like `momentum_regime` (Sharpe-like ratio) and `volume_price_pressure`. These capture the \"character\" of the move rather than just its magnitude.\n4. **Shorter Lookbacks**: Reducing the maximum lookback for returns and regime detection to focus on more recent, relevant data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:48:11.688542",
+  "llm_cost": 0.0187995,
+  "llm_model": "gemini-3-flash-preview"
+}

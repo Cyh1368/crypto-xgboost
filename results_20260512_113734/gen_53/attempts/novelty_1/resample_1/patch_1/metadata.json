@@ -1,0 +1,14 @@
+{
+  "generation": 53,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_crossover_xgb",
+  "patch_description": "This version crossovers the stronger parts of the prior feature sets while biasing more heavily toward regime-invariant, short-horizon signals. It keeps the feature count under 80, emphasizes rolling z-scores, short lookbacks, volatility/efficiency/autocorrelation change features, and a few robust interactions like momentum \u00d7 volatility regime. The XGBoost settings are slightly more expressive than the current program but still constrained to avoid overfitting and prediction collapse.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:17:16.996587",
+  "llm_cost": 0.037755,
+  "llm_model": "gpt-5.4-mini"
+}

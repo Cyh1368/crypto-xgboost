@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "regime_adaptive_features_shorter_lookback",
+  "patch_description": "This edit addresses the core problem: val_slope collapse from 0.074\u21920.006.\n\nChanges:\n1. Reduce primary lookback windows from 60\u219220 bars (faster decay, better cross-regime generalization)\n2. Add z-score normalized features within rolling windows (makes features regime-invariant)\n3. Add volatility trend features (vol_trend_ratio, vol_accel) to detect regime shifts\n4. Add adaptive momentum scaled by volatility regime\n5. Increase model expressivity: reduce reg_alpha/lambda, increase max_depth from 5\u21926, reduce min_child_weight 1\u21920.5\n6. Reduce n_estimators slightly (400\u2192300) to avoid overfitting while increasing depth\n\nThe z-score normalization is crucial: instead of using raw returns, we use (ret - rolling_mean) / rolling_std within a window. This makes the feature invariant to the absolute volatility level, only capturing deviations from recent behavior.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:47:33.060177",
+  "llm_cost": 0.022486,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

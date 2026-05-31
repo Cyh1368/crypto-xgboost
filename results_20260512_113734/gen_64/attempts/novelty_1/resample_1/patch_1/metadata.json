@@ -1,0 +1,14 @@
+{
+  "generation": 64,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This version crosses the current short-horizon regime-invariant setup with the best ideas from the prior programs: shorter lookbacks, rolling z-score normalization, regime-change features, and a limited set of multiplicative interactions that should generalize better across the test\u2192val regime shift.\n\nCompared with the current program, it:\n- shifts emphasis toward 5\u201320 bar dynamics instead of longer windows\n- adds rolling normalization for returns, price location, volume, volatility, and momentum\n- includes trend-of-regime features such as volatility trend, efficiency trend, and autocorrelation trend\n- keeps only a compact feature set under the 80-feature cap\n- slightly relaxes model regularization to reduce prediction collapse while keeping enough bias control to avoid overfit\n\nThe goal is to improve val slope and prediction dispersion without sacrificing the current directional accuracy floor.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:30:35.715144",
+  "llm_cost": 0.03945975,
+  "llm_model": "gpt-5.4-mini"
+}

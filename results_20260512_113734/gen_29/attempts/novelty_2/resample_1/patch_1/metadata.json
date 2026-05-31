@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_crossover_v1",
+  "patch_description": "This crossover combines the best elements from both programs:\n\n1. **Hyperparameters from the higher-scoring program**: Uses the stronger regularization (reg_alpha=0.25, reg_lambda=1.8) and deeper trees (max_depth=4, min_child_weight=4) from the -1.55 score program, which showed better generalization (96.0% vs 85.4%) and slope ratio (19.9% vs 15.7%).\n\n2. **Feature engineering synthesis**:\n   - Keeps the shorter-horizon focus (removing lag 16 from returns, focusing on 1,2,3,5,8,12,20)\n   - Uses the more aggressive z-score windows [10,20,40] instead of [5,10,20] for better regime invariance\n   - Removes redundant features (atr_5, some efficiency features) to stay well under 80 features\n   - Adds back key z-scored price deviations (price_sma5_z, price_sma10_z) which help with regime adaptation\n   - Keeps momentum_z features which normalize momentum across regimes\n   - Maintains all critical interaction terms (momentum\u00d7vol, volume\u00d7price, trend\u00d7vol)\n\n3. **Strategic feature reduction**: The -1.55 program showed that fewer, more regime-invariant features generalize better. This crossover removes:\n   - Redundant efficiency features (keeps efficiency_10, efficiency_20, eff_trend)\n   - Extra autocorrelation lags (keeps autocorr_5, autocorr_10, autocorr_trend)\n   - Extra ATR features (removes atr_5, keeps atr_10, atr_20)\n   - One RSI period (removes rsi_8, keeps 5,10,14)\n\nThe goal is to combine the stronger regularization and model capacity from the -1.55 program with the comprehensive feature set from the current program, while maintaining regime-invariant normalization throughout.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:14:05.149574",
+  "llm_cost": 0.17316600000000001,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

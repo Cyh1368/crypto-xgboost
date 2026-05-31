@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "increase_expressivity_and_regime_invariance",
+  "patch_description": "The model currently suffers from prediction collapse (very low slope and pred_std_ratio) and poor generalization across regimes. \n\nKey changes:\n1.  **Increased Model Expressivity**: Boosted `max_depth` to 5, decreased `min_child_weight` to 2, and reduced `reg_lambda` to 0.6. This allows the model to capture more complex patterns and prevents it from collapsing toward the mean.\n2.  **Vol-Normalized Returns**: Replaced raw returns with volatility-normalized returns (`ret / (vol * sqrt(lag))`). This makes return features regime-invariant, as a 1% move is scaled by the current market volatility.\n3.  **Regime-Invariant Volatility**: Replaced raw volatility with Z-scored volatility and added a rolling `vol_rank_100`. Rank-based features are perfectly regime-invariant.\n4.  **Removed Slow Operations**: Removed the `ret_autocorr_5` feature which uses a slow `.apply()` call, improving execution speed.\n5.  **Added Robust Indicators**: Added a 14-period Stochastic %K (`stoch_k_14`) which is naturally bounded and robust to price scaling.\n6.  **Adjusted Learning Rate**: Increased `n_estimators` to 400 and tuned the `learning_rate` to 0.06 to allow for better convergence with the increased depth.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:47:19.516258",
+  "llm_cost": 0.0093335,
+  "llm_model": "gemini-3-flash-preview"
+}

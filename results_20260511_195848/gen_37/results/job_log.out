@@ -1,0 +1,13 @@
+RUN ERROR: name 'CLIP_PERCENTILE' is not defined
+Traceback (most recent call last):
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 153, in main
+    result = run_fn(df)
+             ^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 135, in run_fn
+    return mod.run_experiment(X_tr, y_tr, X_te, y_te, X_va, y_va)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/results_20260511_195848/gen_37/main.py", line 148, in run_experiment
+    clip_val = np.percentile(np.abs(y_train), CLIP_PERCENTILE)
+                                              ^^^^^^^^^^^^^^^
+NameError: name 'CLIP_PERCENTILE' is not defined
+

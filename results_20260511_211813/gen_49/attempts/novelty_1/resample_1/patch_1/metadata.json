@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "expressivity_and_strict_shifting",
+  "patch_description": "Optimized the model for higher expressivity and signal extraction to address the prediction collapse.\n1. Increased expressivity: Increased `max_depth` to 7, reduced `reg_lambda` to 0.1, and decreased `min_child_weight` to 2. This pushes the model away from predicting the mean and toward capturing tail-end directional signals.\n2. Robust feature engineering: Implemented a strictly past-only feature set by ensuring every calculation is shifted by at least one bar (using `shift(1)`).\n3. Signal refinement: Added classic technical indicators like RSI and normalized distance from high/low to capture mean reversion. \n4. Feature pruning: Consolidated features to approximately 55 high-signal inputs (under the 80-feature limit) to focus on multi-horizon momentum, volatility regimes, and volume-confirmed moves while avoiding dimensionality issues.\n5. Orderbook and Funding: Maintained focus on market microstructure cues (OBI and funding) which often provide the cleanest alpha in perp markets.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:29:29.405959",
+  "llm_cost": 0.020313499999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

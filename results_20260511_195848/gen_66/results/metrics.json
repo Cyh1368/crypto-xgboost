@@ -1,0 +1,7 @@
+{
+  "combined_score": -10.0,
+  "public": {
+    "error": "This method is only implemented for DatetimeIndex, PeriodIndex and TimedeltaIndex; Got type Index"
+  },
+  "private": {}
+}

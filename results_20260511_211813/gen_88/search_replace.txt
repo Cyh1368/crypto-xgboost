@@ -1,0 +1,123 @@
+Looking at the performance metrics, I can see a consistent pattern across all prior runs:
+
+**Key observations:**
+1. **Persistent collapse penalty (~0.47-0.65)**: pred_std_ratio stays very low (0.02-0.06), indicating predictions cluster near the mean
+2. **Mild overfit (0.02-0.06)**: train_DA consistently exceeds val_DA by ~3-5%, suggesting modest overfitting
+3. **Stalled val_DA (~0.52)**: Barely above random (0.50), indicating weak signal extraction
+4. **Best score: -0.25**: Achieved with higher pred_std_ratio (0.044) and better regularization balance
+
+**Root cause:** Heavy regularization (reg_lambda=0.5, reg_alpha up to 0.05) is collapsing model expressivity to suppress variance, but this kills the signal. The model learns to predict near-zero (mean BPS) rather than differentiate between bullish/bearish bars.
+
+**Strategy:**
+1. **Drastically reduce L2 regularization** to allow the model to express learned patterns
+2. **Increase tree complexity slightly** (max_depth 6→7, min_child_weight 1→0) to capture non-linear interactions
+3. **Add variance-amplifying features** that explicitly encode short-term directional bias and price mean-reversion extremes
+4. **Use higher learning rate** with earlier stopping to explore solution space more aggressively
+5. **Loosen target clipping** slightly to preserve signal in tail moves
+
+The best prior run (-0.25) had pred_std_ratio=0.044 with looser regularization. I'll push further in that direction while adding stronger signal features.
+
+<NAME>
+aggressive_regularization_reduction_with_signal_features
+</NAME>
+
+<DESCRIPTION>
+The core problem is that heavy L2/L1 regularization (reg_lambda=0.5, reg_alpha=0.05) is collapsing predictions toward the mean, producing pred_std_ratio~0.056 instead of the needed 0.15+. Prior runs show the best results when regularization is lighter (e.g., reg_lambda=0.1, reg_alpha=0.0-0.01).
+
+Changes:
+1. **XGB_PARAMS**: Drastically reduce reg_lambda (0.5→0.15), eliminate reg_alpha (0.05→0.0), increase learning_rate (0.05→0.08), allow min_child_weight to go to 0, increase max_depth to 7 for flexibility, raise n_estimators to 1200 with aggressive early stopping (40).
+
+2. **build_features()**: Add short-term mean-reversion and directional-bias features that XGBoost can latch onto:
+   - Short-term price extremes (5-bar and 10-bar percentile ranks) to capture mean-reversion setups
+   - Intrabar momentum acceleration (ret_accel_3_12, ret_accel_6_24)
+   - Return entropy/skewness over short windows for tail-risk detection
+   - Close relative to recent range (close_rank_8) for quick reversals
+   - Simple price velocity (close - close_shift_4) as a leading signal
+   These are all properly shifted and past-only.
+
+3. **CLIP_PERCENTILE**: Increase from 98.0→99.0 to preserve tail signal while still clipping outliers.
+
+Expected outcome: Higher pred_std_ratio (target 0.10+), better signal capture, and val_DA→0.53+.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98.0
+=======
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 7,
+    "min_child_weight": 0,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.15,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+
+CLIP_PERCENTILE = 99.0
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Trend & Regime ---
+    ma_fast = close.rolling(12).mean().shift(1)
+    ma_slow = close.rolling(48).mean().shift(1)
+    feat['trend_rel'] = (ma_fast / (ma_slow + eps)) - 1.0
+    feat['vol_regime'] = feat['rv_10'] / (feat['rv_60'] + eps)
+
+    # --- Session / Time (No shift needed for time) ---
+=======
+    # --- Trend & Regime ---
+    ma_fast = close.rolling(12).mean().shift(1)
+    ma_slow = close.rolling(48).mean().shift(1)
+    feat['trend_rel'] = (ma_fast / (ma_slow + eps)) - 1.0
+    feat['vol_regime'] = feat['rv_10'] / (feat['rv_60'] + eps)
+
+    # --- Short-term mean reversion & directional bias ---
+    # Price percentile ranks for quick reversal detection
+    feat['close_rank_8'] = close.rolling(8).apply(
+        lambda x: pd.Series(x).rank(pct=True).iloc[-1], raw=False
+    ).shift(1)
+    feat['close_rank_5'] = close.rolling(5).apply(
+        lambda x: pd.Series(x).rank(pct=True).iloc[-1], raw=False
+    ).shift(1)
+
+    # Short-term momentum acceleration (directional bias)
+    feat['ret_accel_3_12'] = (close.pct_change(3) - close.pct_change(12)).shift(1)
+    feat['ret_accel_6_24'] = (close.pct_change(6) - close.pct_change(24)).shift(1)
+
+    # Price velocity: 4-bar price change as leading signal
+    feat['velocity_4'] = close.pct_change(4).shift(1)
+    feat['velocity_8'] = close.pct_change(8).shift(1)
+
+    # Return skewness for tail-risk detection (short window)
+    ret_mu_10 = log_ret1.rolling(10).mean().shift(1)
+    ret_sd_10 = log_ret1.rolling(10).std().shift(1)
+    feat['ret_skew_10'] = (((log_ret1 - ret_mu_10) / (ret_sd_10 + eps)) ** 3).rolling(10).mean().shift(1)
+
+    # --- Session / Time (No shift needed for time) ---
+>>>>>>> REPLACE
+</DIFF>

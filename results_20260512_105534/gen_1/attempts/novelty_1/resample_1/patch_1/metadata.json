@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_shortlookback",
+  "patch_description": "This edit attacks the main failure mode: the model\u2019s slope collapses out-of-sample because the current feature set is dominated by longer-horizon, regime-specific levels. I\u2019m shifting the feature space toward shorter, more adaptive windows and adding rolling z-score normalization so signals are expressed relative to their recent local regime rather than absolute price/volatility levels.\n\nConcretely:\n- Reduce reliance on 20/60-bar horizons and add 5/10/15/20-bar momentum, volatility, and efficiency features.\n- Add rolling normalized versions of key momentum, volatility, ATR, RSI, MACD, and volume features.\n- Add rate-of-change regime features such as volatility trend and efficiency trend.\n- Keep the feature count under 80 while increasing regime robustness.\n- Make the model slightly more conservative with stronger regularization and fewer trees to reduce memorization of the training regime.\n\nThis should improve val slope and pred_std_ratio by making the learned relationships more stationary across the train/test/val regime shifts.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:56:08.635095",
+  "llm_cost": 0.02568825,
+  "llm_model": "gpt-5.4-mini"
+}

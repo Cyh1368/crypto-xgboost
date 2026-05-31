@@ -1,0 +1,14 @@
+{
+  "generation": 66,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover version keeps the strongest parts of the prior feature sets while shifting the model toward shorter lookbacks, regime-invariant rolling normalization, and explicit market-character change features. It removes some slower, regime-specific structures, adds compact z-scored momentum/volatility/efficiency signals, and preserves the key interaction term momentum \u00d7 volatility regime.  \nOn the model side, it slightly increases tree depth and reduces over-regularization collapse by using a more balanced XGBoost configuration with stronger sample constraints than the most aggressive runs, aiming to improve validation slope and prediction dispersion without sacrificing directional accuracy.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:38:53.516233",
+  "llm_cost": 0.04082625,
+  "llm_model": "gpt-5.4-mini"
+}

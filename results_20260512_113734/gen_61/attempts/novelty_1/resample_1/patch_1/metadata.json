@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover version emphasizes shorter-horizon, regime-invariant signals while keeping the feature set compact and robust. It combines the strongest ideas from the prior programs: rolling z-scores, volatility/trend-change features, momentum \u00d7 volatility interactions, and light winsorization. It also reduces feature horizons overall to better survive the train\u2192test\u2192val regime shift, while slightly increasing model expressivity to help prevent prediction collapse toward the mean. The feature count remains well below the 80-feature limit and all features use only past data.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:28:15.629413",
+  "llm_cost": 0.041673,
+  "llm_model": "gpt-5.4-mini"
+}

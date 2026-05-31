@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "regime_robust_short_windows",
+  "patch_description": "This edit targets the main failure mode: the model\u2019s signal collapses in the validation regime because it is learning overly specific level-based patterns and is too constrained to express a stable slope.\n\nI\u2019m making two coordinated changes:\n\n1. Hyperparameters:\n   - Relax regularization a bit so XGBoost can fit stronger but still controlled structure.\n   - Increase tree count and depth slightly to recover predictive slope.\n   - Lower learning rate and raise early stopping patience to let the model find more robust patterns without overfitting sharply to the training regime.\n   - Keep min_child_weight above the current minimum to avoid noisy splits, but reduce it from 5 to 2 to improve expressivity.\n\n2. Features:\n   - Shift emphasis toward short lookbacks and regime-normalized signals.\n   - Add rolling z-score versions of returns and volatility, which makes features more comparable across volatility regimes.\n   - Add trend-of-regime features such as vol_trend, efficiency_trend, and short-horizon momentum normalized by volatility.\n   - Add a multiplicative interaction between short momentum and volatility regime, which often generalizes better than absolute momentum alone.\n   - Replace some longer-window dependence with shorter windows to reduce regime fragility.\n\nThe goal is to increase val slope and pred_std_ratio without sacrificing too much DA or widening the train\u2192val gap.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:16:18.146147",
+  "llm_cost": 0.01824525,
+  "llm_model": "gpt-5.4-mini"
+}

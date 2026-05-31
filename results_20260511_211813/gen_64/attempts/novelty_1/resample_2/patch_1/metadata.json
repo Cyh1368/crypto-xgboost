@@ -1,0 +1,14 @@
+{
+  "generation": 64,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_exhaustion_features",
+  "patch_description": "The model is still experiencing partial prediction collapse (pred_std_ratio = 0.11, targeted > 0.15). To address this, I am increasing the model's expressivity by increasing `max_depth` to 7 and `n_estimators` to 1000, while significantly lowering the `learning_rate` to 0.02 to allow for a more nuanced ensemble. \n\nOn the feature engineering side, I am adding \"Exhaustion\" features that measure the price distance from 24-hour highs and lows normalized by ATR. These features help identify overextended regimes where mean reversion is likely. I am also adding a 'Volatility of Volatility' (V-Vol) metric and 'Money Flow Index' (MFI) to better capture the relationship between price pressure and volume, which are critical for out-of-sample directional accuracy in 15-minute crypto futures.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:33:24.481724",
+  "llm_cost": 0.014627,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 7,
+  "patch_name": "rolling_regime_invariance",
+  "patch_description": "This edit targets the exact failure mode: the model\u2019s slope collapses out-of-sample because it leans too much on absolute levels that shift across regimes. I\u2019m making the feature set more regime-invariant by:\n- replacing some long-horizon absolute features with shorter lookbacks,\n- adding rolling z-score versions of key signals,\n- adding rate-of-change features for volatility, efficiency, and autocorrelation,\n- adding a momentum \u00d7 volatility interaction on a short horizon.\n\nI also reduce tree complexity and increase minimum child weight slightly so XGBoost is forced to prefer higher-support patterns that are less likely to evaporate in the validation regime. This should help raise val slope and pred_std_ratio without blowing up the train/val gap.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:16:08.021046",
+  "llm_cost": 0.01819575,
+  "llm_model": "gpt-5.4-mini"
+}

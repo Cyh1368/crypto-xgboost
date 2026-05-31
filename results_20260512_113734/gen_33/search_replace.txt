@@ -1,0 +1,156 @@
+<NAME>
+regime_conditional_features
+</NAME>
+
+<DESCRIPTION>
+The current best program achieves 96.0% generalization ratio but suffers from a val_slope that's only 7.8% of train_slope. The key insight from the best performer is that it includes `vol_regime_rank` and `vol_regime_20_40` but doesn't use them to modulate other features adaptively.
+
+I will implement regime-conditional versions of the top-performing features by creating multiplicative interactions between momentum, efficiency, and autocorrelation features with volatility regime indicators. This approach makes features explicitly adapt to market conditions rather than assuming static relationships.
+
+Specifically, I will:
+1. Create high-volatility versions of momentum features (ret_3, ret_5) by multiplying with (vol_regime_rank > 0.7)
+2. Create low-volatility versions of efficiency and autocorrelation features by multiplying with (vol_regime_rank < 0.3)
+3. Add regime-conditional RSI features that behave differently in different volatility environments
+4. Create a volatility regime transition indicator to capture regime shifts
+
+This should improve the slope ratio by making the model learn regime-specific patterns that generalize better across the train→test→val boundaries.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # -----------------------
+    # Regime features
+    # -----------------------
+    trend_10 = (close / close.shift(10) - 1.0)
+    trend_20 = (close / close.shift(20) - 1.0)
+    trend_40 = (close / close.shift(40) - 1.0)
+    feat["trend_strength_10"] = trend_10.abs() * 10000
+    feat["trend_strength_20"] = trend_20.abs() * 10000
+    feat["trend_strength_40"] = trend_40.abs() * 10000
+    feat["trend_dir_10"] = np.sign(trend_10)
+    feat["trend_dir_20"] = np.sign(trend_20)
+    feat["vol_regime_20_40"] = vol_20 / (vol_40 + eps)
+    feat["vol_regime_10_20"] = vol_10 / (vol_20 + eps)
+    feat["vol_regime_rank"] = vol_20.rolling(120).rank(pct=True)
+=======
+    # -----------------------
+    # Regime features
+    # -----------------------
+    trend_10 = (close / close.shift(10) - 1.0)
+    trend_20 = (close / close.shift(20) - 1.0)
+    trend_40 = (close / close.shift(40) - 1.0)
+    feat["trend_strength_10"] = trend_10.abs() * 10000
+    feat["trend_strength_20"] = trend_20.abs() * 10000
+    feat["trend_strength_40"] = trend_40.abs() * 10000
+    feat["trend_dir_10"] = np.sign(trend_10)
+    feat["trend_dir_20"] = np.sign(trend_20)
+    feat["vol_regime_20_40"] = vol_20 / (vol_40 + eps)
+    feat["vol_regime_10_20"] = vol_10 / (vol_20 + eps)
+    feat["vol_regime_rank"] = vol_20.rolling(120).rank(pct=True)
+
+    # -----------------------
+    # Regime-conditional features
+    # -----------------------
+    # High volatility regime indicator (top 30%)
+    high_vol_regime = (feat["vol_regime_rank"] > 0.7).astype(float)
+    # Low volatility regime indicator (bottom 30%)
+    low_vol_regime = (feat["vol_regime_rank"] < 0.3).astype(float)
+    # Mid volatility regime
+    mid_vol_regime = ((feat["vol_regime_rank"] >= 0.3) & (feat["vol_regime_rank"] <= 0.7)).astype(float)
+
+    # Momentum features conditional on volatility regime
+    feat["ret_3_high_vol"] = ret_3 * high_vol_regime
+    feat["ret_5_high_vol"] = ret_5 * high_vol_regime
+    feat["ret_3_low_vol"] = ret_3 * low_vol_regime
+    feat["ret_5_low_vol"] = ret_5 * low_vol_regime
+
+    # Efficiency features conditional on volatility regime
+    feat["efficiency_10_low_vol"] = feat["efficiency_10"] * low_vol_regime
+    feat["efficiency_20_low_vol"] = feat["efficiency_20"] * low_vol_regime
+    feat["efficiency_10_high_vol"] = feat["efficiency_10"] * high_vol_regime
+
+    # Autocorrelation features conditional on volatility regime
+    feat["autocorr_5_low_vol"] = feat["autocorr_5"] * low_vol_regime
+    feat["autocorr_10_low_vol"] = feat["autocorr_10"] * low_vol_regime
+    feat["autocorr_5_high_vol"] = feat["autocorr_5"] * high_vol_regime
+
+    # RSI conditional on volatility regime
+    feat["rsi_10_high_vol"] = feat["rsi_10"] * high_vol_regime
+    feat["rsi_10_low_vol"] = feat["rsi_10"] * low_vol_regime
+
+    # Regime transition indicator (captures regime shifts)
+    vol_regime_change = feat["vol_regime_rank"].diff(5)
+    feat["vol_regime_transition"] = vol_regime_change.abs()
+    feat["vol_regime_up_transition"] = vol_regime_change.clip(lower=0)
+    feat["vol_regime_down_transition"] = (-vol_regime_change).clip(lower=0)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # Final cleanup
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+
+    # Keep feature count below limit
+    if feat.shape[1] > 80:
+        feat = feat.iloc[:, :80]
+
+    return feat
+=======
+    # Final cleanup
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+
+    # Keep feature count below limit - prioritize regime-conditional features
+    if feat.shape[1] > 80:
+        # Keep the most important regime-conditional features
+        priority_cols = [col for col in feat.columns if any(x in col for x in
+                        ['_high_vol', '_low_vol', 'regime_transition', 'vol_regime_rank',
+                         'vol_regime_20_40', 'efficiency', 'autocorr', 'ret_z', 'momentum_regime'])]
+        other_cols = [col for col in feat.columns if col not in priority_cols]
+        # Keep all priority columns and fill remaining slots with other columns
+        keep_cols = priority_cols + other_cols[:max(0, 80 - len(priority_cols))]
+        feat = feat[keep_cols]
+
+    return feat
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+XGB_PARAMS = {
+    "n_estimators": 640,
+    "max_depth": 3,
+    "min_child_weight": 3,
+    "reg_alpha": 0.08,
+    "reg_lambda": 0.9,
+    "subsample": 0.84,
+    "colsample_bytree": 0.78,
+    "learning_rate": 0.045,
+    "gamma": 0.02,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 55,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 580,
+    "max_depth": 4,
+    "min_child_weight": 4,
+    "reg_alpha": 0.12,
+    "reg_lambda": 1.1,
+    "subsample": 0.86,
+    "colsample_bytree": 0.76,
+    "learning_rate": 0.05,
+    "gamma": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+</DIFF>

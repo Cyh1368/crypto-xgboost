@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover version keeps the stronger regime-stabilizing ideas from the prior implementations while reducing reliance on long lookbacks that likely caused the train\u2192validation slope collapse. It emphasizes:\n\n- shorter rolling windows and faster-decaying signals,\n- rolling z-score normalization to make features more regime-invariant,\n- explicit features for changes in market character such as volatility trend, autocorrelation trend, and efficiency trend,\n- a small number of interaction terms that often generalize better than raw components alone,\n- slightly less regularization and a bit more model expressivity to reduce prediction collapse.\n\nThe feature count stays well under the 80-feature limit, all features use only past data, and the interface/output format remains unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:16:56.876432",
+  "llm_cost": 0.026334,
+  "llm_model": "gpt-5.4-mini"
+}

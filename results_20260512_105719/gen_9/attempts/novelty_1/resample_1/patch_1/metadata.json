@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "shorter_regime_normalized_features",
+  "patch_description": "This edit attacks the regime-shift collapse directly by replacing several long-horizon, regime-specific signals with shorter-window, rolling-normalized features that are more invariant across market volatility states.\n\nKey ideas:\n- Use shorter lookbacks (5\u201320 bars) for momentum, volatility, volume, and range features so the model relies on fresher structure that is less likely to vanish in the validation regime.\n- Add rolling z-scores for returns, volume, volatility, ATR, and price position to make features comparable across low- and high-volatility periods.\n- Add \u201crate of change of market character\u201d features such as volatility trend, efficiency trend, and autocorrelation trend.\n- Keep a momentum \u00d7 volatility-regime interaction, but in a simpler form that should generalize better.\n- Tighten XGBoost to reduce overfit-induced slope collapse: shallower trees, more conservative learning rate, stronger regularization, and higher min_child_weight.\n\nThis should improve val slope and pred_std_ratio while keeping the train/val gap controlled.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:59:31.397972",
+  "llm_cost": 0.02425275,
+  "llm_model": "gpt-5.4-mini"
+}

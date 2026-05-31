@@ -1,0 +1,158 @@
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 950,
+    "max_depth": 6,
+    "min_child_weight": 5,           # Increased to prevent fitting noise in high-variance setup
+    "reg_alpha": 0.0,                # Reduced to zero to combat prediction collapse
+    "reg_lambda": 0.001,             # Minimal L2 to allow higher variance in predictions
+    "subsample": 0.8,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.07,
+    "gamma": 0.02,                   # Small threshold for tree growth
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 98          # Higher percentile preserves more detail in return distributions
+MIN_PRED_STD_RATIO = 0.15     # Encouraging more expressive prediction distributions
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build a feature matrix using strictly past-only data.
+    Focuses on rolling ranks and candle microstructure.
+    Target: 15-minute directional momentum/reversals.
+    """
+    # Shift input data by 1 to ensure no lookahead
+    # All features derived here will use 's' (shifted) data
+    s = df.shift(1)
+    
+    feat = pd.DataFrame(index=df.index)
+
+    close = s['close']
+    volume = s['volume']
+    high = s['high']
+    low = s['low']
+    open_ = s['open']
+
+    # --- 1. Non-Parametric Momentum (Rolling Ranks) ---
+    ret1 = close.pct_change(1)
+    for w in [4, 12, 48]:
+        # Captures how extreme current returns are relative to the recent past
+        feat[f'ret_rank_{w}'] = ret1.rolling(w).rank(pct=True)
+        feat[f'mom_{w}'] = close.pct_change(w)
+
+    # --- 2. Candle Microstructure (Wick/Body Dynamics) ---
+    body = (close - open_).abs()
+    range_ = (high - low).clip(lower=1e-9)
+    feat['body_pct'] = body / range_
+    feat['upper_wick'] = (high - s[['open', 'close']].max(axis=1)) / range_
+    feat['lower_wick'] = (s[['open', 'close']].min(axis=1) - low) / range_
+    feat['wick_balance'] = feat['upper_wick'] - feat['lower_wick']
+    
+    # --- 3. Volatility Regimes ---
+    log_ret = np.log(close / close.shift(1))
+    vol_short = log_ret.rolling(12).std()
+    vol_long = log_ret.rolling(96).std()
+    feat['vol_ratio'] = vol_short / (vol_long + 1e-9)
+    feat['dist_atr'] = (high - low).rolling(14).mean() / (close + 1e-9)
+    
+    # --- 4. Mean Reversion & Price Displacement ---
+    sma20 = close.rolling(20).mean()
+    sma100 = close.rolling(100).mean()
+    feat['dist_sma20'] = (close - sma20) / (close * feat['dist_atr'] + 1e-9)
+    feat['ma_spread'] = (sma20 - sma100) / (sma100 + 1e-9)
+    
+    # VWAP deviation (proxy using mid-price*vol if true VWAP is unavailable)
+    typical_price = (high + low + close) / 3.0
+    vwap_approx = (typical_price * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap_approx) / (close + 1e-9)
+
+    # --- 5. Relative Volume Intensity ---
+    vol_ma = volume.rolling(48).mean()
+    feat['vol_intensity'] = volume / (vol_ma + 1e-9)
+    feat['vol_rank'] = volume.rolling(48).rank(pct=True)
+    
+    # --- 6. Interaction: Directional Signal * Intensity ---
+    feat['rsi_14'] = 50 # placehold
+    delta = close.diff()
+    up = delta.clip(lower=0).rolling(14).mean()
+    down = -delta.clip(upper=0).rolling(14).mean()
+    rs = up / (down + 1e-9)
+    rsi = 100 - (100 / (1 + rs))
+    feat['rsi_14'] = rsi
+    feat['rsi_vol'] = (rsi - 50) * feat['vol_intensity']
+
+    # --- 7. Time/Seasonality ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+
+    # --- 8. Funding & Order Flow Proxies ---
+    if 'funding_rate' in df.columns:
+        feat['funding'] = s['funding_rate']
+        feat['funding_z'] = (s['funding_rate'] - s['funding_rate'].rolling(32).mean()) / (s['funding_rate'].rolling(32).std() + 1e-9)
+
+    if 'bids' in df.columns and 'asks' in df.columns:
+        # Simple Order Imbalance if provided
+        feat['imb'] = (s['bids'].str[0].str[1] - s['asks'].str[0].str[1]) / (s['bids'].str[0].str[1] + s['asks'].str[0].str[1] + 1e-9)
+
+    # Clean up
+    feat = feat.replace([np.inf, -np.inf], 0)
+    feat = feat.fillna(method='ffill').fillna(0)
+    
+    # Ensure no lookahead: final check, shift entire df by 1 was already done at start
+    # but the indices must remain original to match targets. 
+    # Return features aligned to original df index.
+    return feat
+
+# ─────────────────────────────────────────────
+# DO NOT MODIFY BELOW THIS LINE
+
+def run_experiment(
+    X_train, y_train,
+    X_test,  y_test,
+    X_val,   y_val,
+):
+    """
+    Train an XGBoost model and return raw predictions for all three splits.
+    """
+    # Clip targets
+    clip_val = np.percentile(np.abs(y_train), CLIP_PERCENTILE)
+    y_train_c = y_train.clip(-clip_val, clip_val)
+
+    # Scale
+    scaler = StandardScaler()
+    X_tr = scaler.fit_transform(X_train)
+    X_te = scaler.transform(X_test)
+    X_va = scaler.transform(X_val)
+
+    params = {k: v for k, v in XGB_PARAMS.items()
+              if k != 'early_stopping_rounds'}
+    early = XGB_PARAMS.get('early_stopping_rounds', 30)
+
+    model = xgb.XGBRegressor(**params, early_stopping_rounds=early)
+    model.fit(
+        X_tr, y_train_c,
+        eval_set=[(X_te, y_test)],
+        verbose=False,
+    )
+
+    return {
+        'train': {'pred': model.predict(X_tr), 'actual': y_train.values},
+        'test':  {'pred': model.predict(X_te), 'actual': y_test.values},
+        'val':   {'pred': model.predict(X_va), 'actual': y_val.values},
+        'model': model,
+    }

@@ -1,0 +1,181 @@
+<NAME>
+higher_signal_regime_features
+</NAME>
+
+<DESCRIPTION>
+The current model is heavily underconfident (`pred_std_ratio` is far below target), which usually means the tree ensemble is too constrained and the feature set is not providing enough separable regime information. I’m proposing two coordinated changes:
+
+1. Relax XGBoost regularization and give it more capacity to fit weak but real directional edges:
+   - more trees,
+   - slightly deeper trees,
+   - lower `min_child_weight`,
+   - lower `reg_lambda`,
+   - a bit more subsampling to retain robustness,
+   - slightly smaller learning rate with more rounds.
+
+2. Add a small set of high-value past-only features that improve regime discrimination without exploding dimensionality:
+   - normalized lagged returns and return spreads,
+   - short-horizon realized volatility shifts,
+   - EMA-based trend spread,
+   - VWAP-distance z-score,
+   - RSI slope / midline state,
+   - volume shock / price-volume interaction,
+   - a short regime persistence measure.
+
+These features are designed to help the model separate trend, mean-reversion, and volatility-expansion periods, which should improve directional accuracy while also increasing prediction dispersion away from the mean.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.05,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 96
+MIN_PRED_STD_RATIO = 0.15
+=======
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.02,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 140,
+}
+
+CLIP_PERCENTILE = 98
+MIN_PRED_STD_RATIO = 0.15
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Multi-scale returns and phase structure
+    for lag in [1, 2, 4, 8, 16, 32]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    r1 = close.pct_change(1)
+    r3 = close.pct_change(3)
+    r6 = close.pct_change(6)
+    r12 = close.pct_change(12)
+    r24 = close.pct_change(24)
+
+    feat["ret_accel_3"] = r1 - r3 / 3.0
+    feat["ret_accel_6"] = r3 - r6 / 2.0
+    feat["ret_accel_12"] = r6 - r12 / 2.0
+    feat["trend_stack"] = np.sign(r1) + np.sign(r3) + np.sign(r6) + np.sign(r12)
+=======
+    # ── Multi-scale returns and phase structure
+    for lag in [1, 2, 4, 8, 16, 32]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    r1 = close.pct_change(1)
+    r3 = close.pct_change(3)
+    r6 = close.pct_change(6)
+    r12 = close.pct_change(12)
+    r24 = close.pct_change(24)
+
+    feat["ret_accel_3"] = r1 - r3 / 3.0
+    feat["ret_accel_6"] = r3 - r6 / 2.0
+    feat["ret_accel_12"] = r6 - r12 / 2.0
+    feat["trend_stack"] = np.sign(r1) + np.sign(r3) + np.sign(r6) + np.sign(r12)
+    feat["ret_1_z_24"] = (r1 - r1.rolling(24).mean()) / (r1.rolling(24).std() + 1e-9)
+    feat["ret_spread_1_6"] = r1 - r6 / 6.0
+    feat["ret_spread_3_12"] = r3 - r12 / 4.0
+    feat["ret_mom_ratio"] = (r1 + r3 + r6) / (r12.abs() + 1e-6)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["trend_ratio"] = (ema_fast - ema_slow) / (close.rolling(20).std() + 1e-9)
+=======
+    feat["trend_ratio"] = (ema_fast - ema_slow) / (close.rolling(20).std() + 1e-9)
+    feat["trend_slope_3"] = ema_fast.pct_change(3) - ema_slow.pct_change(3)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+
+    # A smooth compression/expansion state
+    feat["vol_state"] = np.tanh((feat["vol_ratio_8_96"] - 1.0) * 1.5)
+=======
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+
+    # A smooth compression/expansion state
+    feat["vol_state"] = np.tanh((feat["vol_ratio_8_96"] - 1.0) * 1.5)
+    feat["vol_shift_24"] = (rv_24 - rv_96) / (rv_96 + 1e-9)
+    feat["vol_regime_persist"] = (feat["vol_state"] > 0).astype(float).rolling(12).mean()
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["vwap_dev_20"] = (close - vwap_20) / (close.rolling(20).std() + 1e-9)
+    feat["vwap_dev_60"] = (close - vwap_60) / (close.rolling(60).std() + 1e-9)
+=======
+    feat["vwap_dev_20"] = (close - vwap_20) / (close.rolling(20).std() + 1e-9)
+    feat["vwap_dev_60"] = (close - vwap_60) / (close.rolling(60).std() + 1e-9)
+    feat["vwap_dev_slope"] = feat["vwap_dev_20"] - feat["vwap_dev_60"]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["rsi_7"] = rsi(close, 7)
+    feat["rsi_14"] = rsi(close, 14)
+    feat["rsi_28"] = rsi(close, 28)
+    feat["rsi_slope"] = feat["rsi_7"].diff()
+    feat["rsi_z_30"] = (feat["rsi_14"] - feat["rsi_14"].rolling(30).mean()) / (feat["rsi_14"].rolling(30).std() + 1e-9)
+=======
+    feat["rsi_7"] = rsi(close, 7)
+    feat["rsi_14"] = rsi(close, 14)
+    feat["rsi_28"] = rsi(close, 28)
+    feat["rsi_slope"] = feat["rsi_7"].diff()
+    feat["rsi_z_30"] = (feat["rsi_14"] - feat["rsi_14"].rolling(30).mean()) / (feat["rsi_14"].rolling(30).std() + 1e-9)
+    feat["rsi_midline"] = (feat["rsi_14"] - 50.0) / 50.0
+    feat["rsi_mom"] = feat["rsi_7"] - feat["rsi_28"]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["volume_ratio_5"] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat["volume_ratio_20"] = volume / (vol_mean_20 + 1e-9)
+    feat["volume_ratio_60"] = volume / (vol_mean_60 + 1e-9)
+    feat["volume_z_20"] = (volume - vol_mean_20) / (vol_std_20 + 1e-9)
+    feat["volume_chg_1"] = volume.pct_change(1)
+    feat["volume_chg_4"] = volume.pct_change(4)
+=======
+    feat["volume_ratio_5"] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat["volume_ratio_20"] = volume / (vol_mean_20 + 1e-9)
+    feat["volume_ratio_60"] = volume / (vol_mean_60 + 1e-9)
+    feat["volume_z_20"] = (volume - vol_mean_20) / (vol_std_20 + 1e-9)
+    feat["volume_chg_1"] = volume.pct_change(1)
+    feat["volume_chg_4"] = volume.pct_change(4)
+    feat["volume_shock_20"] = (volume - vol_mean_20) / (vol_mean_20 + 1e-9)
+    feat["price_volume_impulse"] = r1 * feat["volume_ratio_5"]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["dir_persist_8"] = sign_r1.rolling(8).mean()
+    feat["dir_persist_24"] = sign_r1.rolling(24).mean()
+    feat["sign_flip_8"] = (sign_r1 != sign_r1.shift(1)).astype(float).rolling(8).mean()
+    feat["sign_flip_24"] = (sign_r1 != sign_r1.shift(1)).astype(float).rolling(24).mean()
+=======
+    feat["dir_persist_8"] = sign_r1.rolling(8).mean()
+    feat["dir_persist_24"] = sign_r1.rolling(24).mean()
+    feat["sign_flip_8"] = (sign_r1 != sign_r1.shift(1)).astype(float).rolling(8).mean()
+    feat["sign_flip_24"] = (sign_r1 != sign_r1.shift(1)).astype(float).rolling(24).mean()
+    feat["dir_persist_diff"] = feat["dir_persist_8"] - feat["dir_persist_24"]
+>>>>>>> REPLACE
+</DIFF>

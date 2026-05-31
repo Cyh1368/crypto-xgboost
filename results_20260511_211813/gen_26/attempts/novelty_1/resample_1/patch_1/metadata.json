@@ -1,0 +1,14 @@
+{
+  "generation": 26,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "phase_regime_xgb",
+  "patch_description": "I took inspiration from the prior programs\u2019 emphasis on classic technical indicators, momentum/mean-reversion mixes, and regime-aware interactions, but shifted to a more \u201cmarket phase\u201d view instead of stacking more of the same indicators.\n\nThe new idea is to model each bar through three layers:\n1. **Local phase**: short-horizon return structure, candle shape, and directional persistence.\n2. **Regime context**: volatility compression/expansion, trend vs. chop, and volume shock conditions.\n3. **Asymmetric interaction**: features that change meaning depending on whether the market is trending, mean-reverting, or expanding volatility.\n\nInstead of many overlapping indicators, this version uses a compact set of normalized, lag-safe features built from:\n- multi-scale returns and return acceleration,\n- exponentially weighted trend and dispersion ratios,\n- rolling quantile positions for price and volume,\n- candle geometry and range expansion,\n- regime switches using volatility and trend strength,\n- optional orderbook and funding conditioning.\n\nThe XGBoost setup is made less collapsed than the current version by reducing over-regularization, increasing tree expressivity moderately, and using more estimators with stronger subsampling. The goal is to preserve generalization while giving the model enough capacity to move away from mean-like predictions and exploit regime-conditioned directional edges.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:23:22.861288",
+  "llm_cost": 0.02508825,
+  "llm_model": "gpt-5.4-mini"
+}

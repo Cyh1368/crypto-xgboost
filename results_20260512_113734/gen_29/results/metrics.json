@@ -1,0 +1,28 @@
+{
+  "combined_score": -1.6248214598270818,
+  "public": {
+    "combined_score": -1.6248,
+    "val_da": 0.5255,
+    "test_da": 0.5298,
+    "train_da": 0.5595,
+    "train_pearson": 0.3396,
+    "test_pearson": 0.0728,
+    "val_pearson": 0.0621,
+    "train_slope": 0.0248,
+    "test_slope": 0.0052,
+    "val_slope": 0.0041,
+    "slope_ratio": 0.164,
+    "generalization_ratio": 0.8534,
+    "pred_std_ratio": 0.0654,
+    "overfit_gap": 0.034
+  },
+  "private": {
+    "collapse_penalty": 1.0766,
+    "slope_penalty": 0.8162,
+    "gen_penalty": 0.0,
+    "overfit_penalty": 0.0,
+    "invert_penalty": 0.0,
+    "signal_score": 0.268
+  },
+  "text_feedback": "val_DA=0.5255  test_DA=0.5298  train_DA=0.5595\nval_r=0.0621  test_r=0.0728  train_r=0.3396\nval_slope=0.0041  train_slope=0.0248  slope_ratio=16.4%\npred_std_ratio=0.0654  generalization_ratio=85.3%  overfit_gap=0.0340\npenalties \u2192 collapse=1.077  slope=0.816  gen=0.000  overfit=0.000  invert=0.000\nSCORE=-1.6248\nWARNING: predictions collapsed toward mean \u2014 increase model expressivity or remove regularization.\nWARNING: val slope (0.0041) is only 16.4% of train slope (0.0248). Features are regime-specific. Try shorter lookbacks, z-score normalization within rolling windows, or regime-conditional feature scaling."
+}

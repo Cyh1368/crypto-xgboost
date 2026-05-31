@@ -1,0 +1,84 @@
+<NAME>
+regime_invariant_robustness
+</NAME>
+
+<DESCRIPTION>
+This edit addresses the primary problem of slope collapse and prediction collapse by:
+1. Increasing regularization (min_child_weight=25, reg_lambda=15.0) and reducing tree depth to force the model to learn broader, more robust patterns that generalize across regimes.
+2. Introducing more regime-invariant features using local z-score normalization (mom_z_10, price_z_20, vol_z_60) and range-relative positioning (dist_range_20).
+3. Adding short-term autocorrelation and volume z-scores to capture changes in market character (mean-reversion vs trending).
+4. Adjusting the target clipping (97th percentile) and minimum prediction standard deviation ratio (0.18) to improve the model's signal-to-noise handling and expressivity.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 360,
+    "max_depth": 3,
+    "min_child_weight": 3,
+    "reg_alpha": 0.10,
+    "reg_lambda": 1.2,
+    "subsample": 0.90,
+    "colsample_bytree": 0.80,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 45,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.16     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 280,
+    "max_depth": 3,
+    "min_child_weight": 25,
+    "reg_alpha": 0.50,
+    "reg_lambda": 15.0,
+    "subsample": 0.75,
+    "colsample_bytree": 0.70,
+    "learning_rate": 0.07,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 35,
+}
+
+CLIP_PERCENTILE = 97          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.18     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    feat['ret_z_mom'] = (close.pct_change(3) - close.pct_change(3).rolling(20).mean()) / (close.pct_change(3).rolling(20).std() + 1e-9)
+
+    # --- Short-horizon volatility and volatility trend ---
+=======
+    feat['ret_z_mom'] = (close.pct_change(3) - close.pct_change(3).rolling(20).mean()) / (close.pct_change(3).rolling(20).std() + 1e-9)
+    feat['mom_z_10'] = (close.pct_change(10)) / (vol2 * np.sqrt(10) + 1e-9)
+    feat['price_z_20'] = (close - close.rolling(20).mean()) / (close.rolling(20).std() + 1e-9)
+    feat['dist_range_20'] = (close - low.rolling(20).min()) / (high.rolling(20).max() - low.rolling(20).min() + 1e-9)
+
+    # --- Short-horizon volatility and volatility trend ---
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    feat['vol_rank_60'] = vol3.rolling(60).rank(pct=True)
+
+    # --- Fast momentum / mean reversion ---
+=======
+    feat['vol_rank_60'] = vol3.rolling(60).rank(pct=True)
+    feat['vol_z_60'] = (vol2 - vol2.rolling(60).mean()) / (vol2.rolling(60).std() + 1e-9)
+    feat['autocorr_5'] = log_ret.rolling(5).corr(log_ret.shift(1))
+
+    # --- Fast momentum / mean reversion ---
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    feat['volume_z_20'] = (volume - vol_ma_20) / (volume.rolling(20).std() + 1e-9)
+    feat['vol_price_interaction'] = feat['volume_ratio_20'] * feat['price_sma10_dev']
+=======
+    feat['volume_z_20'] = (volume - vol_ma_20) / (volume.rolling(20).std() + 1e-9)
+    feat['volume_z_60'] = (volume - volume.rolling(60).mean()) / (volume.rolling(60).std() + 1e-9)
+    feat['vol_price_interaction'] = feat['volume_ratio_20'] * feat['price_sma10_dev']
+>>>>>>> REPLACE
+</DIFF>

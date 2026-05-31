@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse_and_alignment",
+  "patch_description": "The model was collapsing predictions toward the mean (pred_std_ratio=0.0091) due to two critical issues:\n\n1. **Data alignment bug**: `feat.dropna()` was dropping all rows containing any NaN values. Since rolling window features require warmup periods (e.g., RSI-14 needs 14 bars, volatility-60 needs 60 bars), and orderbook/funding data may have sparse NaNs, this was dropping the majority of the training data and causing severe misalignment with targets.\n\n2. **Over-regularization**: The hyperparameters (reg_alpha=0.1, reg_lambda=1.0, min_child_weight=10, n_estimators=300 with learning_rate=0.01) were too conservative, suppressing model expressivity.\n\n**Fix**: Replace `dropna()` with forward-fill to preserve row alignment, and significantly loosen regularization while increasing model capacity. This allows the model to learn real trading signals instead of defaulting to the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:10:51.372333",
+  "llm_cost": 0.017328,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

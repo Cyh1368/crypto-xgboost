@@ -1,0 +1,101 @@
+<NAME>
+increase_expressivity_and_regime_features
+</NAME>
+
+<DESCRIPTION>
+The model currently suffers from prediction collapse (low pred_std_ratio) and a near-zero predictive slope on the validation set, indicating it's too conservative and failing to generalize across regime shifts. 
+
+I am proposing three main changes:
+1. **Increase Model Expressivity**: Raising `max_depth` to 5, increasing `n_estimators` to 450, and reducing `min_child_weight` and `reg_lambda`. This directly addresses the "collapsed toward mean" warning by allowing the model to capture more complex, high-variance patterns.
+2. **Regime-Invariant Character Features**: Adding higher-order moments (skewness, kurtosis) and "volatility of volatility" (VVoV) to help the model identify market regimes (e.g., trending vs. mean-reverting, stable vs. unstable) that are invariant to absolute price levels.
+3. **Risk-Adjusted Momentum**: Adding a Sharpe-like feature (momentum divided by volatility) and range expansion metrics to better normalize the "signal" across different volatility environments.
+4. **Target & Variance Adjustments**: Reducing `CLIP_PERCENTILE` to 97 to focus on the core distribution and increasing `MIN_PRED_STD_RATIO` to 0.22 to force the model to produce more distinct predictions.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 320,
+    "max_depth": 3,
+    "min_child_weight": 3,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.4,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 450,
+    "max_depth": 5,
+    "min_child_weight": 2,
+    "reg_alpha": 0.1,
+    "reg_lambda": 0.2,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+
+CLIP_PERCENTILE = 97          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.22     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Volatility regime and fast regime shifts ---
+    realized_vol_8 = log_ret.rolling(8).std()
+    realized_vol_20 = log_ret.rolling(20).std()
+    vol_mean_40 = realized_vol_20.rolling(40).mean()
+    feat['vol_regime'] = realized_vol_20 / (vol_mean_40 + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_8 / (realized_vol_20 + 1e-9)
+
+    # --- Volatility trend (rate of change) ---
+    feat['vol_trend'] = (realized_vol_8 - realized_vol_8.shift(4)) / (realized_vol_8.shift(4) + 1e-9)
+=======
+    # --- Volatility regime and fast regime shifts ---
+    realized_vol_8 = log_ret.rolling(8).std()
+    realized_vol_20 = log_ret.rolling(20).std()
+    vol_mean_100 = realized_vol_20.rolling(100).mean()
+    feat['vol_regime'] = realized_vol_20 / (vol_mean_100 + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_8 / (realized_vol_20 + 1e-9)
+
+    # --- Volatility trend and acceleration ---
+    feat['vol_trend'] = (realized_vol_8 - realized_vol_8.shift(4)) / (realized_vol_8.shift(4) + 1e-9)
+    feat['vol_accel'] = realized_vol_8.diff(4)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Return autocorrelation and its trend ---
+    feat['ret_autocorr_5'] = ret_1.rolling(5).apply(lambda x: x.autocorr(lag=1) if len(x) > 1 else 0, raw=False)
+    feat['ret_autocorr_10'] = ret_1.rolling(10).apply(lambda x: x.autocorr(lag=1) if len(x) > 1 else 0, raw=False)
+    feat['ret_autocorr_trend'] = feat['ret_autocorr_5'] - feat['ret_autocorr_5'].shift(5)
+
+    # --- Efficiency ratio and trend ---
+=======
+    # --- Return character (regime indicators) ---
+    feat['ret_skew_20'] = log_ret.rolling(20).skew()
+    feat['ret_kurt_20'] = log_ret.rolling(20).kurt()
+    feat['vvov_20'] = realized_vol_8.rolling(20).std() / (realized_vol_20 + 1e-9)
+    
+    # --- Risk-adjusted momentum ---
+    feat['mom_sharpe_10'] = close.pct_change(10) / (realized_vol_20 * np.sqrt(10) + 1e-9)
+    feat['range_expansion_10'] = (high - low) / ((high - low).rolling(10).mean() + 1e-9)
+
+    # --- Return autocorrelation and its trend ---
+    feat['ret_autocorr_5'] = ret_1.rolling(5).apply(lambda x: x.autocorr(lag=1) if len(x) > 1 else 0, raw=False)
+    feat['ret_autocorr_10'] = ret_1.rolling(10).apply(lambda x: x.autocorr(lag=1) if len(x) > 1 else 0, raw=False)
+    feat['ret_autocorr_trend'] = feat['ret_autocorr_5'] - feat['ret_autocorr_5'].shift(5)
+
+    # --- Efficiency ratio and trend ---
+>>>>>>> REPLACE
+</DIFF>

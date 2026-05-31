@@ -1,0 +1,135 @@
+<NAME>
+increase_expressivity_and_microstructure
+</NAME>
+
+<DESCRIPTION>
+This edit aims to address the "predictions collapsed toward mean" warning by increasing model expressivity and adding higher-resolution features. 
+1.  **Hyperparameters**: Increased `max_depth` to 6, `learning_rate` to 0.05, and `n_estimators` to 1000, while reducing regularization (`reg_lambda` and `min_child_weight`). This allows the model to capture more complex patterns and move away from the mean.
+2.  **Volatility Features**: Added `vol_of_vol_24` and `skew_20` to capture the stability and asymmetry of the volatility regime.
+3.  **Range Features**: Added `dist_max_48` and `dist_min_48` to provide the model with context regarding the current price's position relative to the 12-hour high/low.
+4.  **Volume Features**: Added `log_vol` to capture the raw scale of activity, which can be useful for regime identification.
+5.  **Interaction Features**: Added `vol_weighted_mom` to combine price momentum with relative volume intensity.
+6.  **Optimization**: Replaced the `apply`-based OBI calculation with a faster list comprehension to ensure execution stays within the 3-minute limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 850,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.02,
+    "reg_lambda": 0.35,
+    "subsample": 0.82,
+    "colsample_bytree": 0.82,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 70,
+}
+
+CLIP_PERCENTILE = 98
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.2,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 97
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+
+    # A smooth compression/expansion state
+    feat["vol_state"] = np.tanh((feat["vol_ratio_8_96"] - 1.0) * 1.5)
+=======
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+    feat["vol_of_vol_24"] = rv_8.rolling(24).std() / (rv_24 + 1e-9)
+    feat["skew_20"] = log_ret.rolling(20).skew()
+
+    # A smooth compression/expansion state
+    feat["vol_state"] = np.tanh((feat["vol_ratio_8_96"] - 1.0) * 1.5)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["range_width_20"] = (hi_20 - lo_20) / (close + 1e-9)
+    feat["range_width_60"] = (hi_60 - lo_60) / (close + 1e-9)
+=======
+    feat["range_width_20"] = (hi_20 - lo_20) / (close + 1e-9)
+    feat["range_width_60"] = (hi_60 - lo_60) / (close + 1e-9)
+    feat["dist_max_48"] = (high.rolling(48).max() - close) / (close + 1e-9)
+    feat["dist_min_48"] = (close - low.rolling(48).min()) / (close + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["volume_ratio_60"] = volume / (vol_mean_60 + 1e-9)
+    feat["volume_z_20"] = (volume - vol_mean_20) / (vol_std_20 + 1e-9)
+    feat["volume_chg_1"] = volume.pct_change(1)
+    feat["volume_chg_4"] = volume.pct_change(4)
+=======
+    feat["volume_ratio_60"] = volume / (vol_mean_60 + 1e-9)
+    feat["volume_z_20"] = (volume - vol_mean_20) / (vol_std_20 + 1e-9)
+    feat["volume_chg_1"] = volume.pct_change(1)
+    feat["volume_chg_4"] = volume.pct_change(4)
+    feat["log_vol"] = np.log1p(volume)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["rsi_x_trend"] = (feat["rsi_14"] / 100.0) * feat["trend_ratio"]
+    feat["wick_imbalance"] = feat["lower_wick"] - feat["upper_wick"]
+    feat["breakout_pressure"] = feat["range_pos_20"] * (feat["volume_ratio_5"] - 1.0)
+=======
+    feat["rsi_x_trend"] = (feat["rsi_14"] / 100.0) * feat["trend_ratio"]
+    feat["wick_imbalance"] = feat["lower_wick"] - feat["upper_wick"]
+    feat["breakout_pressure"] = feat["range_pos_20"] * (feat["volume_ratio_5"] - 1.0)
+    feat["vol_weighted_mom"] = (r1 * volume) / (vol_mean_20 + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Orderbook features, if present
+    if "bids" in df.columns and "asks" in df.columns:
+        def obi(row, tau=1):
+            try:
+                bids = np.array(row["bids"], dtype=float)
+                asks = np.array(row["asks"], dtype=float)
+                if bids.ndim != 2 or asks.ndim != 2 or bids.shape[1] < 2 or asks.shape[1] < 2:
+                    return 0.0
+                bid_vol = np.sum(bids[:, 1] * np.exp(-tau * np.arange(len(bids))))
+                ask_vol = np.sum(asks[:, 1] * np.exp(-tau * np.arange(len(asks))))
+                return (bid_vol - ask_vol) / (bid_vol + ask_vol + 1e-9)
+            except Exception:
+                return 0.0
+
+        feat["obi_tau1"] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat["obi_tau3"] = df.apply(lambda r: obi(r, 3), axis=1)
+=======
+    # ── Orderbook features, if present
+    if "bids" in df.columns and "asks" in df.columns:
+        def get_obi(b, a, tau):
+            try:
+                b_arr, a_arr = np.array(b, dtype=float), np.array(a, dtype=float)
+                w = np.exp(-tau * np.arange(len(b_arr)))
+                bv = np.sum(b_arr[:, 1] * w)
+                av = np.sum(a_arr[:, 1] * w)
+                return (bv - av) / (bv + av + 1e-9)
+            except: return 0.0
+        feat["obi_tau1"] = [get_obi(b, a, 1) for b, a in zip(df["bids"], df["asks"])]
+        feat["obi_tau3"] = [get_obi(b, a, 3) for b, a in zip(df["bids"], df["asks"])]
+>>>>>>> REPLACE
+</DIFF>

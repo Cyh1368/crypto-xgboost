@@ -1,0 +1,45 @@
+{
+  "active_proposals_at_start": 4,
+  "api_costs": 0.0,
+  "archive_inspiration_ids": [
+    "c7f218d3-7ce7-4daf-b85c-6e52f197ad60",
+    "040f446c-1236-4655-8c66-c4ddae0a997d",
+    "d459a20e-e383-4983-8aa7-ddd85423fff2"
+  ],
+  "artifacts": {
+    "generated_code_path": "results_20260512_105719/gen_124/main.py",
+    "generation_dir": "results_20260512_105719/gen_124",
+    "results_dir": "results_20260512_105719/gen_124/results"
+  },
+  "attempts": {
+    "novelty_attempt": null,
+    "patch_attempt": null,
+    "resample_attempt": null
+  },
+  "code_embedding_available": false,
+  "downstream_eval_submitted": false,
+  "embed_cost": 0.0,
+  "error_attempt": "'a' and 'p' must have same size",
+  "failure_class": "proposal_generation_failed",
+  "failure_json_path": "results_20260512_105719/gen_124/failure.json",
+  "failure_reason": "'a' and 'p' must have same size",
+  "failure_stage": "proposal",
+  "generated_code_available": false,
+  "generation": 124,
+  "language": "python",
+  "last_error_msg": null,
+  "max_similarity": null,
+  "node_kind": "failed_proposal",
+  "novelty_checks_performed": 0,
+  "novelty_cost": 0.0,
+  "novelty_explanation": "",
+  "parent_id": "2aa35c4c-8aff-48ab-bb25-298bd542f73b",
+  "patch_description": null,
+  "patch_name": null,
+  "patch_type": null,
+  "proposal_started_at": 1778598108.097255,
+  "sampling_worker_id": null,
+  "system_prompt_id": null,
+  "timestamp": "2026-05-12T11:01:48.585211",
+  "top_k_inspiration_ids": []
+}

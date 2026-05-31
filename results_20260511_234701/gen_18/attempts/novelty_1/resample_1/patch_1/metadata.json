@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_zscoring",
+  "patch_description": "The primary issue is a severe slope collapse (0.074 train -> 0.006 val), indicating the model is learning regime-specific noise. \n\nI am implementing the following strategies:\n1.  **Regime-Invariant Features**: Replaced raw returns and volatility with rolling Z-scores (window=200) to ensure features like \"1% return\" are interpreted relative to current volatility.\n2.  **Shorter Lookbacks**: Focused on 1, 3, 5, and 12-bar windows to capture faster-decaying but more generalizable patterns.\n3.  **Market Character Features**: Added Efficiency Ratio (Kama) and Volatility Trend (short/long vol ratio) to detect regime shifts.\n4.  **Robust Hyperparameters**: Reduced `max_depth` to 3 and significantly increased `min_child_weight` to 40. This forces the model to find patterns that apply to large subsets of the data, preventing it from fitting the specific \"shape\" of the training period.\n5.  **Regularization**: Added L1 (reg_alpha) and L2 (reg_lambda) to further penalize complex, non-generalizing trees.\n6.  **Increased MIN_PRED_STD_RATIO**: Raised to 0.18 to encourage the model to maintain predictive variance.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:50:49.559759",
+  "llm_cost": 0.016819,
+  "llm_model": "gemini-3-flash-preview"
+}

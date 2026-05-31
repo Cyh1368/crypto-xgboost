@@ -1,0 +1,53 @@
+<NAME>
+extend_multiscale_zscore_and_add_regime_shift_indicators
+</NAME>
+
+<DESCRIPTION>
+The current program achieves a strong 96.0% generalization ratio (val_r/test_r), indicating that the rolling z-score normalization at [10, 20, 40] windows is working well for regime invariance. However, the 19.9% slope ratio (val_slope/train_slope) shows that the model still struggles to transfer predictive patterns to the validation period.
+
+The key insight is that while z-scores make features regime-invariant at individual timescales, we need to explicitly capture when SHORT-TERM behavior diverges from LONG-TERM behavior - these divergences signal regime transitions that are predictive across periods.
+
+This edit:
+1. Extends the multi-scale z-score normalization to include 60 and 80-bar windows for enhanced long-term regime awareness
+2. Creates explicit regime shift indicators: `regime_shift_short_long = ret_z_20 - ret_z_60` and `regime_shift_medium_long = ret_z_40 - ret_z_80`
+3. Removes the least important time-of-day features (`hour_sin`, `hour_cos`, `dow_sin`, `dow_cos`) to stay within the 80-feature limit while adding more predictive regime indicators
+
+The regime shift indicators measure when normalized short/medium-term momentum deviates from normalized long-term momentum, which is a transferable signal that works across different market regimes. This should improve val_slope while maintaining the strong generalization ratio.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Rolling z-scores for regime invariance
+    for w in [10, 20, 40]:
+        mu = ret1.rolling(w).mean()
+        sd = ret1.rolling(w).std()
+        feat[f"ret_z_{w}"] = (ret1 - mu) / (sd + eps)
+=======
+    # Rolling z-scores for regime invariance - extended to longer windows
+    for w in [10, 20, 40, 60, 80]:
+        mu = ret1.rolling(w).mean()
+        sd = ret1.rolling(w).std()
+        feat[f"ret_z_{w}"] = (ret1 - mu) / (sd + eps)
+
+    # Regime shift indicators: divergence between short/medium and long-term normalized behavior
+    feat["regime_shift_short_long"] = feat["ret_z_20"] - feat["ret_z_60"]
+    feat["regime_shift_medium_long"] = feat["ret_z_40"] - feat["ret_z_80"]
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Session / time features
+    hour = df.index.hour
+    dow = df.index.dayofweek
+    feat["hour_sin"] = np.sin(2 * np.pi * hour / 24)
+    feat["hour_cos"] = np.cos(2 * np.pi * hour / 24)
+    feat["dow_sin"] = np.sin(2 * np.pi * dow / 7)
+    feat["dow_cos"] = np.cos(2 * np.pi * dow / 7)
+    feat["is_weekend"] = (dow >= 5).astype(float)
+=======
+    # Session / time features - keep only weekend indicator (most predictive)
+    dow = df.index.dayofweek
+    feat["is_weekend"] = (dow >= 5).astype(float)
+>>>>>>> REPLACE
+</DIFF>

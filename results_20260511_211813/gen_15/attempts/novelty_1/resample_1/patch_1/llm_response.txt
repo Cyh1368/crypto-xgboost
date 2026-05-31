@@ -1,0 +1,80 @@
+<NAME>
+increase_expressivity_and_add_signals
+</NAME>
+
+<DESCRIPTION>
+The previous model suffered from 'mean prediction collapse' as indicated by the very low pred_std_ratio (0.0091 vs goal of 0.15) and text feedback. This suggests the model was too heavily regularized and lacking in expressivity to capture subtle signals in noisy 15-minute crypto futures data.
+
+I am proposing the following changes:
+1. **Hyperparameters**: Significantly increase the learning rate (0.01 -> 0.05), increase tree depth (4 -> 7), and reduce the minimum child weight (10 -> 2). This allows the trees to find more specific, smaller-scale patterns. I also reduced reg_alpha and reg_lambda to loosen the regularization penalty.
+2. **Feature Engineering**: Re-introduced and expanded the signal set to include:
+   - **Momentum Acceleration**: Captures the second derivative of price movement.
+   - **Mean Reversion/Relative Position**: Price distance from 30-bar High/Low and 10/50 SMA ratios.
+   - **Candle Shadows**: Capture intra-bar volatility and potential rejection candles.
+   - **Volatility Expansion**: Short-term vs long-term volatility ratios to identify breakouts.
+   - **Volume Z-Score**: Identifies unusual participation compared to a trailing window.
+
+These changes are designed to push the model's predictions away from the mean and closer to the actual return standard deviation while maintaining directional accuracy.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 300,
+    "max_depth": 4,
+    "min_child_weight": 10,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "subsample": 0.6,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.01,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 30,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 500,
+    "max_depth": 7,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+
+    # --- Orderbook (if real data available) ---
+=======
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+
+    # --- Additional Indicators ---
+    feat['mom_accel'] = feat['ret_3'].diff(3)
+    feat['sma_10_50_ratio'] = close.rolling(10).mean() / (close.rolling(50).mean() + 1e-9)
+    low_30, high_30 = low.rolling(30).min(), high.rolling(30).max()
+    feat['range_pos_30'] = (close - low_30) / (high_30 - low_30 + 1e-9)
+    feat['shadow_upper'] = (high - df[['open', 'close']].max(axis=1)) / (close + 1e-9)
+    feat['shadow_lower'] = (df[['open', 'close']].min(axis=1) - low) / (close + 1e-9)
+    feat['vol_expansion'] = log_ret.rolling(5).std() / (log_ret.rolling(40).std() + 1e-9)
+    feat['volume_zscore_40'] = (volume - volume.rolling(40).mean()) / (volume.rolling(40).std() + 1e-9)
+
+    # --- Orderbook (if real data available) ---
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,56 @@
+<NAME>
+increase_expressivity_and_prune
+</NAME>
+
+<DESCRIPTION>
+The model is currently suffering from prediction collapse (pred_std_ratio = 0.06), indicating it is too conservative. To address this, I am increasing model expressivity by raising the learning rate to 0.1, increasing max_depth to 6, and significantly reducing reg_lambda to 0.01. 
+
+On the feature engineering side, I am pruning several redundant or less impactful features (ret_24, vol_192, rsi_28, volume_chg_8, range_pos_60, range_width_60, momentum_slow, obi_lag1) to stay within the 80-feature limit. I am introducing three high-signal features:
+1. Efficiency Ratio (Kaufman's ER): To distinguish between trending and noisy market states.
+2. Range Relative: To identify volatility breakouts relative to recent history.
+3. Volume Price Impulse: To capture momentum confirmed by volume surges.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.88,
+    "colsample_bytree": 0.88,
+    "learning_rate": 0.07,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 90,
+}
+
+CLIP_PERCENTILE = 96
+MIN_PRED_STD_RATIO = 0.15
+N_REGIMES = 3  # Number of market regimes
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 96
+MIN_PRED_STD_RATIO = 0.15
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+def build_features(df: pd.DataFrame

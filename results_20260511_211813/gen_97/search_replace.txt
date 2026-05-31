@@ -1,0 +1,127 @@
+<NAME>
+reduce_collapse_add_regime
+</NAME>
+
+<DESCRIPTION>
+The current model is still showing a strong mean-collapse signal (`pred_std_ratio` well below the desired level), which usually means the trees are too constrained and the feature set is not giving enough short-horizon regime contrast.
+
+This edit aims to improve expressivity in two complementary ways:
+
+1. Loosen model regularization slightly and allow a bit more tree complexity:
+   - increase depth from 5 to 6
+   - reduce `min_child_weight`
+   - reduce `reg_lambda`
+   - reduce `learning_rate` a bit and compensate with more trees
+   - keep early stopping, but give the model more room to learn structure
+
+2. Add a compact set of high-signal features that are still strictly past-only:
+   - short-horizon return acceleration
+   - volatility-of-volatility
+   - candle “location in range” over a short window
+   - volume impulse / acceleration
+   - ATR-normalized momentum and range expansion
+   - a small regime interaction that should help in trend vs chop conditions
+
+These additions are targeted to increase prediction spread without materially increasing feature count or risking leakage. The existing `keep_cols` stays under 80, and the new features are selected to be information-dense rather than redundant.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 900,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.6,
+    "gamma": 0.0,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 98.5
+MIN_PRED_STD_RATIO = 0.15
+=======
+XGB_PARAMS = {
+    "n_estimators": 1300,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.25,
+    "gamma": 0.0,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "colsample_bynode": 0.85,
+    "learning_rate": 0.025,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 90,
+}
+
+CLIP_PERCENTILE = 99.0
+MIN_PRED_STD_RATIO = 0.15
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Robust past-only normalized return features ---
+    for w in [16, 32, 64]:
+        mu = log_ret1.rolling(w).mean().shift(1)
+        sd = log_ret1.rolling(w).std().shift(1)
+        feat[f"ret_z_{w}"] = (log_ret1 - mu) / (sd + eps)
+
+    # --- Regime interactions (novel part) ---
+    feat["trend_x_vol"] = feat["ema_trend"] * feat["vol_regime"]
+    feat["trend_x_volume"] = feat["ema_trend"] * feat["vol_z_24"]
+    feat["meanrev_x_vol"] = feat["z_close_24"] * feat["vol_compress"]
+    feat["momentum_x_range"] = feat["mom_16"] * feat["range_pct"]
+    feat["momentum_x_wick"] = feat["mom_16"] * (feat["upper_wick_pct"] - feat["lower_wick_pct"])
+    feat["breakout_pressure"] = feat["close_pos_range"] * feat["vol_surge"] * (feat["range_pct"] / (feat["atr_norm_20"] + eps))
+=======
+    # --- Robust past-only normalized return features ---
+    for w in [16, 32, 64]:
+        mu = log_ret1.rolling(w).mean().shift(1)
+        sd = log_ret1.rolling(w).std().shift(1)
+        feat[f"ret_z_{w}"] = (log_ret1 - mu) / (sd + eps)
+
+    # --- Short-horizon / acceleration features ---
+    feat["ret_accel_3_12"] = close.pct_change(3).shift(1) - close.pct_change(12).shift(1)
+    feat["ret_accel_6_24"] = close.pct_change(6).shift(1) - close.pct_change(24).shift(1)
+    feat["range_z_20"] = (tr - tr.rolling(20).mean().shift(1)) / (tr.rolling(20).std().shift(1) + eps)
+    feat["vol_of_vol_20"] = feat["rv_20"].rolling(20).std().shift(1)
+    feat["volume_impulse_12"] = (volume / (volume.rolling(12).mean().shift(1) + eps)) - 1.0
+    feat["volume_accel_24"] = (
+        volume.rolling(24).mean().shift(1) / (volume.rolling(48).mean().shift(1) + eps)
+    ) - 1.0
+    feat["close_rank_48"] = close.rolling(48).apply(
+        lambda x: pd.Series(x).rank(pct=True).iloc[-1], raw=False
+    ).shift(1)
+
+    # --- Regime interactions (novel part) ---
+    feat["trend_x_vol"] = feat["ema_trend"] * feat["vol_regime"]
+    feat["trend_x_volume"] = feat["ema_trend"] * feat["vol_z_24"]
+    feat["meanrev_x_vol"] = feat["z_close_24"] * feat["vol_compress"]
+    feat["momentum_x_range"] = feat["mom_16"] * feat["range_pct"]
+    feat["momentum_x_wick"] = feat["mom_16"] * (feat["upper_wick_pct"] - feat["lower_wick_pct"])
+    feat["breakout_pressure"] = feat["close_pos_range"] * feat["vol_surge"] * (feat["range_pct"] / (feat["atr_norm_20"] + eps))
+    feat["mom_atr_16"] = feat["mom_16"] / (feat["atr_norm_20"] + eps)
+    feat["trend_x_rangez"] = feat["ema_trend"] * feat["range_z_20"]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Keep under 80 features
+    if feat.shape[1] > 80:
+        feat = feat.iloc[:, :80]
+=======
+    # Keep under 80 features
+    if feat.shape[1] > 80:
+        feat = feat.iloc[:, :80]
+>>>>>>> REPLACE
+</DIFF>

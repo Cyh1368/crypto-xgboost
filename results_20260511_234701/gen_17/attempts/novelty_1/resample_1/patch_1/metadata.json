@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 9,
+  "patch_name": "short_window_regime_features",
+  "patch_description": "This edit targets the current collapse toward the mean by making the feature set more regime-invariant and more reactive to short-lived market structure changes, while also giving XGBoost a bit more capacity to use those signals.\n\nMain ideas:\n- Replace the current longer-horizon volatility regime logic with shorter rolling comparisons and rolling z-scores.\n- Add autocorrelation and efficiency-trend features, which capture whether the market is becoming more or less trend-like.\n- Keep feature count comfortably below 80.\n- Increase model capacity modestly with more trees and slightly less restrictive splitting so the model can express a stronger slope on validation without exploding overfit.\n\nWhy this should help:\n- The validation regime appears to differ from train/test, so shorter lookbacks and normalized signals should survive regime change better.\n- The model is currently too flat on validation (`pred_std_ratio` is very low), so a little more tree capacity and weaker child-weight constraint should help restore prediction dispersion.\n- The added trend-of-market-character features are designed to capture second-order regime shifts rather than just absolute levels.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:50:12.026100",
+  "llm_cost": 0.023927999999999998,
+  "llm_model": "gpt-5.4-mini"
+}

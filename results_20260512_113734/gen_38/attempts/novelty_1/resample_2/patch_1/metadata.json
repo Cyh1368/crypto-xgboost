@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover version keeps the strongest robust ideas from the prior scripts while shifting feature emphasis toward shorter lookbacks, rolling normalization, and regime-change signals that are more likely to survive the train\u2192test\u2192val regime shift.\n\nKey changes:\n- replaces many long-horizon, regime-specific features with shorter-window momentum, volatility, efficiency, and price-position features\n- adds rolling z-scored versions of core signals to make them more regime-invariant\n- adds explicit change-in-market-character features such as vol trend, autocorr trend, and efficiency trend\n- includes a compact momentum \u00d7 volatility-regime interaction, which often generalizes better than either alone\n- simplifies and regularizes the XGBoost model slightly to reduce collapse while keeping enough expressivity\n- keeps the feature count safely below 80 and uses only past data\n\nThe overall goal is to increase validation slope and correlation without overfitting the earlier regime.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:58:56.402645",
+  "llm_cost": 0.03588,
+  "llm_model": "gpt-5.4-mini"
+}

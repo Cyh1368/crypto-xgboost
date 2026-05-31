@@ -1,0 +1,14 @@
+{
+  "generation": 94,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 8,
+  "patch_name": "higher_signal_regime_features",
+  "patch_description": "The current model is heavily underconfident (`pred_std_ratio` is far below target), which usually means the tree ensemble is too constrained and the feature set is not providing enough separable regime information. I\u2019m proposing two coordinated changes:\n\n1. Relax XGBoost regularization and give it more capacity to fit weak but real directional edges:\n   - more trees,\n   - slightly deeper trees,\n   - lower `min_child_weight`,\n   - lower `reg_lambda`,\n   - a bit more subsampling to retain robustness,\n   - slightly smaller learning rate with more rounds.\n\n2. Add a small set of high-value past-only features that improve regime discrimination without exploding dimensionality:\n   - normalized lagged returns and return spreads,\n   - short-horizon realized volatility shifts,\n   - EMA-based trend spread,\n   - VWAP-distance z-score,\n   - RSI slope / midline state,\n   - volume shock / price-volume interaction,\n   - a short regime persistence measure.\n\nThese features are designed to help the model separate trend, mean-reversion, and volatility-expansion periods, which should improve directional accuracy while also increasing prediction dispersion away from the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:45:35.838674",
+  "llm_cost": 0.030365999999999997,
+  "llm_model": "gpt-5.4-mini"
+}

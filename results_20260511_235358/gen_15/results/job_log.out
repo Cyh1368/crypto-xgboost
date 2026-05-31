@@ -1,0 +1,28 @@
+RUN ERROR: too many indices for array: array is 1-dimensional, but 2 were indexed
+Traceback (most recent call last):
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 217, in main
+    result = run_fn(df)
+             ^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 193, in run_fn
+    X_all = mod.build_features(df)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/results_20260511_235358/gen_15/main.py", line 104, in build_features
+    feat['obi_simple'] = df.apply(obi, axis=1)
+                         ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/pandas/core/frame.py", line 12423, in apply
+    return op.apply().__finalize__(self, method="apply")
+           ^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/pandas/core/apply.py", line 1015, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/pandas/core/apply.py", line 1167, in apply_standard
+    results, res_index = self.apply_series_generator()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/pandas/core/apply.py", line 1183, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/results_20260511_235358/gen_15/main.py", line 103, in obi
+    return (np.sum(b[:3, 1]) - np.sum(a[:3, 1])) / (np.sum(b[:3, 1]) + np.sum(a[:3, 1]) + 1e-9)
+                   ~^^^^^^^
+IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed
+

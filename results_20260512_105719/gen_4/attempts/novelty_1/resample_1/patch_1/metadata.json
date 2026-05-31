@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_short_lookback",
+  "patch_description": "The primary issue is that the model's predictive slope collapses from 0.074 on train to 0.006 on val, indicating severe regime-specific overfitting. The current features use long lookback windows (20-200 bars) that capture regime-specific patterns rather than universal market dynamics.\n\nKey changes to address this:\n\n1. **Shorter lookback windows (5-20 bars)**: Replace most 20-60+ bar features with 5-15 bar equivalents. Shorter windows decay faster but generalize better across regime shifts.\n\n2. **Z-score normalization within rolling windows**: Instead of raw returns or volatility levels, compute z-scores of recent returns relative to their own recent distribution. This makes features regime-invariant.\n\n3. **Rate-of-change features**: Add features measuring how market character is changing (volatility trend, autocorrelation trend) rather than absolute levels.\n\n4. **Reduced model complexity**: Decrease n_estimators from 400 to 200 and increase min_child_weight from 1 to 3 to force the model to learn only high-sample, robust patterns.\n\n5. **Feature interactions**: Add momentum \u00d7 volatility_regime as a single multiplicative term, which often generalizes better than both features separately.\n\n6. **Remove long-term regime features**: Eliminate features based on 60+ bar windows and 200-bar rolling statistics that are too regime-specific.\n\n7. **Increase learning rate**: From 0.15 to 0.20 with fewer trees to prevent overfitting to training regime nuances.\n\nThis approach prioritizes features that capture universal short-term market dynamics over regime-specific patterns, directly addressing the train\u2192val slope collapse.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:58:15.567249",
+  "llm_cost": 0.076932,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

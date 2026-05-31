@@ -1,0 +1,14 @@
+{
+  "generation": 51,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "add_percentile_rank_features_for_distribution_invariance",
+  "patch_description": "The current program shows strong train performance (train_slope=0.0738) but severe degradation on validation (val_slope=0.0060, only 8.2% of train). This indicates features are regime-specific - they learn patterns based on absolute levels that don't transfer across market regimes.\n\nThe best-performing prior program (combined_score=-2.06) already uses some rank-based features like `vol_rank_40`, `ret_rank_20`, `ret3_rank_30`, `rsi_14_rank_40`, and `hl_range_rank_40`. These percentile rank features are distribution-invariant - they capture relative position within a rolling window rather than absolute values.\n\nI will extend this successful pattern by adding percentile rank transformations for the most predictive raw features:\n\n1. **ret_3_rank_60**: Rank-normalize the 3-period return to make momentum signals regime-invariant\n2. **efficiency_20_rank_80**: Rank-normalize efficiency to capture relative trend quality independent of absolute efficiency levels\n3. **momentum_regime_rank_60**: Rank-normalize the momentum/volatility ratio to make this interaction stable across regimes\n4. **rsi_14_rank_60**: Add a longer-window rank of RSI to complement existing rank features\n\nThese additions will:\n- Stay within the 80-feature budget (current program has ~62 features, adding 4 brings us to ~66)\n- Provide regime-invariant versions of key predictive signals\n- Potentially push slope_ratio from 8.2% toward 15-20% by reducing regime dependency\n- Build on the proven success of rank features in the best prior programs\n\nThe key insight is that while absolute feature values change meaning across regimes (e.g., 2% vol is high in calm markets, low in turbulent ones), the percentile rank within a rolling window stays interpretable.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:22:34.373048",
+  "llm_cost": 0.112929,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

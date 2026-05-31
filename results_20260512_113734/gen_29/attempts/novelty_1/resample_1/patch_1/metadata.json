@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "none",
+  "patch_description": "This crossover combines the best elements from both programs:\n\n1. **Hyperparameters**: Takes the middle ground between the two programs. The current program is too heavily regularized (high lambda=8.0, gamma=0.2, min_child_weight=10), causing severe prediction collapse. The crossover program had better generalization (0.62 vs 0.85) but still collapsed. This new version:\n   - Uses moderate regularization (reg_lambda=2.0, reg_alpha=0.2) to prevent overfitting while maintaining expressivity\n   - Increases max_depth to 4 and reduces min_child_weight to 6 to allow more pattern capture\n   - Uses learning_rate=0.07 and n_estimators=240 for stable convergence\n   - Increases subsample/colsample to 0.82 for better feature utilization\n\n2. **Feature Engineering**: Combines the comprehensive feature set from the crossover program with the regime-stability indicators from the current program:\n   - Keeps all the short-lookback z-scored features from the crossover (proven to generalize better)\n   - Adds the critical regime shift detection features from the current program (return_dispersion trends, range_to_vol ratios, momentum_regime_x_eff)\n   - Includes sma_5 cross-features for even shorter-term mean reversion signals\n   - Maintains all volatility trend features and efficiency metrics that measure CHANGE in market character rather than just state\n   - Preserves funding_x_volregime interaction which helps capture regime-dependent funding pressure\n\n3. **Rationale**: The current program's high regularization kills predictive slope (0.0076 train slope, 0.0016 val slope). The crossover program had better train slope (0.0120) but still collapsed. By reducing regularization moderately and combining the most robust features from both, we aim to:\n   - Increase val_slope from 0.0016 to at least 0.0030 (targeting 0.020+)\n   - Maintain or improve generalization_ratio (currently excellent at 85.4%)\n   - Reduce prediction collapse (pred_std_ratio from 0.0353 to 0.10+)\n   - Keep feature count safely under 80",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T11:59:52.659238",
+  "llm_cost": 0.137562,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

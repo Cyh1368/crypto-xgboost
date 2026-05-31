@@ -1,0 +1,248 @@
+<NAME>
+short_regime_features
+</NAME>
+
+<DESCRIPTION>
+This edit targets the main failure mode: the model’s slope collapses in the newest regime, which usually means it is learning absolute levels that do not survive regime shifts. The proposed feature set emphasizes short-horizon, regime-invariant signals:
+
+- shorter lookbacks for returns, volatility, trend strength, and mean-reversion
+- rolling z-scored versions of return, volatility, RSI, and price deviation
+- explicit rate-of-change features for volatility and efficiency
+- short-window autocorrelation and its trend, which helps capture market character changes
+- a stronger momentum × volatility-regime interaction using normalized momentum
+
+I also slightly relax the tree regularization so XGBoost can fit these more informative but noisier short-term signals without collapsing toward the mean. This should help raise val_slope and pred_std_ratio while keeping overfit under control.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 250,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 700,
+    "max_depth": 4,
+    "min_child_weight": 5,
+    "reg_alpha": 0.05,
+    "reg_lambda": 1.0,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.18     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Returns (shorter lookbacks) ---
+    for lag in [1, 2, 3, 6, 12, 24]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # --- Volatility (shorter windows + z-score normalization) ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 20]:
+        vol = log_ret.rolling(w).std()
+        feat[f'vol_{w}'] = vol
+        # Z-score normalize volatility within rolling 60-bar window
+        feat[f'vol_{w}_z'] = (vol - vol.rolling(60).mean()) / (vol.rolling(60).std() + 1e-9)
+
+    # Volatility trend (rate of change)
+    vol_10 = log_ret.rolling(10).std()
+    feat['vol_trend'] = vol_10.diff(5) / (vol_10.shift(5) + 1e-9)
+
+    # --- RSI (z-score normalized) ---
+    for period in [6, 14]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        rsi = 100 - 100 / (1 + rs)
+        feat[f'rsi_{period}'] = rsi
+        # Z-score normalize RSI within rolling window
+        feat[f'rsi_{period}_z'] = (rsi - rsi.rolling(60).mean()) / (rsi.rolling(60).std() + 1e-9)
+=======
+    # --- Returns (shorter lookbacks) ---
+    for lag in [1, 2, 3, 5, 8, 12, 20]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+    ret_1 = close.pct_change(1)
+    feat['ret_z_20'] = (ret_1 - ret_1.rolling(20).mean()) / (ret_1.rolling(20).std() + 1e-9)
+    feat['ret_z_40'] = (ret_1 - ret_1.rolling(40).mean()) / (ret_1.rolling(40).std() + 1e-9)
+
+    # --- Volatility (shorter windows + z-score normalization) ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 20]:
+        vol = log_ret.rolling(w).std()
+        feat[f'vol_{w}'] = vol
+        feat[f'vol_{w}_z'] = (vol - vol.rolling(40).mean()) / (vol.rolling(40).std() + 1e-9)
+
+    # Volatility trend (rate of change)
+    vol_5 = log_ret.rolling(5).std()
+    vol_10 = log_ret.rolling(10).std()
+    feat['vol_trend'] = (vol_5 - vol_5.shift(3)) / (vol_5.shift(3) + 1e-9)
+    feat['vol_trend_10'] = vol_10.diff(5) / (vol_10.shift(5) + 1e-9)
+
+    # --- RSI (z-score normalized) ---
+    for period in [6, 14]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        rsi = 100 - 100 / (1 + rs)
+        feat[f'rsi_{period}'] = rsi
+        feat[f'rsi_{period}_z'] = (rsi - rsi.rolling(40).mean()) / (rsi.rolling(40).std() + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Regime features (shorter lookbacks + z-score) ---
+    trend_10 = (close / close.shift(10) - 1) * 10000
+    trend_20 = (close / close.shift(20) - 1) * 10000
+    feat['trend_strength_10'] = trend_10.abs()
+    feat['trend_strength_20'] = trend_20.abs()
+    feat['trend_dir_10'] = np.sign(trend_10)
+    feat['trend_dir_20'] = np.sign(trend_20)
+
+    # Volatility regime using shorter reference window
+    realized_vol_10 = log_ret.rolling(10).std()
+    realized_vol_20 = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol_10 / (realized_vol_10.rolling(60).mean() + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_10 / (realized_vol_20 + 1e-9)
+    feat['vol_rank_60'] = realized_vol_10.rolling(60).rank(pct=True)
+
+    # Momentum acceleration (rate of change of momentum)
+    ret_3 = close.pct_change(3)
+    feat['momentum_accel'] = ret_3.diff(3)
+=======
+    # --- Regime features (shorter lookbacks + z-score) ---
+    trend_5 = (close / close.shift(5) - 1) * 10000
+    trend_10 = (close / close.shift(10) - 1) * 10000
+    feat['trend_strength_5'] = trend_5.abs()
+    feat['trend_strength_10'] = trend_10.abs()
+    feat['trend_dir_5'] = np.sign(trend_5)
+    feat['trend_dir_10'] = np.sign(trend_10)
+
+    # Volatility regime using shorter reference window
+    realized_vol_10 = log_ret.rolling(10).std()
+    realized_vol_20 = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol_10 / (realized_vol_10.rolling(40).mean() + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_10 / (realized_vol_20 + 1e-9)
+    feat['vol_rank_40'] = realized_vol_10.rolling(40).rank(pct=True)
+
+    # Momentum acceleration (rate of change of momentum)
+    ret_3 = close.pct_change(3)
+    feat['momentum_accel'] = ret_3.diff(2)
+    feat['momentum_z_20'] = (ret_3 - ret_3.rolling(20).mean()) / (ret_3.rolling(20).std() + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Mean reversion features (shorter windows + z-score) ---
+    sma_10 = close.rolling(10).mean()
+    sma_20 = close.rolling(20).mean()
+    price_dev_10 = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma10_dev'] = price_dev_10
+    feat['price_sma20_dev'] = (close - sma_20) / (sma_20 + 1e-9)
+    feat['sma_cross'] = (sma_10 - sma_20) / (sma_20 + 1e-9)
+    # Z-score normalize price deviation
+    feat['price_dev_z'] = (price_dev_10 - price_dev_10.rolling(60).mean()) / (price_dev_10.rolling(60).std() + 1e-9)
+
+    # --- Momentum × Volatility interaction (single most robust) ---
+    ret_3 = close.pct_change(3)
+    vol_10 = log_ret.rolling(10).std()
+    feat['momentum_vol_interaction'] = ret_3 * feat['vol_regime']
+    feat['momentum_regime'] = ret_3 / (vol_10 + 1e-9)
+=======
+    # --- Mean reversion features (shorter windows + z-score) ---
+    sma_5 = close.rolling(5).mean()
+    sma_10 = close.rolling(10).mean()
+    price_dev_5 = (close - sma_5) / (sma_5 + 1e-9)
+    feat['price_sma5_dev'] = price_dev_5
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['sma_cross'] = (sma_5 - sma_10) / (sma_10 + 1e-9)
+    feat['price_dev_z'] = (price_dev_5 - price_dev_5.rolling(40).mean()) / (price_dev_5.rolling(40).std() + 1e-9)
+
+    # --- Momentum × Volatility interaction (single most robust) ---
+    vol_10 = log_ret.rolling(10).std()
+    feat['momentum_vol_interaction'] = feat['momentum_z_20'] * feat['vol_regime']
+    feat['momentum_regime'] = ret_3 / (vol_10 + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Close position in range (shorter window) ---
+    low_10 = low.rolling(10).min()
+    high_10 = high.rolling(10).max()
+    feat['close_position_10'] = (close - low_10) / (high_10 - low_10 + 1e-9)
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+
+    # Z-scored returns (already regime-invariant)
+    ret_1 = close.pct_change(1)
+    feat['ret_z_20'] = (ret_1 - ret_1.rolling(20).mean()) / (ret_1.rolling(20).std() + 1e-9)
+    feat['ret_z_40'] = (ret_1 - ret_1.rolling(40).mean()) / (ret_1.rolling(40).std() + 1e-9)
+
+    # Return acceleration
+    feat['ret_accel_3'] = ret_1.diff(3)
+
+    # Volume-return correlation (shorter window)
+    feat['vol_ret_corr_10'] = log_ret.rolling(10).corr(volume.pct_change(1))
+=======
+    # --- Close position in range (shorter window) ---
+    low_5 = low.rolling(5).min()
+    high_5 = high.rolling(5).max()
+    feat['close_position_5'] = (close - low_5) / (high_5 - low_5 + 1e-9)
+    low_10 = low.rolling(10).min()
+    high_10 = high.rolling(10).max()
+    feat['close_position_10'] = (close - low_10) / (high_10 - low_10 + 1e-9)
+
+    # Return acceleration
+    feat['ret_accel_3'] = ret_1.diff(3)
+
+    # Volume-return correlation (shorter window)
+    feat['vol_ret_corr_10'] = log_ret.rolling(10).corr(volume.pct_change(1))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency (shorter window) ---
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    # Efficiency trend (rate of change)
+    eff_10 = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+    feat['efficiency_trend'] = eff_10.diff(5)
+=======
+    # --- Trend Consistency and Efficiency (shorter window) ---
+    feat['efficiency_5'] = (close - close.shift(5)).abs() / (close.diff().abs().rolling(5).sum() + 1e-9)
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+
+    # Efficiency trend (rate of change)
+    eff_5 = (close - close.shift(5)).abs() / (close.diff().abs().rolling(5).sum() + 1e-9)
+    feat['efficiency_trend'] = eff_5.diff(3)
+    feat['efficiency_z_20'] = (feat['efficiency_5'] - feat['efficiency_5'].rolling(20).mean()) / (feat['efficiency_5'].rolling(20).std() + 1e-9)
+
+    # Short-window autocorrelation and its trend
+    feat['autocorr_10'] = log_ret.rolling(10).apply(lambda x: pd.Series(x).autocorr(lag=1), raw=False)
+    feat['autocorr_20'] = log_ret.rolling(20).apply(lambda x: pd.Series(x).autocorr(lag=1), raw=False)
+    feat['autocorr_trend'] = feat['autocorr_10'] - feat['autocorr_20']
+>>>>>>> REPLACE
+</DIFF>

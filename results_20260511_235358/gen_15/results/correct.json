@@ -1,0 +1,4 @@
+{
+  "correct": false,
+  "error": "too many indices for array: array is 1-dimensional, but 2 were indexed"
+}

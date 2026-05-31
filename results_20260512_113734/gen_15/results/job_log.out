@@ -1,0 +1,16 @@
+LOAD ERROR: invalid syntax (main.py, line 29)
+Traceback (most recent call last):
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 208, in main
+    run_fn = _make_run_fn(program_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 189, in _make_run_fn
+    spec.loader.exec_module(mod)
+  File "<frozen importlib._bootstrap_external>", line 936, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1074, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1004, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/home/chengyou1368/crypto-xgboost/results_20260512_113734/gen_15/main.py", line 29
+    =======
+    ^^
+SyntaxError: invalid syntax
+

@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "short_horizon_regime_features",
+  "patch_description": "This edit targets the main failure mode: the model\u2019s slope collapses badly in validation because it relies too much on absolute, regime-specific levels from longer lookbacks. I\u2019m adding shorter-horizon, rolling-normalized features that are more regime-invariant, plus explicit \u201ctrend of regime\u201d features so the model can detect when volatility and efficiency are changing rather than just whether they are high or low.\n\nI also slightly retune XGBoost to reduce brittle memorization while keeping enough capacity to avoid the current near-mean prediction collapse. The new configuration uses a shallower tree, more trees with a lower learning rate, and modest regularization so the model can fit robust short-horizon patterns without overfitting to the train regime.\n\nThe changes stay within the feature budget and only use past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:39:40.987626",
+  "llm_cost": 0.02152575,
+  "llm_model": "gpt-5.4-mini"
+}

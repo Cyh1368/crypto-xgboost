@@ -1,0 +1,14 @@
+{
+  "generation": 30,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortxgb",
+  "patch_description": "This rewrite focuses on the two issues that are hurting the current model most: regime fragility and prediction collapse.\n\nThe feature set is redesigned to emphasize short lookbacks, rolling z-scores, percentile/rank transforms, and change-in-market-character signals rather than absolute levels. This should make the features more invariant across the train\u2192test\u2192val regime shifts, especially for BTC/ETH/SOL perp microstructure.\n\nKey changes:\n- Use shorter horizons for momentum, volatility, RSI, MACD, VWAP, and mean reversion.\n- Add rolling z-score and rolling rank features for returns, volatility, volume, efficiency, and regime measures.\n- Add explicit regime-change features such as volatility trend, efficiency trend, autocorrelation trend, and range expansion.\n- Add a compact interaction feature: momentum \u00d7 volatility regime.\n- Remove some long-horizon, regime-specific features that likely overfit the earlier market regime.\n- Make XGBoost less constrained than the current setup, but still regularized enough to avoid extreme overfit and keep prediction variance from collapsing.\n\nThe goal is to improve val_slope and val_pearson while keeping DA stable and maintaining the train\u2192val generalization gap within the target limit.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:56:28.358147",
+  "llm_cost": 0.0330825,
+  "llm_model": "gpt-5.4-mini"
+}

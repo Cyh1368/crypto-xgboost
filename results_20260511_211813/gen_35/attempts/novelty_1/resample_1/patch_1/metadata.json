@@ -1,0 +1,14 @@
+{
+  "generation": 35,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_boost",
+  "patch_description": "The current model is still collapsing toward the mean, which is usually a sign that the tree ensemble is too constrained for the weak-but-real directional edge in 15m crypto perp data. I\u2019m proposing two complementary changes:\n\n1. **More expressive but still controlled XGBoost settings**\n   - Reduce `min_child_weight` and `reg_lambda`, remove the overly strong `reg_alpha`.\n   - Slightly increase depth and lower learning rate.\n   - Add row/column stochasticity plus `max_bin` for hist boosting.\n   - Keep early stopping, but allow more trees so the model can actually use the added signal.\n\n2. **Feature redesign toward regime-aware short-horizon signals**\n   - Shorten the core lookbacks and add explicit **lagged regime / trend / volatility / breakout / funding** features.\n   - Use **shift(1)** where needed to preserve past-only usage.\n   - Add compact but informative interaction features that help the model switch between trend-following and mean-reversion regimes.\n   - Keep total feature count under the limit and avoid heavy computations.\n\nThis should help raise `pred_std_ratio` without materially increasing overfit, and should improve validation DA by making the model less \u201caverage\u201d and more regime-sensitive.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:24:47.969934",
+  "llm_cost": 0.03718200000000001,
+  "llm_model": "gpt-5.4-mini"
+}

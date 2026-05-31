@@ -1,0 +1,153 @@
+<NAME>
+adaptive_regime_conditional_features
+</NAME>
+
+<DESCRIPTION>
+The current program shows a critical problem: val_slope is only 5.2% of train_slope, indicating severe regime-specific overfitting. The model learns patterns that work in training but collapse in validation. The best-performing prior program achieved 96.0% generalization ratio by using regime-conditional features.
+
+The key insight is that momentum, efficiency, and autocorrelation features should be explicitly modulated by volatility regime indicators. Instead of treating these features as static, we create regime-conditional versions that adapt to market conditions:
+
+1. **High-volatility momentum features**: Multiply short-term returns by a high-vol indicator (vol_regime_rank > 0.7). In high-vol regimes, momentum patterns are stronger and more reliable.
+
+2. **Low-volatility efficiency features**: Multiply efficiency by a low-vol indicator (vol_regime_rank < 0.3). In low-vol regimes, mean reversion and efficiency patterns dominate.
+
+3. **Regime-specific autocorrelation**: Create separate autocorrelation features for high and low volatility periods, as persistence patterns differ dramatically across regimes.
+
+This approach directly addresses the regime shift problem by making features explicitly regime-aware rather than assuming static relationships. The vol_regime_rank feature already exists in the codebase, so we can leverage it immediately.
+
+Additionally, I'll reduce regularization slightly (reg_lambda from 0.5 to 0.4) to allow the model to learn these more nuanced regime-conditional patterns without being overly constrained.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 280,
+    "max_depth": 4,
+    "min_child_weight": 3,
+    "reg_alpha": 0.15,
+    "reg_lambda": 0.5,
+    "subsample": 0.78,
+    "colsample_bytree": 0.78,
+    "learning_rate": 0.055,
+    "gamma": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 280,
+    "max_depth": 4,
+    "min_child_weight": 3,
+    "reg_alpha": 0.15,
+    "reg_lambda": 0.4,
+    "subsample": 0.78,
+    "colsample_bytree": 0.78,
+    "learning_rate": 0.055,
+    "gamma": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Volatility rank (shorter window)
+    feat['vol_rank_60'] = rv_20.rolling(60).rank(pct=True)
+=======
+    # Volatility rank (shorter window)
+    feat['vol_rank_60'] = rv_20.rolling(60).rank(pct=True)
+    feat['vol_regime_rank'] = rv_20.rolling(40).rank(pct=True)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- Momentum × Volatility interactions (adaptive) ---
+    ret_3 = close.pct_change(3)
+    ret_5 = close.pct_change(5)
+    feat['momentum_vol_interaction_1'] = ret_3 * feat['vol_regime']
+    feat['momentum_vol_interaction_2'] = ret_5 * feat['vol_regime']
+    feat['momentum_regime_ratio_1'] = ret_3 / (rv_10 + 1e-9)
+    feat['momentum_regime_ratio_2'] = ret_5 / (rv_20 + 1e-9)
+    feat['momentum_regime_fast'] = ret_3 * feat['vol_regime_fast']
+=======
+    # --- Momentum × Volatility interactions (adaptive) ---
+    ret_3 = close.pct_change(3)
+    ret_5 = close.pct_change(5)
+    feat['momentum_vol_interaction_1'] = ret_3 * feat['vol_regime']
+    feat['momentum_vol_interaction_2'] = ret_5 * feat['vol_regime']
+    feat['momentum_regime_ratio_1'] = ret_3 / (rv_10 + 1e-9)
+    feat['momentum_regime_ratio_2'] = ret_5 / (rv_20 + 1e-9)
+    feat['momentum_regime_fast'] = ret_3 * feat['vol_regime_fast']
+    
+    # Regime-conditional momentum features
+    high_vol_indicator = (feat['vol_regime_rank'] > 0.7).astype(float)
+    low_vol_indicator = (feat['vol_regime_rank'] < 0.3).astype(float)
+    feat['ret_3_high_vol'] = ret_3 * high_vol_indicator
+    feat['ret_5_high_vol'] = ret_5 * high_vol_indicator
+    feat['ret_3_low_vol'] = ret_3 * low_vol_indicator
+    feat['ret_5_low_vol'] = ret_5 * low_vol_indicator
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # Autocorrelation (persistence measure)
+    feat['ret_autocorr_5'] = ret_1.rolling(5).corr(ret_1.shift(1))
+    feat['ret_autocorr_10'] = ret_1.rolling(10).corr(ret_1.shift(1))
+    feat['autocorr_trend'] = feat['ret_autocorr_5'] - feat['ret_autocorr_10']
+=======
+    # Autocorrelation (persistence measure)
+    feat['ret_autocorr_5'] = ret_1.rolling(5).corr(ret_1.shift(1))
+    feat['ret_autocorr_10'] = ret_1.rolling(10).corr(ret_1.shift(1))
+    feat['autocorr_trend'] = feat['ret_autocorr_5'] - feat['ret_autocorr_10']
+    
+    # Regime-conditional autocorrelation
+    high_vol_indicator = (feat['vol_regime_rank'] > 0.7).astype(float)
+    low_vol_indicator = (feat['vol_regime_rank'] < 0.3).astype(float)
+    feat['autocorr_5_high_vol'] = feat['ret_autocorr_5'] * high_vol_indicator
+    feat['autocorr_5_low_vol'] = feat['ret_autocorr_5'] * low_vol_indicator
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- Trend Consistency and Efficiency (multiple horizons + change) ---
+    for w in [5, 10, 20]:
+        denom = close.diff().abs().rolling(w).sum()
+        feat[f'efficiency_{w}'] = (close - close.shift(w)).abs() / (denom + 1e-9)
+
+    # Efficiency trend (rate of change)
+    feat['efficiency_trend'] = feat['efficiency_5'] - feat['efficiency_20']
+
+    # Interaction: trend × volatility change
+    feat['trend_x_vol_change'] = feat['trend_10'] * feat['vol_regime_change']
+    feat['efficiency_x_vol'] = feat['efficiency_10'] * feat['vol_regime']
+=======
+    # --- Trend Consistency and Efficiency (multiple horizons + change) ---
+    for w in [5, 10, 20]:
+        denom = close.diff().abs().rolling(w).sum()
+        feat[f'efficiency_{w}'] = (close - close.shift(w)).abs() / (denom + 1e-9)
+
+    # Efficiency trend (rate of change)
+    feat['efficiency_trend'] = feat['efficiency_5'] - feat['efficiency_20']
+
+    # Interaction: trend × volatility change
+    feat['trend_x_vol_change'] = feat['trend_10'] * feat['vol_regime_change']
+    feat['efficiency_x_vol'] = feat['efficiency_10'] * feat['vol_regime']
+    
+    # Regime-conditional efficiency features
+    high_vol_indicator = (feat['vol_regime_rank'] > 0.7).astype(float)
+    low_vol_indicator = (feat['vol_regime_rank'] < 0.3).astype(float)
+    feat['efficiency_10_low_vol'] = feat['efficiency_10'] * low_vol_indicator
+    feat['efficiency_20_low_vol'] = feat['efficiency_20'] * low_vol_indicator
+    feat['efficiency_10_high_vol'] = feat['efficiency_10'] * high_vol_indicator
+>>>>>>> REPLACE
+</DIFF>

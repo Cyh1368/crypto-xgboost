@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "robust_short_window_regime",
+  "patch_description": "This edit aims to reduce regime-specific overfitting by shifting the model toward shorter-horizon, regime-normalized signals and slightly stronger tree regularization.\n\nKey ideas:\n- Replace several long-lookback constructs with shorter, more reactive windows that should survive regime shifts better.\n- Add rolling z-score / normalization features so the same market move is measured relative to its recent local context.\n- Add rate-of-change features for volatility, efficiency, and autocorrelation proxies, which are often more stable across changing volatility regimes than absolute levels.\n- Add a compact momentum \u00d7 volatility-regime interaction to preserve the useful interaction signal, but in a more regime-invariant form.\n- Strengthen XGBoost regularization a bit and reduce tree count so the model is less able to memorize the training regime, while still retaining enough capacity to learn robust patterns.\n\nThe changes are designed to improve validation slope and prediction dispersion without increasing feature count beyond the allowed limit.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:15:47.394211",
+  "llm_cost": 0.02320875,
+  "llm_model": "gpt-5.4-mini"
+}

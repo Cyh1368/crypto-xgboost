@@ -1,0 +1,78 @@
+Looking at the performance history, I can see a consistent pattern:
+
+1. **Collapse penalty dominates** (0.447-0.705 across all attempts): `pred_std_ratio` is stuck at 0.01-0.06, far below the 0.15 target
+2. **val_DA plateaus at 0.50-0.53**: The model is severely underfitting despite having good features
+3. **Regularization is too aggressive**: Even with `reg_alpha=0.02, reg_lambda=0.35`, the model collapses to predicting the mean
+
+The core issue is that **regularization is strangling model expressivity**. The model has ~60+ features but can't use them effectively because:
+- `min_child_weight=3` is too high for 15-min bars (prevents splits on weak signals)
+- `reg_lambda=0.35` heavily penalizes leaf weights
+- Learning rate is too low (0.03) to overcome regularization
+
+**Strategy**: Dramatically reduce regularization and increase tree complexity to allow the model to capture signal from the rich feature set.
+
+<NAME>
+aggressive_regularization_reduction
+</NAME>
+
+<DESCRIPTION>
+The model is severely collapsed (pred_std_ratio=0.06 vs target 0.15+). This is a regularization problem, not a feature problem. The features are well-designed but the model can't use them.
+
+Key changes:
+1. **Slash regularization**: `reg_lambda: 0.35 → 0.05` (7x reduction), `reg_alpha: 0.02 → 0.001` (20x reduction) to allow trees to learn signal
+2. **Reduce min_child_weight**: `3 → 1` to allow splits on weaker but real signals in 15-min data
+3. **Increase learning rate**: `0.03 → 0.08` to compensate for fewer estimators and help escape local minima
+4. **Reduce estimators slightly**: `850 → 600` (with higher LR, fewer trees needed; faster training)
+5. **Increase subsample/colsample**: `0.82 → 0.85` to reduce variance without heavy regularization
+6. **Increase early_stopping_rounds**: `70 → 100` to let the model train longer and find signal
+
+This targets the collapse penalty directly. The goal is to get pred_std_ratio > 0.12 (from 0.06), which would cut the collapse penalty in half and likely improve val_DA as well.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 850,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.02,
+    "reg_lambda": 0.35,
+    "subsample": 0.82,
+    "colsample_bytree": 0.82,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 70,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.05,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+CLIP_PERCENTILE = 98
+MIN_PRED_STD_RATIO = 0.15
+=======
+CLIP_PERCENTILE = 96
+MIN_PRED_STD_RATIO = 0.15
+>>>>>>> REPLACE
+</DIFF>
+
+**Rationale for CLIP_PERCENTILE change**: Reducing from 98 to 96 clips more extreme outliers, which helps the model focus on the core signal distribution. This is a minor adjustment but helps when regularization is loosened—it prevents the model from overfitting to rare extreme moves.

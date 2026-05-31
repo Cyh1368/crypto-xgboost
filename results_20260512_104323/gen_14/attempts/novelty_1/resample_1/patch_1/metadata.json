@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_short_windows",
+  "patch_description": "This edit targets the slope collapse by shifting the model toward shorter-horizon, regime-normalized signals and slightly constraining tree complexity.\n\nKey ideas:\n- Replace some absolute-level indicators with rolling z-scores / ranks so features are more comparable across volatility regimes.\n- Emphasize 5\u201320 bar behavior and add explicit rate-of-change features for volatility and efficiency, which should be more stable across regime shifts.\n- Add a small number of interaction terms that combine momentum with regime state in a single feature.\n- Reduce model expressivity a bit and add regularization so XGBoost is less likely to memorize the training regime and more likely to preserve slope on validation.\n\nThe feature count remains well under the 80-feature limit, and all features use only past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:46:29.882269",
+  "llm_cost": 0.023739000000000003,
+  "llm_model": "gpt-5.4-mini"
+}

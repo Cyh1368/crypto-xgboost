@@ -1,0 +1,276 @@
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 5,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 94
+MIN_PRED_STD_RATIO = 0.15
+N_REGIMES = 3  # Number of market regimes to identify
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV + orderbook + funding data.
+    All features must use only past data (no lookahead).
+    """
+    feat = pd.DataFrame(index=df.index)
+    close = df['close'].astype(float)
+    volume = df['volume'].astype(float)
+    high = df['high'].astype(float)
+    low = df['low'].astype(float)
+    open_ = df['open'].astype(float)
+
+    # --- Returns and Trend Stack ---
+    r1 = close.pct_change(1)
+    r3 = close.pct_change(3)
+    r6 = close.pct_change(6)
+    r12 = close.pct_change(12)
+    r24 = close.pct_change(24)
+    
+    feat['ret_1'], feat['ret_3'], feat['ret_6'], feat['ret_12'] = r1, r3, r6, r12
+    feat['trend_stack'] = np.sign(r1) + np.sign(r3) + np.sign(r6) + np.sign(r12)
+    feat['ret_accel_3'] = r1 - r3 / 3.0
+    feat['ret_accel_6'] = r3 - r6 / 2.0
+
+    # --- Volatility and Vol State ---
+    log_ret = np.log(close / close.shift(1))
+    vol_2 = log_ret.rolling(2).std()
+    vol_5 = log_ret.rolling(5).std()
+    vol_20 = log_ret.rolling(20).std()
+    vol_60 = log_ret.rolling(60).std()
+    vol_96 = log_ret.rolling(96).std()
+    
+    feat['vol_2'] = vol_2
+    feat['vol_5'] = vol_5
+    feat['vol_20'] = vol_20
+    feat['vol_60'] = vol_60
+    feat['vol_ratio_2_5'] = vol_2 / (vol_5 + 1e-9)
+    feat['vol_ratio_5_20'] = vol_5 / (vol_20 + 1e-9)
+    feat['vol_ratio_20_60'] = vol_20 / (vol_60 + 1e-9)
+    feat['vol_ratio_5_96'] = vol_5 / (vol_96 + 1e-9)
+    feat['vol_state'] = np.tanh((vol_5 / (vol_60 + 1e-9)) - 1.0)
+    feat['vol_regime'] = vol_20 / (vol_20.rolling(200).mean() + 1e-9)
+    feat['vol_accel'] = vol_5 / (vol_20 + 1e-9) - 1.0
+
+    # --- Oscillators ---
+    for period in [6, 14, 28]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        feat[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+    
+    feat['rsi_6_slope'] = feat['rsi_6'].diff()
+    feat['rsi_14_slope'] = feat['rsi_14'].diff()
+    feat['rsi_z_30'] = (feat['rsi_14'] - feat['rsi_14'].rolling(30).mean()) / (feat['rsi_14'].rolling(30).std() + 1e-9)
+
+    # --- Mean Reversion / Gaps ---
+    ema_8 = close.ewm(span=8, adjust=False).mean()
+    ema_21 = close.ewm(span=21, adjust=False).mean()
+    ema_55 = close.ewm(span=55, adjust=False).mean()
+    feat['ema_gap_fast'] = (ema_8 - ema_21) / (close + 1e-9)
+    feat['ema_gap_slow'] = (ema_21 - ema_55) / (close + 1e-9)
+    feat['ema_slope_fast'] = ema_8.pct_change(3)
+    feat['ema_slope_slow'] = ema_55.pct_change(8)
+    
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+    feat['streak_5'] = (r1 > 0).astype(int).rolling(5).sum() - (r1 < 0).astype(int).rolling(5).sum()
+
+    # --- Volume Dynamics ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+    feat['volume_z_20'] = (volume - volume.rolling(20).mean()) / (volume.rolling(20).std() + 1e-9)
+    feat['volume_chg_1'] = volume.pct_change(1)
+    feat['volume_chg_4'] = volume.pct_change(4)
+
+    # --- Candle Microstructure ---
+    bar_range = (high - low).replace(0, np.nan)
+    feat['candle_body'] = (close - open_) / (bar_range + 1e-9)
+    feat['upper_wick'] = (high - np.maximum(close, open_)) / (bar_range + 1e-9)
+    feat['lower_wick'] = (np.minimum(close, open_) - low) / (bar_range + 1e-9)
+    feat['close_loc'] = (close - low) / (bar_range + 1e-9)
+    feat['wick_imbalance'] = feat['lower_wick'] - feat['upper_wick']
+
+    # --- Range and Breakout ---
+    hi_20, lo_20 = high.rolling(20).max(), low.rolling(20).min()
+    hi_60, lo_60 = high.rolling(60).max(), low.rolling(60).min()
+    feat['range_pos_20'] = (close - lo_20) / ((hi_20 - lo_20) + 1e-9)
+    feat['range_pos_60'] = (close - lo_60) / ((hi_60 - lo_60) + 1e-9)
+    feat['range_width_20'] = (hi_20 - lo_20) / (close + 1e-9)
+    feat['range_width_60'] = (hi_60 - lo_60) / (close + 1e-9)
+
+    # --- Rolling Quantiles (Rank) ---
+    feat['ret_qpos_60'] = r1.rolling(60).rank(pct=True)
+    feat['vol_qpos_60'] = volume.rolling(60).rank(pct=True)
+    feat['close_qpos_60'] = close.rolling(60).rank(pct=True)
+
+    # --- Direction Persistence ---
+    sign_r1 = np.sign(r1)
+    feat['dir_persist_8'] = sign_r1.rolling(8).mean()
+    feat['dir_persist_24'] = sign_r1.rolling(24).mean()
+
+    # --- Interactions ---
+    feat['momentum_decay_6'] = (r1 * 0.5 + r3 * 0.3 + r6 * 0.2)
+    feat['momentum_decay_12'] = (r3 * 0.4 + r6 * 0.35 + r12 * 0.25)
+    feat['vol_regime_x_mom'] = feat['vol_regime'] * feat['momentum_decay_6']
+    feat['vol_state_x_mom'] = feat['vol_state'] * feat['momentum_decay_6']
+    feat['vol_mom_surge'] = feat['vol_state'] * feat['volume_ratio_5']
+    feat['trend_x_vol'] = (ema_8 - ema_55) / (close.rolling(20).std() + 1e-9) * feat['vol_state']
+    feat['range_x_volume'] = feat['range_pos_20'] * (feat['volume_ratio_5'] - 1.0)
+
+    # --- Time features ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+    feat['dow_cos'] = np.cos(2 * np.pi * df.index.dayofweek / 7)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # --- Orderbook / Funding ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def get_obi(b, a, tau=1):
+            try:
+                w = np.exp(-tau * np.arange(10))
+                bv = np.sum(np.array(b)[:10, 1] * w[:len(b)])
+                av = np.sum(np.array(a)[:10, 1] * w[:len(a)])
+                return (bv - av) / (bv + av + 1e-9)
+            except: return 0.0
+        feat['obi_tau1'] = [get_obi(b, a, 1) for b, a in zip(df['bids'], df['asks'])]
+        feat['obi_tau3'] = [get_obi(b, a, 3) for b, a in zip(df['bids'], df['asks'])]
+
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate'].astype(float)
+        feat['funding_rate'] = fr
+        feat['funding_ma_8h'] = fr.rolling(32).mean()
+        feat['funding_chg_1'] = fr.diff(1)
+        feat['funding_chg_4'] = fr.diff(4)
+        feat['funding_z_32'] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+
+    return feat.replace([np.inf, -np.inf], np.nan).dropna()
+# EVOLVE-BLOCK-END
+
+
+def identify_regimes(X_train, n_regimes=N_REGIMES):
+    """
+    Identify market regimes using KMeans clustering on training features.
+    Returns cluster labels and the fitted KMeans model.
+    """
+    kmeans = KMeans(n_clusters=n_regimes, random_state=42, n_init=10)
+    train_regimes = kmeans.fit_predict(X_train)
+    return train_regimes, kmeans
+
+
+def train_regime_models(X_train, y_train, X_test, y_test, regimes_train, kmeans_model):
+    """
+    Train separate XGBoost models for each regime.
+    Returns dict of models and regime assignments.
+    """
+    clip_val = np.percentile(np.abs(y_train), CLIP_PERCENTILE)
+    y_train_c = y_train.clip(-clip_val, clip_val)
+    
+    regime_models = {}
+    
+    for regime_id in range(N_REGIMES):
+        mask_train = regimes_train == regime_id
+        
+        if mask_train.sum() < 50:  # Skip regimes with too few samples
+            continue
+        
+        X_regime = X_train[mask_train]
+        y_regime = y_train_c[mask_train]
+        
+        params = {k: v for k, v in XGB_PARAMS.items()
+                  if k != 'early_stopping_rounds'}
+        early = XGB_PARAMS.get('early_stopping_rounds', 30)
+        
+        model = xgb.XGBRegressor(**params, early_stopping_rounds=early)
+        model.fit(X_regime, y_regime, eval_set=[(X_regime, y_regime)], verbose=False)
+        
+        regime_models[regime_id] = model
+    
+    return regime_models
+
+
+def predict_ensemble(X, regimes, kmeans_model, regime_models):
+    """
+    Generate ensemble predictions using regime-specific models.
+    Combines predictions weighted by regime probability.
+    """
+    n_samples = X.shape[0]
+    predictions = np.zeros(n_samples)
+    
+    # Get soft cluster assignments (distances to centroids)
+    distances = kmeans_model.transform(X)
+    # Convert distances to probabilities (inverse distance weighting)
+    probs = 1.0 / (distances + 1e-9)
+    probs = probs / probs.sum(axis=1, keepdims=True)
+    
+    # Ensemble prediction: weighted average of regime-specific predictions
+    for regime_id, model in regime_models.items():
+        regime_pred = model.predict(X)
+        predictions += probs[:, regime_id] * regime_pred
+    
+    return predictions
+
+
+# ─────────────────────────────────────────────
+# DO NOT MODIFY BELOW THIS LINE
+# run_experiment is the fixed interface called by evaluate.py
+
+def run_experiment(
+    X_train, y_train,
+    X_test,  y_test,
+    X_val,   y_val,
+):
+    """
+    Train regime-conditional ensemble and return raw predictions for all three splits.
+    Called by evaluate.py via shinka.core.run_shinka_eval.
+    """
+    # Scale
+    scaler = StandardScaler()
+    X_tr = scaler.fit_transform(X_train)
+    X_te = scaler.transform(X_test)
+    X_va = scaler.transform(X_val)
+
+    # Identify regimes on training data
+    regimes_train, kmeans_model = identify_regimes(X_tr, n_regimes=N_REGIMES)
+    
+    # Train regime-specific models
+    regime_models = train_regime_models(X_tr, y_train, X_te, y_test, regimes_train, kmeans_model)
+    
+    # Generate ensemble predictions
+    pred_train = predict_ensemble(X_tr, regimes_train, kmeans_model, regime_models)
+    pred_test = predict_ensemble(X_te, None, kmeans_model, regime_models)
+    pred_val = predict_ensemble(X_va, None, kmeans_model, regime_models)
+
+    return {
+        'train': {'pred': pred_train, 'actual': y_train.values},
+        'test':  {'pred': pred_test, 'actual': y_test.values},
+        'val':   {'pred': pred_val, 'actual': y_val.values},
+        'model': regime_models,
+    }

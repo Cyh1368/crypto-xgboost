@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "less_collapse_more_signal",
+  "patch_description": "The current model is still too conservative: `pred_std_ratio` is low, which means the ensemble is collapsing toward the mean. To counter that, I\u2019m making two coordinated changes:\n\n1. **Increase model expressivity slightly** while keeping regularization in check.  \n   - A somewhat higher learning rate with fewer trees encourages stronger splits and less underfitting.\n   - Slightly deeper trees and lower `min_child_weight` let XGBoost capture sharper local regime effects.\n   - Mildly reduced subsampling/column sampling keeps diversity without making the model too smooth.\n\n2. **Add a small set of short-horizon regime-sensitive features** that are past-only and cheap to compute:\n   - short-term return acceleration\n   - realized skewness of returns\n   - rolling close position percentile\n   - volatility-of-volatility\n   - volume impulse / volume acceleration\n   - interaction of momentum with volatility regime\n\nThese features are designed to help the model distinguish trend continuation from mean reversion across different volatility and participation regimes, which should increase prediction dispersion without materially increasing overfit risk. The feature count stays well below the 80-feature cap.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:22:01.146378",
+  "llm_cost": 0.0126315,
+  "llm_model": "gpt-5.4-mini"
+}

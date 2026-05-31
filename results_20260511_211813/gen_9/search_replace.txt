@@ -1,0 +1,131 @@
+Looking at the performance metrics, the core issue is **prediction collapse** (pred_std_ratio ≈ 0.02, collapse penalty ≈ 0.66). The model is predicting too close to the mean despite having val_DA ≈ 0.52.
+
+The problem is that regularization is still too aggressive. Even with the previous relaxations, the combination of:
+- `reg_lambda: 0.7` (still high)
+- `reg_alpha: 0.02` (moderate)
+- `min_child_weight: 4` (prevents small splits)
+- `gamma: 0.0` (no split penalty)
+
+...is suppressing the model's ability to make diverse predictions.
+
+**Strategy:**
+1. **Dramatically reduce regularization** to allow the model to express signal variance
+2. **Increase tree complexity** (depth, estimators) to capture non-linear patterns
+3. **Reduce min_child_weight** to allow finer splits
+4. **Add gamma** to prevent overfitting through split complexity rather than L1/L2
+5. **Increase learning rate** to allow faster convergence with fewer estimators
+6. **Add feature interactions** that capture regime-dependent momentum signals
+
+The key insight: we need pred_std_ratio > 0.15 to avoid the collapse penalty. This requires the model to make confident, diverse predictions.
+
+<NAME>
+aggressive_regularization_reduction_with_interactions
+</NAME>
+
+<DESCRIPTION>
+The current model suffers from severe prediction collapse (pred_std_ratio=0.0185) despite achieving reasonable val_DA. This is caused by over-regularization that suppresses the model's expressivity.
+
+Changes:
+1. **Hyperparameters**: Dramatically reduce L1/L2 regularization (reg_lambda: 0.7→0.1, reg_alpha: 0.02→0.005), increase tree depth (5→6), reduce min_child_weight (4→2), add gamma (0→0.5) for split complexity control, increase learning_rate (0.03→0.05), reduce n_estimators (700→600) since higher LR converges faster.
+
+2. **Features**: Add regime-conditional momentum interactions (momentum × vol_regime, momentum × trend_strength) and adaptive features that scale with volatility. These capture the signal that regularization was suppressing.
+
+The goal is to push pred_std_ratio above 0.15 while maintaining val_DA ≥ 0.52.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 700,
+    "max_depth": 5,
+    "min_child_weight": 4,
+    "reg_alpha": 0.02,
+    "reg_lambda": 0.7,
+    "subsample": 0.75,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.03,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.12     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.005,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.05,
+    "gamma": 0.5,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 97          # less aggressive clipping to preserve signal variance
+MIN_PRED_STD_RATIO = 0.12     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Returns / momentum ---
+    for lag in [1, 3, 6, 12, 24, 48]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+    feat['ret_accel_3_1'] = ret1 - ret3 / 3.0
+    feat['mom_ratio_12_48'] = (close.pct_change(12) + 1e-9) / (close.pct_change(48).abs() + 1e-9)
+=======
+    # --- Returns / momentum ---
+    for lag in [1, 3, 6, 12, 24, 48]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+    feat['ret_accel_3_1'] = ret1 - ret3 / 3.0
+    feat['mom_ratio_12_48'] = (close.pct_change(12) + 1e-9) / (close.pct_change(48).abs() + 1e-9)
+
+    # Momentum acceleration (higher-order derivative)
+    feat['ret_accel_6_3'] = close.pct_change(6) - close.pct_change(3)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    vol_regime = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+    feat['vol_regime'] = vol_regime
+    feat['trend_x_regime'] = feat['trend_strength_60'] / (vol_regime + 1e-9)
+    feat['ret1_x_regime'] = ret1 * vol_regime
+=======
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    vol_regime = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+    feat['vol_regime'] = vol_regime
+    feat['trend_x_regime'] = feat['trend_strength_60'] / (vol_regime + 1e-9)
+    feat['ret1_x_regime'] = ret1 * vol_regime
+
+    # Regime-conditional momentum interactions (capture signal suppressed by regularization)
+    feat['ret6_x_vol_regime'] = close.pct_change(6) * vol_regime
+    feat['ret12_x_vol_regime'] = close.pct_change(12) * vol_regime
+    feat['ret3_x_trend_strength'] = close.pct_change(3) * (feat['trend_strength_60'] / 10000.0)
+
+    # Adaptive momentum scaled by recent volatility
+    recent_vol = log_ret.rolling(10).std()
+    feat['adaptive_ret6'] = close.pct_change(6) / (recent_vol + 1e-9)
+    feat['adaptive_ret12'] = close.pct_change(12) / (recent_vol + 1e-9)
+
+    # Volatility-adjusted RSI (regime-conditional oscillator)
+    rsi_14 = feat['rsi_14']
+    feat['rsi_14_vol_adjusted'] = rsi_14 / (vol_regime + 1e-9)
+>>>>>>> REPLACE
+</DIFF>

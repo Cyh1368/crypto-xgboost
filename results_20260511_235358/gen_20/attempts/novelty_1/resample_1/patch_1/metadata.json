@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "robust_regime_invariance",
+  "patch_description": "The model currently suffers from a severe predictive slope collapse (0.074 train -> 0.006 val), indicating it relies on features that do not generalize across market regimes. \n\nThis update implements three key strategies:\n1. **Regime-Invariant Features**: Introduces rolling Z-scores for returns (Sharpe-like ratios) and Efficiency Ratios (Kaufman). These normalize market moves relative to recent volatility and noise, making them more consistent across high and low volatility environments.\n2. **Shorter Lookbacks**: Shifts the focus from 60+ bar windows to 5-21 bar windows, as shorter-term patterns tend to decay slower and adapt faster to regime shifts.\n3. **Enhanced Regularization**: Increases `min_child_weight` from 1 to 10 and adds L1/L2 regularization (`reg_alpha`, `reg_lambda`). This forces the XGBoost model to find patterns that are supported by larger sample sizes, reducing the likelihood of fitting noise in the training regime.\n4. **Expressivity Tuning**: Lowers the learning rate and increases the number of estimators to allow the model to converge more gracefully on robust features.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:58:01.757769",
+  "llm_cost": 0.0161855,
+  "llm_model": "gemini-3-flash-preview"
+}

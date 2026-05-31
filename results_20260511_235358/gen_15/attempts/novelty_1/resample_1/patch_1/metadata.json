@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_zscoring_and_robust_params",
+  "patch_description": "This update addresses the predictive slope collapse (val_slope=0.006) and the regime shift between test and validation. \n\n1.  **Regime-Invariant Features**: I replaced long-window absolute trends (60+ bars) with Z-score normalized features calculated over rolling windows (15-30 bars). This ensures that a price deviation or momentum signal is relative to the recent local market environment rather than an absolute value that changes meaning between regimes.\n2.  **Rate of Change Features**: Added `vol_trend` (fast/slow vol ratio) and `efficiency_trend` to detect when the market transitions from trending to mean-reverting.\n3.  **Hyperparameter Tuning for Generalization**: \n    - Increased `min_child_weight` from 1 to 20 to force the model to learn patterns that persist across larger subsets of data, filtering out regime-specific noise.\n    - Set `max_depth` to 4 and increased `reg_lambda` to 10.0 to penalize complex, fragile trees.\n    - Lowered `learning_rate` to 0.05 for more stable feature weight assignment.\n4.  **Target scaling**: Increased `MIN_PRED_STD_RATIO` to 0.20 to discourage the model from collapsing all predictions to the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:57:02.612103",
+  "llm_cost": 0.0176805,
+  "llm_model": "gemini-3-flash-preview"
+}

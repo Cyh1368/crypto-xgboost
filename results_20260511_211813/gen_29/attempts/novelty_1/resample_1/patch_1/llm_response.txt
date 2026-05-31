@@ -1,0 +1,133 @@
+<NAME>
+regime_expansion
+</NAME>
+
+<DESCRIPTION>
+The current model is still too conservative: pred_std_ratio is very low, which means the booster is collapsing toward the mean. To improve directional accuracy, I’m making two targeted changes:
+
+1. Hyperparameters: increase tree capacity a bit, reduce regularization, and add column/bagging randomness so XGBoost can fit more directional structure without becoming unstable. This should raise prediction dispersion while keeping overfit controlled by using moderately deep trees and a slightly lower learning rate.
+
+2. Features: add regime-aware and normalized momentum features that are still causal and cheap to compute:
+   - short-horizon return z-scores to detect local bursts vs. drift,
+   - multi-window momentum direction features,
+   - trend strength and volatility regime from shorter windows,
+   - wick/body imbalance to capture candle structure,
+   - rolling correlation between returns and volume change as a simple flow proxy.
+   
+These features are designed to help the model separate trending from mean-reverting periods, which is often critical for perp futures DA. The total feature count remains comfortably below the limit.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 700,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.9,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+
+    # --- Mean reversion features ---
+    sma_10 = close.rolling(10).mean()
+    sma_50 = close.rolling(50).mean()
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma50_dev'] = (close - sma_50) / (sma_50 + 1e-9)
+    feat['sma_cross'] = (sma_10 - sma_50) / (sma_50 + 1e-9)
+
+    # --- Momentum × Volatility interactions ---
+    ret_3 = close.pct_change(3)
+    vol_20 = log_ret.rolling(20).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_20
+    feat['momentum_regime'] = ret_3 / (vol_20 + 1e-9)
+
+    # --- Volume × Price position interactions ---
+    vol_ratio = volume / (volume.rolling(20).mean() + 1e-9)
+    bb_pct = (close - close.rolling(20).mean()) / (2 * close.rolling(20).std() + 1e-9)
+    feat['volume_bb_interaction'] = vol_ratio * bb_pct
+
+    # --- High-low range features ---
+    feat['hl_range'] = (high - low) / close
+    feat['hl_range_ma'] = feat['hl_range'].rolling(10).mean()
+
+    # --- Close position in range ---
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+=======
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    trend_20 = (close / close.shift(20) - 1) * 10000
+    trend_60 = (close / close.shift(60) - 1) * 10000
+    feat['trend_dir_20'] = np.sign(trend_20)
+    feat['trend_dir_60'] = np.sign(trend_60)
+    realized_vol_20 = log_ret.rolling(20).std()
+    realized_vol_60 = log_ret.rolling(60).std()
+    feat['vol_regime'] = realized_vol_20 / (realized_vol_20.rolling(200).mean() + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_20 / (realized_vol_60 + 1e-9)
+
+    # --- Mean reversion features ---
+    sma_10 = close.rolling(10).mean()
+    sma_50 = close.rolling(50).mean()
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma50_dev'] = (close - sma_50) / (sma_50 + 1e-9)
+    feat['sma_cross'] = (sma_10 - sma_50) / (sma_50 + 1e-9)
+
+    # --- Momentum × Volatility interactions ---
+    ret_3 = close.pct_change(3)
+    vol_20 = log_ret.rolling(20).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_20
+    feat['momentum_regime'] = ret_3 / (vol_20 + 1e-9)
+
+    # --- Volume × Price position interactions ---
+    vol_ratio = volume / (volume.rolling(20).mean() + 1e-9)
+    bb_pct = (close - close.rolling(20).mean()) / (2 * close.rolling(20).std() + 1e-9)
+    feat['volume_bb_interaction'] = vol_ratio * bb_pct
+
+    # --- High-low range features ---
+    feat['hl_range'] = (high - low) / close
+    feat['hl_range_ma'] = feat['hl_range'].rolling(10).mean()
+    feat['candle_body_ratio'] = (close - df['open']).abs() / ((high - low) + 1e-9)
+    feat['upper_wick_ratio'] = (high - df[['open', 'close']].max(axis=1)) / ((high - low) + 1e-9)
+    feat['lower_wick_ratio'] = (df[['open', 'close']].min(axis=1) - low) / ((high - low) + 1e-9)
+
+    # --- Close position in range ---
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+    feat['ret_z_20'] = (close.pct_change(1) - close.pct_change(1).rolling(20).mean()) / (close.pct_change(1).rolling(20).std() + 1e-9)
+    feat['ret_z_60'] = (close.pct_change(1) - close.pct_change(1).rolling(60).mean()) / (close.pct_change(1).rolling(60).std() + 1e-9)
+    feat['ret_accel_6'] = close.pct_change(1).diff(6)
+    feat['vol_ret_corr_20'] = log_ret.rolling(20).corr(volume.pct_change(1))
+>>>>>>> REPLACE
+</DIFF>

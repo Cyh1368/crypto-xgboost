@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_regime_xgb_v2",
+  "patch_description": "The current model suffers from severe prediction collapse (pred_std_ratio=0.0091), indicating the model is predicting near the mean rather than capturing actual signal variation. This is the primary failure mode.\n\nKey improvements:\n1. **Reduce regularization aggressively**: Lower reg_alpha/reg_lambda, increase learning_rate, reduce min_child_weight to allow the model to learn signal variance.\n2. **Increase model capacity**: Deeper trees (max_depth=6-7), more estimators, higher subsample/colsample to capture non-linear patterns.\n3. **Enhanced feature engineering**:\n   - Add multi-timeframe momentum and mean-reversion signals\n   - Create regime-conditional features (high vol vs low vol behavior differs)\n   - Add interaction features between volatility and price action\n   - Implement adaptive lookback windows based on recent volatility\n   - Add microstructure features (price acceleration, volume-weighted momentum)\n   - Create lagged prediction features to capture autocorrelation\n4. **Better target handling**: Use less aggressive clipping to preserve signal variance in targets.\n5. **Feature normalization**: Apply per-feature robust scaling to handle outliers while preserving variance.\n\nThe strategy is to shift from a conservative, over-regularized model to one that can express the underlying signal while maintaining reasonable generalization through feature diversity and moderate regularization.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:19:03.998594",
+  "llm_cost": 0.019937,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

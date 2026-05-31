@@ -1,0 +1,14 @@
+{
+  "generation": 63,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse_increase_expressivity_and_correct_shifts",
+  "patch_description": "The main issue is that the model's predictions collapse toward the mean, indicated by a very low pred_std_ratio (~0.01), meaning the model is not expressive enough or is over-regularized. The current hyperparameters still have some regularization (reg_lambda=0.5) and relatively shallow depth (max_depth=5), which may limit expressivity. Also, the feature engineering applies many shifts, but some features like 'atr_norm' and 'vol_regime' are not fully shifted, potentially leaking future info or causing misalignment.\n\nFixes applied:\n- Increase model expressivity by raising max_depth to 7 and removing regularization (reg_alpha=0, reg_lambda=0).\n- Increase n_estimators to 600 to allow more boosting rounds.\n- Reduce learning_rate to 0.03 for stable training with more estimators.\n- Ensure all features use only past data by shifting all features consistently by 1 bar, including 'atr_norm' and 'vol_regime'.\n- Shift 'atr_norm' and 'vol_regime' by 1 to avoid lookahead.\n- Shift 'vwap_dev' and volume ratios are already shifted.\n- Keep the rest of the feature engineering consistent with past data only.\n- These changes should increase model expressivity and prevent prediction collapse while respecting constraints.\n\nThis addresses the warning about collapsed predictions and should improve pred_std_ratio above the 0.15 threshold, fixing the validation failure.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:08:14.566434",
+  "llm_cost": 0.006088400000000001,
+  "llm_model": "gpt-4.1-mini"
+}

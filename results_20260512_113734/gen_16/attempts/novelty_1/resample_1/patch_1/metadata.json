@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb_crossover",
+  "patch_description": "This version crosses over the stronger parts of the prior implementations while shifting the feature set toward shorter, regime-robust windows and normalized signals. The main changes are:\n\n- shorter lookbacks for momentum, volatility, and mean-reversion signals\n- rolling z-score style normalization to reduce regime dependence\n- explicit \u201cchange in market character\u201d features such as volatility trend, efficiency trend, and autocorrelation trend\n- a compact momentum \u00d7 volatility interaction that often generalizes better than the raw components alone\n- lighter XGBoost regularization than the current program to reduce prediction collapse while still controlling overfit\n\nThe feature count stays below the 80-feature limit, all features use only past data, and the `run_experiment()` interface is unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:41:50.714001",
+  "llm_cost": 0.02335425,
+  "llm_model": "gpt-5.4-mini"
+}

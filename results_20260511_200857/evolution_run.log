@@ -1,0 +1,1037 @@
+  @@@@@@@@@@@@@@@@@@@@@      ░██████╗██╗░░██╗██╗███╗░░██╗██╗░░██╗░█████╗░
+  @                   @      ██╔════╝██║░░██║██║████╗░██║██║░██╔╝██╔══██╗
+  @          @        @      ╚█████╗░███████║██║██╔██╗██║█████═╝░███████║
+  @    @@   @@  @@    @      ░╚═══██╗██╔══██║██║██║╚████║██╔═██╗░██╔══██║
+  @   @     @    @@   @      ██████╔╝██║░░██║██║██║░╚███║██║░╚██╗██║░░██║
+  @    @@  @    @     @      ╚═════╝░╚═╝░░╚═╝╚═╝╚═╝░░╚══╝╚═╝░░╚═╝╚═╝░░╚═╝
+  @        @          @      @@@@@@@@@@@@@@@
+  @                   @   @@                 @@@@@
+  @@@@@@@@@@@@@@@@@@@@ @@                       @  @@                 █▀▀
+                      @                          @@  @                ██▄
+                    @      @@                      @  @@
+                   @       @         @              @   @             █░█
+                   @                 @               @  @             ▀▄▀
+                     @@@@@          @     @           @  @
+                      @            @          @       @ @@            █▀█
+                   @@    @@     @@       @@   @        @              █▄█
+                  @@        @@         @     @         @
+                 @@       @@   @@       @@@@@          @        @@    █░░
+              @ @@                @                    @              █▄▄
+             @ @@@@@             @@ @@                 @      @@
+            @                  @       @@              @    @@        █░█
+       @@@@@@@@@@@@@@@@@@@@@@             @@@          @@@@@@@  @@    ▀▄▀
+       @     @         @                      @@         @@@  @@
+        @@               @                      @      @   @  @@      █▀▀
+          @@@@@@@@@@@@@@@@@@                   @    @   @   @@        ██▄
+                                               @  @  @   @
+                                               @  @  @@@@
+                                               @  @@
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - 🖥️  System resources detected:
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO -    • CPU cores: 16
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO -    • Memory: 7.6 GB
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - 🔧 Concurrency settings:
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO -    • Evaluation jobs: 4
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO -    • Proposal jobs: 6
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO -    • DB workers: 2
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO -    • Total threads: 12
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - Configured local numeric thread cap per eval process: 4
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - ASYNC EVOLUTION RUN STARTED
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - Max evaluation jobs: 4
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - Max proposal jobs: 6
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - Target generations: 100
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - Language: python
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - Results directory: results_20260511_200857
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - Log file: results_20260511_200857/evolution_run.log
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-11 20:08:57 - shinka.database.async_dbase - INFO - 🔧 AsyncDB initialized with 2 workers, 2 concurrent DB ops (WAL mode)
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - Copying initial program from evolve/initial.py
+2026-05-11 20:08:57 - shinka.core.async_runner - INFO - Starting initial program evaluation: results_20260511_200857/gen_0/main.py
+2026-05-11 20:08:57 - shinka.launch.local - INFO - Submitted local process with PID: 10285
+2026-05-11 20:08:57 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_0/main.py --results_dir results_20260511_200857/gen_0/results
+2026-05-11 20:09:00 - shinka.core.async_runner - INFO - Initial program evaluation completed in 3.00s
+2026-05-11 20:09:01 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Initial program embedding computed (cost: $0.0000)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Initial program evaluated - correct: False, combined_score: -0.5160442537563001
+2026-05-11 20:09:01 - shinka.database.dbase - INFO - Program b0c7973b-49bd-4b96-aa5a-e0a5d699ebb8 added to DB - score: -0.5160442537563001.
+                                 Program Evaluation Summary - Gen 0 | Total Cost: $0.00                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 0   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-0   │  ✗ Incorrect  │  -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+2026-05-11 20:09:01 - shinka.database.dbase - INFO - Creating copies of initial program b0c7973b-49bd-4b96-aa5a-e0a5d699ebb8 for all islands
+2026-05-11 20:09:01 - shinka.database.islands - INFO - Created copy 3526eb08... of program b0c7973b... for island 1
+2026-05-11 20:09:01 - shinka.database.islands - INFO - Created copy 7fc6c068... of program b0c7973b... for island 2
+2026-05-11 20:09:01 - shinka.database.islands - INFO - Created copy 3e3e8e3d... of program b0c7973b... for island 3
+2026-05-11 20:09:01 - shinka.database.islands - INFO - Created 3 copies of program b0c7973b... for islands 1-3
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Setup initial program: b0c7973b-49bd-4b96-aa5a-e0a5d699ebb8
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Generation 0 completed during setup
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Verifying database is ready for sampling...
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Database ready - 4 program(s) available for sampling
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Database verification completed - ready for proposal generation
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - 🔄 Job monitor task started
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=0.00s, evaluation_ewma=0.00s, timing_samples=0, active_proposals=0, running_jobs=0)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Starting 4 new proposals. Pipeline: 0/4 (running_jobs=0, active_proposals=0/6), Remaining completed work: 99 (completed=1/100, next_generation=1)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Started proposal task for generation 1 (cost: $0.0000)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Started proposal task for generation 2 (cost: $0.0000)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Started proposal task for generation 3 (cost: $0.0000)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Started proposal task for generation 4 (cost: $0.0000)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Generating proposal for generation 1
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Generating proposal for generation 2
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Generating proposal for generation 3
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Generating proposal for generation 4
+2026-05-11 20:09:01 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 3526eb08-fea9-434b-9b82-4f5f42702d16 (Gen: 0) [from 4 incorrect programs].
+              Parent & Context Sampling Summary - Gen 1 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-1   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 3526eb08-fea9-434b-9b82-4f5f42702d16 (Gen: 0)
+2026-05-11 20:09:01 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:01 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        1.0000
+  gemini-3-flash-preview           0.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:09:01 - shinka.llm.llm - INFO - ==> QUERYING: ['claude-haiku-4-5-20251001', '1.0', '16384']
+2026-05-11 20:09:01 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program b0c7973b-49bd-4b96-aa5a-e0a5d699ebb8 (Gen: 0) [from 4 incorrect programs].
+              Parent & Context Sampling Summary - Gen 2 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-0   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program b0c7973b-49bd-4b96-aa5a-e0a5d699ebb8 (Gen: 0)
+2026-05-11 20:09:01 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:01 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        1.0000
+  gemini-3-flash-preview           0.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:09:01 - shinka.llm.llm - INFO - ==> QUERYING: ['claude-haiku-4-5-20251001', '0.0', '16384']
+2026-05-11 20:09:01 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 7fc6c068-60d5-4663-b318-d46281bbea2e (Gen: 0) [from 4 incorrect programs].
+              Parent & Context Sampling Summary - Gen 3 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-2   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 7fc6c068-60d5-4663-b318-d46281bbea2e (Gen: 0)
+2026-05-11 20:09:01 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:01 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        1.0000
+  gemini-3-flash-preview           0.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:09:01 - shinka.llm.llm - INFO - ==> QUERYING: ['claude-haiku-4-5-20251001', '1.0', '16384']
+2026-05-11 20:09:01 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program b0c7973b-49bd-4b96-aa5a-e0a5d699ebb8 (Gen: 0) [from 4 incorrect programs].
+              Parent & Context Sampling Summary - Gen 4 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-0   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program b0c7973b-49bd-4b96-aa5a-e0a5d699ebb8 (Gen: 0)
+2026-05-11 20:09:01 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:09:01 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:01 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        1.0000
+  gemini-3-flash-preview           0.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:09:01 - shinka.llm.llm - INFO - ==> QUERYING: ['claude-haiku-4-5-20251001', '0.5', '16384']
+2026-05-11 20:09:17 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-05-11 20:09:17 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0156
+2026-05-11 20:09:17 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 SUCCESS
+                         Patch Metadata - Gen 1/100 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ fix                                                                                       │
+│ patch_name               │ collapse_fix_loosened_regularization                                                      │
+│ patch_description        │ The validation failure shows a critical issue: **pred_std_ratio=0.0091**, which is far    │
+│                          │ below the MIN_PRED_STD_RATIO threshold of 0.15. This indicates severe **prediction        │
+│                          │ collapse** — the model is predicting values very close to the mean instead of capturing   │
+│                          │ signal variance.                                                                          │
+│                          │                                                                                           │
+│                          │ Root cause analysis:                                                                      │
+│                          │ - The collapse penalty of 0.705 is the dominant penalty, indicating the model's output    │
+│                          │ variance is only ~0.91% of the actual variance                                            │
+│                          │ - The model is over-regularized: high min_child_weight (10), high reg_alpha (0.1), high   │
+│                          │ reg_lambda (1.0), and low learning_rate (0.01) with only 300 estimators                   │
+│                          │ - These hyperparameters are too restrictive for a forecasting task that needs to capture  │
+│                          │ real directional signal                                                                   │
+│                          │ - Features are being built but the model cannot express them due to excessive             │
+│                          │ regularization                                                                            │
+│                          │                                                                                           │
+│                          │ The fix:                                                                                  │
+│                          │ 1. **Dramatically reduce regularization**: Lower reg_alpha and reg_lambda to allow the    │
+│                          │ model to learn feature signals                                                            │
+│                          │ 2. **Increase model capacity**: Raise n_estimators to 500 and increase max_depth to 5-6   │
+│                          │ to capture non-linear patterns                                                            │
+│                          │ 3. **Reduce min_child_weight**: Lower from 10 to 3 to allow splits on smaller samples     │
+│                          │ 4. **Increase learning_rate**: Raise from 0.01 to 0.05 so the model can adjust more       │
+│                          │ aggressively                                                                              │
+│                          │ 5. **Increase subsample and colsample**: Both were conservative; raise to improve         │
+│                          │ exploration                                                                               │
+│                          │                                                                                           │
+│                          │ These changes will allow the model to express the feature signals without overfitting     │
+│                          │ (the overfit_gap is only 0.013, indicating no overfitting issue currently).               │
+│ num_applied              │ 1                                                                                         │
+│ api_costs                │ $0.0156                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ model_name               │ claude-haiku-4-5-20251001                                                                 │
+│ temperature              │ 0.0                                                                                       │
+│ max_tokens               │ 16384                                                                                     │
+│ diff_summary             │ added: 0; deleted: 0; modified: 8;                                                        │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-11 20:09:17 - shinka.core.async_runner - INFO - Getting code embedding for generation 1...
+2026-05-11 20:09:18 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:09:18 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-05-11 20:09:18 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0163
+2026-05-11 20:09:18 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 SUCCESS
+                         Patch Metadata - Gen 4/100 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ fix                                                                                       │
+│ patch_name               │ fix_prediction_collapse                                                                   │
+│ patch_description        │ The model was suffering from severe prediction collapse (pred_std_ratio=0.0091) due to    │
+│                          │ excessive regularization. The XGBoost hyperparameters were too conservative, forcing      │
+│                          │ predictions toward the mean. The fix reduces regularization dramatically (reg_alpha:      │
+│                          │ 0.1→0.01, reg_lambda: 1.0→0.1, min_child_weight: 10→1), increases model capacity          │
+│                          │ (max_depth: 4→6, n_estimators: 300→500), raises learning rate (0.01→0.05), and adjusts    │
+│                          │ subsample. This allows the model to learn actual signal from the features while           │
+│                          │ maintaining reasonable generalization.                                                    │
+│ num_applied              │ 1                                                                                         │
+│ api_costs                │ $0.0163                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ model_name               │ claude-haiku-4-5-20251001                                                                 │
+│ temperature              │ 1.0                                                                                       │
+│ max_tokens               │ 16384                                                                                     │
+│ diff_summary             │ added: 0; deleted: 0; modified: 8;                                                        │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-11 20:09:18 - shinka.core.async_runner - INFO - Getting code embedding for generation 4...
+2026-05-11 20:09:18 - shinka.core.async_runner - INFO - Code embedding completed for generation 1 (cost: $0.0000)
+2026-05-11 20:09:18 - shinka.launch.local - INFO - Submitted local process with PID: 10359
+2026-05-11 20:09:18 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_1/main.py --results_dir results_20260511_200857/gen_1/results
+2026-05-11 20:09:18 - shinka.core.async_runner - INFO - Proposal → Eval: gen 1 submitted for eval (cost: $0.0157, total: $0.0157). Running jobs: 1/4, Proposals: 4/6
+2026-05-11 20:09:19 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:09:19 - shinka.core.async_runner - INFO - Code embedding completed for generation 4 (cost: $0.0000)
+2026-05-11 20:09:19 - shinka.launch.local - INFO - Submitted local process with PID: 10377
+2026-05-11 20:09:19 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_4/main.py --results_dir results_20260511_200857/gen_4/results
+2026-05-11 20:09:19 - shinka.core.async_runner - INFO - Proposal → Eval: gen 4 submitted for eval (cost: $0.0164, total: $0.0321). Running jobs: 2/4, Proposals: 3/6
+2026-05-11 20:09:20 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-05-11 20:09:20 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0167
+2026-05-11 20:09:20 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 SUCCESS
+                         Patch Metadata - Gen 3/100 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ fix                                                                                       │
+│ patch_name               │ fix_prediction_collapse_and_alignment                                                     │
+│ patch_description        │ The program suffered from prediction collapse (pred_std_ratio=0.0091 vs target 0.15+) due │
+│                          │ to:                                                                                       │
+│                          │ 1. Over-regularization (reg_lambda=1.0, reg_alpha=0.1, min_child_weight=10 were too       │
+│                          │ strict)                                                                                   │
+│                          │ 2. Insufficient model capacity (n_estimators=300, learning_rate=0.01 too conservative)    │
+│                          │ 3. Feature alignment bug: build_features() called dropna() which removed rows, breaking   │
+│                          │ alignment between X and y                                                                 │
+│                          │                                                                                           │
+│                          │ The fix:                                                                                  │
+│                          │ - Remove dropna() from build_features(), instead forward-fill NaN values to preserve      │
+│                          │ alignment                                                                                 │
+│                          │ - Drastically reduce regularization (reg_alpha=0, reg_lambda=0.1)                         │
+│                          │ - Reduce min_child_weight from 10 to 1                                                    │
+│                          │ - Increase learning_rate from 0.01 to 0.05                                                │
+│                          │ - Increase n_estimators from 300 to 500                                                   │
+│                          │ - Fill remaining NaN with 0 instead of dropping rows                                      │
+│ num_applied              │ 1                                                                                         │
+│ api_costs                │ $0.0167                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ model_name               │ claude-haiku-4-5-20251001                                                                 │
+│ temperature              │ 0.0                                                                                       │
+│ max_tokens               │ 16384                                                                                     │
+│ diff_summary             │ added: 2; deleted: 0; modified: 9;                                                        │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-11 20:09:20 - shinka.core.async_runner - INFO - Getting code embedding for generation 3...
+2026-05-11 20:09:20 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:09:20 - shinka.core.async_runner - INFO - Code embedding completed for generation 3 (cost: $0.0000)
+2026-05-11 20:09:20 - shinka.launch.local - INFO - Submitted local process with PID: 10395
+2026-05-11 20:09:20 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_3/main.py --results_dir results_20260511_200857/gen_3/results
+2026-05-11 20:09:20 - shinka.core.async_runner - INFO - Proposal → Eval: gen 3 submitted for eval (cost: $0.0168, total: $0.0488). Running jobs: 3/4, Proposals: 2/6
+2026-05-11 20:09:20 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-05-11 20:09:20 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0164
+2026-05-11 20:09:20 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 SUCCESS
+                         Patch Metadata - Gen 2/100 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ fix                                                                                       │
+│ patch_name               │ fix_prediction_collapse                                                                   │
+│ patch_description        │ The program is suffering from severe **prediction collapse** (pred_std_ratio=0.0091, well │
+│                          │ below the MIN_PRED_STD_RATIO=0.15 threshold). This means the model is predicting values   │
+│                          │ very close to the mean, losing all signal.                                                │
+│                          │                                                                                           │
+│                          │ Root causes identified:                                                                   │
+│                          │ 1. **Excessive regularization**: reg_alpha=0.1 and reg_lambda=1.0 are too strong,         │
+│                          │ combined with high min_child_weight=10, which severely constrains the model's ability to  │
+│                          │ learn patterns.                                                                           │
+│                          │ 2. **Too few estimators**: n_estimators=300 with learning_rate=0.01 may not be enough to  │
+│                          │ overcome regularization.                                                                  │
+│                          │ 3. **Feature engineering issues**: The build_features() function drops NaN rows, which    │
+│                          │ can misalign indices between features and targets, causing data leakage or loss of        │
+│                          │ training samples.                                                                         │
+│                          │ 4. **Subsample too low**: subsample=0.6 further reduces model expressivity.               │
+│                          │                                                                                           │
+│                          │ The fix:                                                                                  │
+│                          │ 1. Dramatically reduce regularization (reg_alpha → 0.01, reg_lambda → 0.1)                │
+│                          │ 2. Reduce min_child_weight from 10 to 1 to allow more flexible splits                     │
+│                          │ 3. Increase n_estimators to 500 and learning_rate to 0.05 for better learning             │
+│                          │ 4. Increase subsample to 0.8 for more stable training                                     │
+│                          │ 5. Fix feature engineering to preserve index alignment by filling NaN values instead of   │
+│                          │ dropping rows                                                                             │
+│                          │ 6. Add more predictive features and interactions to give the model stronger signals       │
+│ num_applied              │ 1                                                                                         │
+│ api_costs                │ $0.0164                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ model_name               │ claude-haiku-4-5-20251001                                                                 │
+│ temperature              │ 0.0                                                                                       │
+│ max_tokens               │ 16384                                                                                     │
+│ diff_summary             │ added: 12; deleted: 0; modified: 8;                                                       │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-11 20:09:20 - shinka.core.async_runner - INFO - Getting code embedding for generation 2...
+2026-05-11 20:09:21 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:09:21 - shinka.core.async_runner - INFO - Code embedding completed for generation 2 (cost: $0.0000)
+2026-05-11 20:09:21 - shinka.launch.local - INFO - Submitted local process with PID: 10410
+2026-05-11 20:09:21 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_2/main.py --results_dir results_20260511_200857/gen_2/results
+2026-05-11 20:09:21 - shinka.core.async_runner - INFO - Proposal → Eval: gen 2 submitted for eval (cost: $0.0165, total: $0.0653). Running jobs: 4/4, Proposals: 1/6
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 10359) completed (gen 1) after 24.7s
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [1] (cost: $0.0653)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 10359) (gen 1)
+2026-05-11 20:09:26 - shinka.launch.local - INFO - Monitoring local process with PID: 10359...
+2026-05-11 20:09:26 - shinka.launch.local - INFO - Process 10359 completed with return code: 0
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 10359): True
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 10359) has valid results - correct=False, score=-0.5693234802592692
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 10359) (gen 1)...
+2026-05-11 20:09:26 - shinka.database.dbase - INFO - Program a5747037-1d8b-4f50-b67b-717a7b4c131a added to DB - score: -0.5693234802592692.
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program a5747037-1d8b-4f50-b67b-717a7b4c131a successfully added to database for ProcessWithLogging(PID: 10359) (gen 1)
+                                 Program Evaluation Summary - Gen 1 | Total Cost: $0.02                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 1   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-1   │  ✗ Incorrect  │  -0.569 │ collapse_fix_loosened_regulari  │ fix    │    1.0 │  $0.016 │ 7.5s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-haiku-4-5-20251… │   4 │      4 │  0.0652 │  0.0163 │  0.0000 │  0.8326 │   0.8326 │ 0.06… │   0.4471 │ 0.00… │
+│ gemini-3-flash-preview  │   0 │      0 │  0.0000 │       - │  0.0000 │  1.6651 │   1.6651 │ 1.00… │   1.3326 │ 0.50… │
+│ gpt-5.4-mini            │   0 │      0 │  0.0000 │       - │  0.0000 │  1.6651 │   1.6651 │ 1.00… │   1.3326 │ 0.50… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - No correct programs found yet, cannot determine best solution.
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 10359) - program a5747037-1d8b-4f50-b67b-717a7b4c131a added (gen 1)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 1 -> 2 (cost: $0.0653)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=17.30s, evaluation_ewma=7.47s, timing_samples=1, active_proposals=0, running_jobs=3)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=3, active_proposals=0/6), Remaining completed work: 95 (completed=2/100, next_generation=5)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Started proposal task for generation 5 (cost: $0.0653)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Generating proposal for generation 5
+2026-05-11 20:09:26 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 7fc6c068-60d5-4663-b318-d46281bbea2e (Gen: 0) [from 5 incorrect programs].
+              Parent & Context Sampling Summary - Gen 5 | Total Cost: $0.02 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-2   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 7fc6c068-60d5-4663-b318-d46281bbea2e (Gen: 0)
+2026-05-11 20:09:26 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:26 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           0.0000
+  gpt-5.4-mini                     1.0000
+2026-05-11 20:09:26 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-5.4-mini', '1.0', '16384', "{'effort': 'low', 'summary': 'auto'}"]
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 10410) completed (gen 2) after 25.5s
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [2] (cost: $0.0653)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 10410) (gen 2)
+2026-05-11 20:09:26 - shinka.launch.local - INFO - Monitoring local process with PID: 10410...
+2026-05-11 20:09:26 - shinka.launch.local - INFO - Process 10410 completed with return code: 0
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 10410): True
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 10410) has valid results - correct=False, score=-10.0
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 10410) (gen 2)...
+2026-05-11 20:09:26 - shinka.database.dbase - INFO - Program 08c1e52d-9f43-49d2-9be1-8e3449f5478a added to DB - score: -10.0.
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program 08c1e52d-9f43-49d2-9be1-8e3449f5478a successfully added to database for ProcessWithLogging(PID: 10410) (gen 2)
+                                 Program Evaluation Summary - Gen 2 | Total Cost: $0.03                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 2   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-0   │  ✗ Incorrect  │ -10.000 │ fix_prediction_collapse         │ fix    │    1.0 │  $0.016 │ 5.5s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-haiku-4-5-20251… │   4 │      4 │  0.0652 │  0.0163 │  0.0000 │  0.8971 │   0.8971 │ 0.06… │   0.4794 │ 0.00… │
+│ gemini-3-flash-preview  │   0 │      0 │  0.0000 │       - │  0.0000 │  1.7941 │   1.7941 │ 1.00… │   1.3971 │ 1.00… │
+│ gpt-5.4-mini            │   1 │      0 │  0.0000 │       - │  0.0000 │  1.7941 │   1.7941 │ 1.00… │   1.3971 │ 0.00… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - No correct programs found yet, cannot determine best solution.
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 10410) - program 08c1e52d-9f43-49d2-9be1-8e3449f5478a added (gen 2)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 2 -> 3 (cost: $0.0653)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=18.12s, evaluation_ewma=6.87s, timing_samples=2, active_proposals=1, running_jobs=2)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=2, active_proposals=1/6), Remaining completed work: 94 (completed=3/100, next_generation=6)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Started proposal task for generation 6 (cost: $0.0653)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Generating proposal for generation 6
+2026-05-11 20:09:26 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 3526eb08-fea9-434b-9b82-4f5f42702d16 (Gen: 0) [from 6 incorrect programs].
+              Parent & Context Sampling Summary - Gen 6 | Total Cost: $0.03 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-1   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 3526eb08-fea9-434b-9b82-4f5f42702d16 (Gen: 0)
+2026-05-11 20:09:26 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:09:26 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:26 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:09:26 - shinka.llm.llm - INFO - ==> QUERYING: ['gemini-3-flash-preview', '1.0', '16384', '0']
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 10377) completed (gen 4) after 26.1s
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [4] (cost: $0.0653)
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 10377) (gen 4)
+2026-05-11 20:09:27 - shinka.launch.local - INFO - Monitoring local process with PID: 10377...
+2026-05-11 20:09:27 - shinka.launch.local - INFO - Process 10377 completed with return code: 0
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 10377): True
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 10377) has valid results - correct=False, score=-0.4617301033807928
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 10377) (gen 4)...
+2026-05-11 20:09:27 - shinka.database.dbase - INFO - Program be1806fd-a8a1-4752-a2ee-cc7f8b9e4afd added to DB - score: -0.4617301033807928.
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program be1806fd-a8a1-4752-a2ee-cc7f8b9e4afd successfully added to database for ProcessWithLogging(PID: 10377) (gen 4)
+                                 Program Evaluation Summary - Gen 4 | Total Cost: $0.05                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 4   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-0   │  ✗ Incorrect  │  -0.462 │ fix_prediction_collapse         │ fix    │    1.0 │  $0.016 │ 8.0s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-haiku-4-5-20251… │   4 │      4 │  0.0652 │  0.0163 │  0.0000 │  0.9465 │   0.9465 │ 0.06… │   0.5041 │ 0.20… │
+│ gemini-3-flash-preview  │   1 │      0 │  0.0000 │       - │  0.0000 │  1.8930 │   1.8930 │ 1.00… │   1.4465 │ 0.40… │
+│ gpt-5.4-mini            │   1 │      0 │  0.0000 │       - │  0.0000 │  1.8930 │   1.8930 │ 1.00… │   1.4465 │ 0.40… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - No correct programs found yet, cannot determine best solution.
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 10377) - program be1806fd-a8a1-4752-a2ee-cc7f8b9e4afd added (gen 4)
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 3 -> 4 (cost: $0.0653)
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=18.12s, evaluation_ewma=7.21s, timing_samples=3, active_proposals=2, running_jobs=1)
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=1, active_proposals=2/6), Remaining completed work: 93 (completed=4/100, next_generation=7)
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - Started proposal task for generation 7 (cost: $0.0653)
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - Generating proposal for generation 7
+2026-05-11 20:09:27 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program be1806fd-a8a1-4752-a2ee-cc7f8b9e4afd (Gen: 4) [from 7 incorrect programs].
+2026-05-11 20:09:27 - shinka.database.dbase - INFO - Retrieved 1 ancestors for program be1806fd-a8a1-4752-a2ee-cc7f8b9e4afd (generations: [0])
+              Parent & Context Sampling Summary - Gen 7 | Total Cost: $0.05 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  4   │   I-0   │   ✗   │   -0.462 │ fix_prediction_collapse         │ fix    │    1.0 │  $0.016 │ 8.0s │
+│ ANCESTOR-1  │  0   │   I-0   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program be1806fd-a8a1-4752-a2ee-cc7f8b9e4afd (Gen: 4)
+2026-05-11 20:09:27 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 4, Score: -0.4617, Ancestors: 1)
+2026-05-11 20:09:27 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:27 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           0.0000
+  gpt-5.4-mini                     1.0000
+2026-05-11 20:09:27 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-5.4-mini', '1.0', '16384', "{'effort': 'low', 'summary': 'auto'}"]
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 10395) completed (gen 3) after 26.8s
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [3] (cost: $0.0653)
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 10395) (gen 3)
+2026-05-11 20:09:28 - shinka.launch.local - INFO - Monitoring local process with PID: 10395...
+2026-05-11 20:09:28 - shinka.launch.local - INFO - Process 10395 completed with return code: 0
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 10395): True
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 10395) has valid results - correct=False, score=-10.0
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 10395) (gen 3)...
+2026-05-11 20:09:28 - shinka.database.dbase - INFO - Program d647c429-7aaf-4d9e-9488-028a965d5303 added to DB - score: -10.0.
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program d647c429-7aaf-4d9e-9488-028a965d5303 successfully added to database for ProcessWithLogging(PID: 10395) (gen 3)
+                                 Program Evaluation Summary - Gen 3 | Total Cost: $0.07                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 3   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-2   │  ✗ Incorrect  │ -10.000 │ fix_prediction_collapse_and_al  │ fix    │    1.0 │  $0.017 │ 7.2s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-haiku-4-5-20251… │   4 │      4 │  0.0652 │  0.0163 │  0.0000 │  0.9864 │   0.9864 │ 0.06… │   0.5241 │ 0.10… │
+│ gemini-3-flash-preview  │   1 │      0 │  0.0000 │       - │  0.0000 │  1.9728 │   1.9728 │ 1.00… │   1.4864 │ 0.80… │
+│ gpt-5.4-mini            │   2 │      0 │  0.0000 │       - │  0.0000 │  1.3950 │   1.3950 │ 1.00… │   1.1975 │ 0.10… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - No correct programs found yet, cannot determine best solution.
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 10395) - program d647c429-7aaf-4d9e-9488-028a965d5303 added (gen 3)
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 4 -> 5 (cost: $0.0653)
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=18.55s, evaluation_ewma=7.21s, timing_samples=4, active_proposals=3, running_jobs=0)
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=0, active_proposals=3/6), Remaining completed work: 92 (completed=5/100, next_generation=8)
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - Started proposal task for generation 8 (cost: $0.0653)
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - Generating proposal for generation 8
+2026-05-11 20:09:28 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 3526eb08-fea9-434b-9b82-4f5f42702d16 (Gen: 0) [from 8 incorrect programs].
+              Parent & Context Sampling Summary - Gen 8 | Total Cost: $0.07 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-1   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 3526eb08-fea9-434b-9b82-4f5f42702d16 (Gen: 0)
+2026-05-11 20:09:28 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:09:28 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:28 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:09:28 - shinka.llm.llm - INFO - ==> QUERYING: ['gemini-3-flash-preview', '0.5', '16384', '0']
+2026-05-11 20:09:39 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-05-11 20:09:39 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0132
+2026-05-11 20:09:39 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 SUCCESS
+                         Patch Metadata - Gen 5/100 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ fix                                                                                       │
+│ patch_name               │ less_regularization_shifted_features                                                      │
+│ patch_description        │ The validation output shows a classic prediction-collapse issue: `pred_std_ratio=0.0091`  │
+│                          │ is far too low, meaning the model is predicting near the mean almost all the time. The    │
+│                          │ current XGBoost setup is over-regularized for this task (`min_child_weight=10`,           │
+│                          │ `reg_alpha=0.1`, `reg_lambda=1.0`, `learning_rate=0.01` with only 300 trees), so the      │
+│                          │ model lacks expressivity and underfits.                                                   │
+│                          │                                                                                           │
+│                          │ I fixed this by:                                                                          │
+│                          │ 1. Making all engineered features explicitly past-only using a 1-bar shift before any     │
+│                          │ rolling/technical calculations, which also aligns with the stated no-lookahead            │
+│                          │ constraint.                                                                               │
+│                          │ 2. Expanding the feature set modestly with a few useful regime and interaction features   │
+│                          │ while keeping total feature count under 80.                                               │
+│                          │ 3. Reducing regularization and increasing model capacity so predictions are less          │
+│                          │ collapsed:                                                                                │
+│                          │    - lower `min_child_weight`                                                             │
+│                          │    - lower `reg_alpha` / `reg_lambda`                                                     │
+│                          │    - deeper trees                                                                         │
+│                          │    - more estimators                                                                      │
+│                          │    - slightly higher learning rate                                                        │
+│                          │ 4. Keeping the interface and return format unchanged.                                     │
+│                          │                                                                                           │
+│                          │ This should increase prediction variance and improve directional accuracy without peeking │
+│                          │ at future data.                                                                           │
+│ num_applied              │ 1                                                                                         │
+│ api_costs                │ $0.0132                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ model_name               │ gpt-5.4-mini                                                                              │
+│ temperature              │ 1.0                                                                                       │
+│ max_output_tokens        │ 16384                                                                                     │
+│ reasoning                │ {'effort': 'low', 'summary': 'auto'}                                                      │
+│ diff_summary             │ added: 19; deleted: 0; modified: 28;                                                      │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-11 20:09:39 - shinka.core.async_runner - INFO - Getting code embedding for generation 5...
+2026-05-11 20:09:40 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:09:40 - shinka.core.async_runner - INFO - Code embedding completed for generation 5 (cost: $0.0000)
+2026-05-11 20:09:40 - shinka.launch.local - INFO - Submitted local process with PID: 10513
+2026-05-11 20:09:40 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_5/main.py --results_dir results_20260511_200857/gen_5/results
+2026-05-11 20:09:40 - shinka.core.async_runner - INFO - Proposal → Eval: gen 5 submitted for eval (cost: $0.0132, total: $0.0785). Running jobs: 1/4, Proposals: 4/6
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 10513) completed (gen 5) after 18.0s
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [5] (cost: $0.0785)
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 10513) (gen 5)
+2026-05-11 20:09:44 - shinka.launch.local - INFO - Monitoring local process with PID: 10513...
+2026-05-11 20:09:44 - shinka.launch.local - INFO - Process 10513 completed with return code: 0
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 10513): True
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 10513) has valid results - correct=False, score=-0.5197554891324656
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 10513) (gen 5)...
+2026-05-11 20:09:44 - shinka.database.dbase - INFO - Program fe405440-7bca-4bb8-adc6-85ca07ef6b27 added to DB - score: -0.5197554891324656.
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program fe405440-7bca-4bb8-adc6-85ca07ef6b27 successfully added to database for ProcessWithLogging(PID: 10513) (gen 5)
+                                 Program Evaluation Summary - Gen 5 | Total Cost: $0.08                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 5   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-2   │  ✗ Incorrect  │  -0.520 │ less_regularization_shifted_fe  │ fix    │    1.0 │  $0.013 │ 3.6s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-haiku-4-5-20251… │   4 │      4 │  0.0652 │  0.0163 │  0.0000 │  1.0197 │   1.0197 │ 0.06… │   0.5412 │ 0.10… │
+│ gemini-3-flash-preview  │   2 │      0 │  0.0000 │       - │  0.0000 │  1.4420 │   1.4420 │ 1.00… │   1.2210 │ 0.80… │
+│ gpt-5.4-mini            │   2 │      1 │  0.0132 │  0.0132 │  0.0000 │  1.4420 │   1.4420 │ 0.08… │   0.7612 │ 0.10… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - No correct programs found yet, cannot determine best solution.
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 10513) - program fe405440-7bca-4bb8-adc6-85ca07ef6b27 added (gen 5)
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 5 -> 6 (cost: $0.0785)
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=17.32s, evaluation_ewma=6.12s, timing_samples=5, active_proposals=3, running_jobs=0)
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=0, active_proposals=3/6), Remaining completed work: 91 (completed=6/100, next_generation=9)
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - Started proposal task for generation 9 (cost: $0.0785)
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - Generating proposal for generation 9
+2026-05-11 20:09:44 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program d647c429-7aaf-4d9e-9488-028a965d5303 (Gen: 3) [from 9 incorrect programs].
+2026-05-11 20:09:44 - shinka.database.dbase - INFO - Retrieved 1 ancestors for program d647c429-7aaf-4d9e-9488-028a965d5303 (generations: [0])
+              Parent & Context Sampling Summary - Gen 9 | Total Cost: $0.08 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  3   │   I-2   │   ✗   │  -10.000 │ fix_prediction_collapse_and_al  │ fix    │    1.0 │  $0.017 │ 7.2s │
+│ ANCESTOR-1  │  0   │   I-2   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program d647c429-7aaf-4d9e-9488-028a965d5303 (Gen: 3)
+2026-05-11 20:09:44 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 3, Score: -10.0000, Ancestors: 1)
+2026-05-11 20:09:44 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:44 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:09:44 - shinka.llm.llm - INFO - ==> QUERYING: ['gemini-3-flash-preview', '0.0', '16384', '0']
+2026-05-11 20:09:45 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-05-11 20:09:45 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0174
+2026-05-11 20:09:45 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 SUCCESS
+                         Patch Metadata - Gen 7/100 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ fix                                                                                       │
+│ patch_name               │ reduce_collapse_richer_features                                                           │
+│ patch_description        │ The validation output shows the model is not overfitting, but its predictions are         │
+│                          │ collapsing toward the mean: `pred_std_ratio` is only `0.0086`, far below the expected     │
+│                          │ floor. That usually means the model is too conservative or the feature set is too weak /  │
+│                          │ too smooth for XGBoost to learn meaningful separation.                                    │
+│                          │                                                                                           │
+│                          │ I fixed this by:                                                                          │
+│                          │ - making the feature engineering more expressive while still using only past data,        │
+│                          │ - adding regime and interaction features that help directionality,                        │
+│                          │ - reducing target clipping severity so the model does not lose too much signal,           │
+│                          │ - loosening regularization and slightly increasing model capacity so predictions can vary │
+│                          │ more.                                                                                     │
+│                          │                                                                                           │
+│                          │ I also kept the required markers and preserved the same input/output interface.           │
+│ num_applied              │ 1                                                                                         │
+│ api_costs                │ $0.0174                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ model_name               │ gpt-5.4-mini                                                                              │
+│ temperature              │ 1.0                                                                                       │
+│ max_output_tokens        │ 16384                                                                                     │
+│ reasoning                │ {'effort': 'low', 'summary': 'auto'}                                                      │
+│ diff_summary             │ added: 54; deleted: 0; modified: 46;                                                      │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-11 20:09:45 - shinka.core.async_runner - INFO - Getting code embedding for generation 7...
+2026-05-11 20:09:45 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:09:45 - shinka.core.async_runner - INFO - Code embedding completed for generation 7 (cost: $0.0001)
+2026-05-11 20:09:45 - shinka.launch.local - INFO - Submitted local process with PID: 10534
+2026-05-11 20:09:45 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_7/main.py --results_dir results_20260511_200857/gen_7/results
+2026-05-11 20:09:45 - shinka.core.async_runner - INFO - Proposal → Eval: gen 7 submitted for eval (cost: $0.0174, total: $0.0960). Running jobs: 1/4, Proposals: 4/6
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 10534) completed (gen 7) after 20.9s
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [7] (cost: $0.0960)
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 10534) (gen 7)
+2026-05-11 20:09:48 - shinka.launch.local - INFO - Monitoring local process with PID: 10534...
+2026-05-11 20:09:48 - shinka.launch.local - INFO - Process 10534 completed with return code: 0
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 10534): True
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 10534) has valid results - correct=False, score=-0.5528242637362332
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 10534) (gen 7)...
+2026-05-11 20:09:48 - shinka.database.dbase - INFO - Program baaf37a9-b75f-4119-a719-0b82eb2ac3cb added to DB - score: -0.5528242637362332.
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program baaf37a9-b75f-4119-a719-0b82eb2ac3cb successfully added to database for ProcessWithLogging(PID: 10534) (gen 7)
+                                 Program Evaluation Summary - Gen 7 | Total Cost: $0.10                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 7   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-0   │  ✗ Incorrect  │  -0.553 │ reduce_collapse_richer_feature  │ fix    │    1.0 │  $0.017 │ 3.1s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-haiku-4-5-20251… │   4 │      4 │  0.0652 │  0.0163 │  0.0000 │  1.0481 │   1.0481 │ 0.06… │   0.5556 │ 0.10… │
+│ gemini-3-flash-preview  │   3 │      0 │  0.0000 │       - │  0.0000 │  1.2103 │   1.2103 │ 1.00… │   1.1051 │ 0.80… │
+│ gpt-5.4-mini            │   2 │      2 │  0.0305 │  0.0153 │  0.0000 │  1.4823 │   1.4823 │ 0.06… │   0.7753 │ 0.10… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - No correct programs found yet, cannot determine best solution.
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 10534) - program baaf37a9-b75f-4119-a719-0b82eb2ac3cb added (gen 7)
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 6 -> 7 (cost: $0.0960)
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=17.49s, evaluation_ewma=5.20s, timing_samples=6, active_proposals=3, running_jobs=0)
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=0, active_proposals=3/6), Remaining completed work: 90 (completed=7/100, next_generation=10)
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - Started proposal task for generation 10 (cost: $0.0960)
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - Generating proposal for generation 10
+2026-05-11 20:09:48 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 3e3e8e3d-e0a8-4def-b431-22e373a5caea (Gen: 0) [from 10 incorrect programs].
+              Parent & Context Sampling Summary - Gen 10 | Total Cost: $0.10 (Novelty: 1/3, Resample: 1/3)              
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-3   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 3e3e8e3d-e0a8-4def-b431-22e373a5caea (Gen: 0)
+2026-05-11 20:09:48 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:09:48 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:09:48 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:09:48 - shinka.llm.llm - INFO - ==> QUERYING: ['gemini-3-flash-preview', '1.0', '16384', '0']
+2026-05-11 20:10:28 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0081
+2026-05-11 20:10:28 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 SUCCESS
+                         Patch Metadata - Gen 6/100 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ fix                                                                                       │
+│ patch_name               │ increase_expressivity_and_technical_features                                              │
+│ patch_description        │ The model failed because its predictions "collapsed towards the mean"                     │
+│                          │ (pred_std_ratio=0.0091), which is far below the required 0.15 threshold. This typically   │
+│                          │ occurs when a model is either too under-expressive or too heavily regularized given the   │
+│                          │ signal-to-noise ratio of the data.                                                        │
+│                          │                                                                                           │
+│                          │ To fix this, I made the following adjustments:                                            │
+│                          │ 1.  **Increased XGBoost Expressivity:** I raised the `learning_rate` from 0.01 to 0.05    │
+│                          │ and increased `max_depth` from 4 to 6. I significantly lowered `min_child_weight` from 10 │
+│                          │ to 1, which allows the model to create more granular splits and capture more variance in  │
+│                          │ the target. I also increased `n_estimators` with a longer `early_stopping_rounds` to      │
+│                          │ ensure the model converges on more complex patterns.                                      │
+│                          │ 2.  **Enhanced Feature Engineering:** I expanded the feature set to better capture        │
+│                          │ momentum and mean-reversion. I added distance-from-moving-average features (MA Dist),     │
+│                          │ more granular return lags (log-returns), MACD histogram, and normalized volume z-scores.  │
+│                          │ 3.  **Removed Potential Bottlenecks:** I removed the slow `df.apply` OBI logic to ensure  │
+│                          │ execution stays well within the 3-minute constraint, focusing on high-quality vectorized  │
+│                          │ OHLCV and funding features instead.                                                       │
+│                          │ 4.  **Improved Robustness:** Added ffill() and better cleaning to handle NaNs             │
+│                          │ consistently.                                                                             │
+│ num_applied              │ 1                                                                                         │
+│ api_costs                │ $0.0081                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ model_name               │ gemini-3-flash-preview                                                                    │
+│ temperature              │ 1.0                                                                                       │
+│ max_tokens               │ 16384                                                                                     │
+│ thinking_budget          │ 0                                                                                         │
+│ diff_summary             │ added: 0; deleted: 14; modified: 51;                                                      │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-11 20:10:28 - shinka.core.async_runner - INFO - Getting code embedding for generation 6...
+2026-05-11 20:10:28 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:10:28 - shinka.core.async_runner - INFO - Code embedding completed for generation 6 (cost: $0.0000)
+2026-05-11 20:10:28 - shinka.launch.local - INFO - Submitted local process with PID: 10558
+2026-05-11 20:10:28 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_6/main.py --results_dir results_20260511_200857/gen_6/results
+2026-05-11 20:10:28 - shinka.core.async_runner - INFO - Proposal → Eval: gen 6 submitted for eval (cost: $0.0082, total: $0.1041). Running jobs: 1/4, Proposals: 4/6
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 10558) completed (gen 6) after 64.9s
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [6] (cost: $0.1041)
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 10558) (gen 6)
+2026-05-11 20:10:31 - shinka.launch.local - INFO - Monitoring local process with PID: 10558...
+2026-05-11 20:10:31 - shinka.launch.local - INFO - Process 10558 completed with return code: 0
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 10558): True
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 10558) has valid results - correct=False, score=-0.45060284582680765
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 10558) (gen 6)...
+2026-05-11 20:10:31 - shinka.database.dbase - INFO - Program 2add151c-d548-4eb4-97d0-2063fa73789c added to DB - score: -0.45060284582680765.
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program 2add151c-d548-4eb4-97d0-2063fa73789c successfully added to database for ProcessWithLogging(PID: 10558) (gen 6)
+                                 Program Evaluation Summary - Gen 6 | Total Cost: $0.10                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 6   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-1   │  ✗ Incorrect  │  -0.451 │ increase_expressivity_and_tech  │ fix    │    1.0 │  $0.008 │ 2.9s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-haiku-4-5-20251… │   4 │      4 │  0.0652 │  0.0163 │  0.0000 │  1.0730 │   1.0730 │ 0.40… │   0.7374 │ 0.10… │
+│ gemini-3-flash-preview  │   4 │      1 │  0.0081 │  0.0081 │  0.0000 │  1.0730 │   1.0730 │ 1.00… │   1.0365 │ 0.80… │
+│ gpt-5.4-mini            │   2 │      2 │  0.0305 │  0.0153 │  0.0000 │  1.5174 │   1.5174 │ 0.44… │   0.9803 │ 0.10… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - No correct programs found yet, cannot determine best solution.
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 10558) - program 2add151c-d548-4eb4-97d0-2063fa73789c added (gen 6)
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 7 -> 8 (cost: $0.1041)
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=30.84s, evaluation_ewma=4.50s, timing_samples=7, active_proposals=3, running_jobs=0)
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=0, active_proposals=3/6), Remaining completed work: 89 (completed=8/100, next_generation=11)
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - Started proposal task for generation 11 (cost: $0.1041)
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - Generating proposal for generation 11
+2026-05-11 20:10:31 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 3526eb08-fea9-434b-9b82-4f5f42702d16 (Gen: 0) [from 11 incorrect programs].
+              Parent & Context Sampling Summary - Gen 11 | Total Cost: $0.10 (Novelty: 1/3, Resample: 1/3)              
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  0   │   I-1   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 3526eb08-fea9-434b-9b82-4f5f42702d16 (Gen: 0)
+2026-05-11 20:10:31 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 0, Score: -0.5160, Ancestors: 0)
+2026-05-11 20:10:31 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:10:31 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        1.0000
+  gemini-3-flash-preview           0.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:10:31 - shinka.llm.llm - INFO - ==> QUERYING: ['claude-haiku-4-5-20251001', '1.0', '16384']
+2026-05-11 20:10:51 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-05-11 20:10:51 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0173
+2026-05-11 20:10:51 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 SUCCESS
+                        Patch Metadata - Gen 11/100 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ fix                                                                                       │
+│ patch_name               │ fix_prediction_collapse_and_alignment                                                     │
+│ patch_description        │ The model was collapsing predictions toward the mean (pred_std_ratio=0.0091) due to two   │
+│                          │ critical issues:                                                                          │
+│                          │                                                                                           │
+│                          │ 1. **Data alignment bug**: `feat.dropna()` was dropping all rows containing any NaN       │
+│                          │ values. Since rolling window features require warmup periods (e.g., RSI-14 needs 14 bars, │
+│                          │ volatility-60 needs 60 bars), and orderbook/funding data may have sparse NaNs, this was   │
+│                          │ dropping the majority of the training data and causing severe misalignment with targets.  │
+│                          │                                                                                           │
+│                          │ 2. **Over-regularization**: The hyperparameters (reg_alpha=0.1, reg_lambda=1.0,           │
+│                          │ min_child_weight=10, n_estimators=300 with learning_rate=0.01) were too conservative,     │
+│                          │ suppressing model expressivity.                                                           │
+│                          │                                                                                           │
+│                          │ **Fix**: Replace `dropna()` with forward-fill to preserve row alignment, and              │
+│                          │ significantly loosen regularization while increasing model capacity. This allows the      │
+│                          │ model to learn real trading signals instead of defaulting to the mean.                    │
+│ num_applied              │ 1                                                                                         │
+│ api_costs                │ $0.0173                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ model_name               │ claude-haiku-4-5-20251001                                                                 │
+│ temperature              │ 0.0                                                                                       │
+│ max_tokens               │ 16384                                                                                     │
+│ diff_summary             │ added: 5; deleted: 0; modified: 9;                                                        │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-11 20:10:51 - shinka.core.async_runner - INFO - Getting code embedding for generation 11...
+2026-05-11 20:10:51 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:10:51 - shinka.core.async_runner - INFO - Code embedding completed for generation 11 (cost: $0.0000)
+2026-05-11 20:10:51 - shinka.launch.local - INFO - Submitted local process with PID: 10582
+2026-05-11 20:10:51 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_11/main.py --results_dir results_20260511_200857/gen_11/results
+2026-05-11 20:10:51 - shinka.core.async_runner - INFO - Proposal → Eval: gen 11 submitted for eval (cost: $0.0174, total: $0.1215). Running jobs: 1/4, Proposals: 4/6
+2026-05-11 20:10:52 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0045
+2026-05-11 20:10:52 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 FAILURE: Could not extract code from patch string
+2026-05-11 20:10:52 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program 2add151c-d548-4eb4-97d0-2063fa73789c (Gen: 6) [from 11 incorrect programs].
+2026-05-11 20:10:52 - shinka.database.dbase - INFO - Retrieved 1 ancestors for program 2add151c-d548-4eb4-97d0-2063fa73789c (generations: [0])
+              Parent & Context Sampling Summary - Gen 9 | Total Cost: $0.10 (Novelty: 1/3, Resample: 2/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  6   │   I-1   │   ✗   │   -0.451 │ increase_expressivity_and_tech  │ fix    │    1.0 │  $0.008 │ 2.9s │
+│ ANCESTOR-1  │  0   │   I-1   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:10:52 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program 2add151c-d548-4eb4-97d0-2063fa73789c (Gen: 6)
+2026-05-11 20:10:52 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 6, Score: -0.4506, Ancestors: 1)
+2026-05-11 20:10:52 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:10:52 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:10:52 - shinka.llm.llm - INFO - ==> QUERYING: ['gemini-3-flash-preview', '0.0', '16384', '0']
+2026-05-11 20:10:52 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0034
+2026-05-11 20:10:52 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 FAILURE: Could not extract code from patch string
+2026-05-11 20:10:52 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program baaf37a9-b75f-4119-a719-0b82eb2ac3cb (Gen: 7) [from 11 incorrect programs].
+2026-05-11 20:10:52 - shinka.database.dbase - INFO - Retrieved 2 ancestors for program baaf37a9-b75f-4119-a719-0b82eb2ac3cb (generations: [0, 4])
+              Parent & Context Sampling Summary - Gen 8 | Total Cost: $0.10 (Novelty: 1/3, Resample: 2/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  7   │   I-0   │   ✗   │   -0.553 │ reduce_collapse_richer_feature  │ fix    │    1.0 │  $0.017 │ 3.1s │
+│ ANCESTOR-1  │  0   │   I-0   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+│ ANCESTOR-2  │  4   │   I-0   │   ✗   │   -0.462 │ fix_prediction_collapse         │ fix    │    1.0 │  $0.016 │ 8.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:10:52 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program baaf37a9-b75f-4119-a719-0b82eb2ac3cb (Gen: 7)
+2026-05-11 20:10:52 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 7, Score: -0.5528, Ancestors: 2)
+2026-05-11 20:10:52 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:10:52 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:10:52 - shinka.llm.llm - INFO - ==> QUERYING: ['gemini-3-flash-preview', '0.5', '16384', '0']
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 10582) completed (gen 11) after 21.9s
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [11] (cost: $0.1215)
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 10582) (gen 11)
+2026-05-11 20:10:53 - shinka.launch.local - INFO - Monitoring local process with PID: 10582...
+2026-05-11 20:10:53 - shinka.launch.local - INFO - Process 10582 completed with return code: 0
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 10582): True
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 10582) has valid results - correct=False, score=-10.0
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 10582) (gen 11)...
+2026-05-11 20:10:53 - shinka.database.dbase - INFO - Program ba217464-313c-4e7a-87e7-f202050db513 added to DB - score: -10.0.
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program ba217464-313c-4e7a-87e7-f202050db513 successfully added to database for ProcessWithLogging(PID: 10582) (gen 11)
+                                Program Evaluation Summary - Gen 11 | Total Cost: $0.12                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 11  │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-1   │  ✗ Incorrect  │ -10.000 │ fix_prediction_collapse_and_al  │ fix    │    1.0 │  $0.017 │ 1.8s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-haiku-4-5-20251… │   5 │      5 │  0.0825 │  0.0165 │  0.0000 │  1.0129 │   1.0129 │ 0.23… │   0.6239 │ 0.10… │
+│ gemini-3-flash-preview  │   6 │      3 │  0.0161 │  0.0054 │  0.0000 │  0.9247 │   0.9247 │ 1.00… │   0.9623 │ 0.80… │
+│ gpt-5.4-mini            │   2 │      2 │  0.0305 │  0.0153 │  0.0000 │  1.6015 │   1.6015 │ 0.27… │   0.9367 │ 0.10… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - No correct programs found yet, cannot determine best solution.
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 10582) - program ba217464-313c-4e7a-87e7-f202050db513 added (gen 11)
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 8 -> 9 (cost: $0.1215)
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=27.63s, evaluation_ewma=3.68s, timing_samples=8, active_proposals=3, running_jobs=0)
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=0, active_proposals=3/6), Remaining completed work: 88 (completed=9/100, next_generation=12)
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - Started proposal task for generation 12 (cost: $0.1215)
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - Generating proposal for generation 12
+2026-05-11 20:10:53 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program d647c429-7aaf-4d9e-9488-028a965d5303 (Gen: 3) [from 12 incorrect programs].
+2026-05-11 20:10:53 - shinka.database.dbase - INFO - Retrieved 1 ancestors for program d647c429-7aaf-4d9e-9488-028a965d5303 (generations: [0])
+              Parent & Context Sampling Summary - Gen 12 | Total Cost: $0.12 (Novelty: 1/3, Resample: 1/3)              
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  3   │   I-2   │   ✗   │  -10.000 │ fix_prediction_collapse_and_al  │ fix    │    1.0 │  $0.017 │ 7.2s │
+│ ANCESTOR-1  │  0   │   I-2   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program d647c429-7aaf-4d9e-9488-028a965d5303 (Gen: 3)
+2026-05-11 20:10:53 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 3, Score: -10.0000, Ancestors: 1)
+2026-05-11 20:10:53 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:10:53 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:10:53 - shinka.llm.llm - INFO - ==> QUERYING: ['gemini-3-flash-preview', '1.0', '16384', '0']
+2026-05-11 20:11:12 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0066
+2026-05-11 20:11:12 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 FAILURE: Could not extract code from patch string
+2026-05-11 20:11:12 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program be1806fd-a8a1-4752-a2ee-cc7f8b9e4afd (Gen: 4) [from 12 incorrect programs].
+2026-05-11 20:11:12 - shinka.database.dbase - INFO - Retrieved 1 ancestors for program be1806fd-a8a1-4752-a2ee-cc7f8b9e4afd (generations: [0])
+              Parent & Context Sampling Summary - Gen 10 | Total Cost: $0.12 (Novelty: 1/3, Resample: 2/3)              
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  4   │   I-0   │   ✗   │   -0.462 │ fix_prediction_collapse         │ fix    │    1.0 │  $0.016 │ 8.0s │
+│ ANCESTOR-1  │  0   │   I-0   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:11:12 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program be1806fd-a8a1-4752-a2ee-cc7f8b9e4afd (Gen: 4)
+2026-05-11 20:11:12 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 4, Score: -0.4617, Ancestors: 1)
+2026-05-11 20:11:12 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:11:12 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:11:12 - shinka.llm.llm - INFO - ==> QUERYING: ['gemini-3-flash-preview', '0.5', '16384', '0']
+2026-05-11 20:11:57 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0044
+2026-05-11 20:11:57 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 FAILURE: Could not extract code from patch string
+2026-05-11 20:11:57 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program fe405440-7bca-4bb8-adc6-85ca07ef6b27 (Gen: 5) [from 12 incorrect programs].
+2026-05-11 20:11:57 - shinka.database.dbase - INFO - Retrieved 1 ancestors for program fe405440-7bca-4bb8-adc6-85ca07ef6b27 (generations: [0])
+              Parent & Context Sampling Summary - Gen 9 | Total Cost: $0.12 (Novelty: 1/3, Resample: 3/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  5   │   I-2   │   ✗   │   -0.520 │ less_regularization_shifted_fe  │ fix    │    1.0 │  $0.013 │ 3.6s │
+│ ANCESTOR-1  │  0   │   I-2   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:11:57 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program fe405440-7bca-4bb8-adc6-85ca07ef6b27 (Gen: 5)
+2026-05-11 20:11:57 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 5, Score: -0.5198, Ancestors: 1)
+2026-05-11 20:11:57 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:11:57 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-11 20:11:57 - shinka.llm.llm - INFO - ==> QUERYING: ['gemini-3-flash-preview', '1.0', '16384', '0']
+2026-05-11 20:12:01 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0100
+2026-05-11 20:12:01 - shinka.core.async_runner - INFO -   FIX ATTEMPT 1/1 SUCCESS
+                        Patch Metadata - Gen 12/100 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ fix                                                                                       │
+│ patch_name               │ fix_fillna_type_and_expressivity                                                          │
+│ patch_description        │ The bug was caused by an incompatible signature in `pd.DataFrame.fillna()`, where the     │
+│                          │ `method` argument is deprecated/removed in newer versions of pandas. The fix replaces     │
+│                          │ `.fillna(method='ffill')` and `.fillna(method='bfill')` with the modern `.ffill()` and    │
+│                          │ `.bfill()` methods.                                                                       │
+│                          │                                                                                           │
+│                          │ Additionally, to address the common failure mode of model collapse (where                 │
+│                          │ `pred_std_ratio` is too low), I loosened the regularization and increased model           │
+│                          │ expressivity by reducing `min_child_weight` and adjusting `reg_lambda`/`reg_alpha`. I     │
+│                          │ also expanded the feature set to include EMA-distance signals and momentum oscillators    │
+│                          │ (total features = 34), which should provide stronger signals to reach the 0.52            │
+│                          │ Directional Accuracy (DA) target.                                                         │
+│ num_applied              │ 1                                                                                         │
+│ api_costs                │ $0.0100                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ model_name               │ gemini-3-flash-preview                                                                    │
+│ temperature              │ 0.5                                                                                       │
+│ max_tokens               │ 16384                                                                                     │
+│ thinking_budget          │ 0                                                                                         │
+│ diff_summary             │ added: 10; deleted: 0; modified: 23;                                                      │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-11 20:12:01 - shinka.core.async_runner - INFO - Getting code embedding for generation 12...
+2026-05-11 20:12:02 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-11 20:12:02 - shinka.core.async_runner - INFO - Code embedding completed for generation 12 (cost: $0.0000)
+2026-05-11 20:12:02 - shinka.launch.local - INFO - Submitted local process with PID: 10646
+2026-05-11 20:12:02 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260511_200857/gen_12/main.py --results_dir results_20260511_200857/gen_12/results
+2026-05-11 20:12:02 - shinka.core.async_runner - INFO - Proposal → Eval: gen 12 submitted for eval (cost: $0.0100, total: $0.1315). Running jobs: 1/4, Proposals: 4/6
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 10646) completed (gen 12) after 72.7s
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [12] (cost: $0.1315)
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 10646) (gen 12)
+2026-05-11 20:12:06 - shinka.launch.local - INFO - Monitoring local process with PID: 10646...
+2026-05-11 20:12:06 - shinka.launch.local - INFO - Process 10646 completed with return code: 0
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 10646): True
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 10646) has valid results - correct=False, score=-0.4801367570201083
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 10646) (gen 12)...
+2026-05-11 20:12:06 - shinka.database.dbase - INFO - Program 3303bc0a-10ca-49df-b7b5-5fc56f3abd74 added to DB - score: -0.4801367570201083.
+2026-05-11 20:12:06 - shinka.database.async_dbase - INFO - Scheduled embedding recomputation after 10 program additions
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program 3303bc0a-10ca-49df-b7b5-5fc56f3abd74 successfully added to database for ProcessWithLogging(PID: 10646) (gen 12)
+                                Program Evaluation Summary - Gen 12 | Total Cost: $0.13                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 12  │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│  Best: N/A  │   I-2   │  ✗ Incorrect  │  -0.480 │ fix_fillna_type_and_expressivi  │ fix    │    1.0 │  $0.010 │ 3.5s │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-haiku-4-5-20251… │   5 │      5 │  0.0825 │  0.0165 │  0.0000 │  1.0531 │   1.0531 │ 0.32… │   0.6876 │ 0.10… │
+│ gemini-3-flash-preview  │   9 │      6 │  0.0371 │  0.0062 │  0.0000 │  0.7849 │   0.7849 │ 1.00… │   0.8925 │ 0.10… │
+│ gpt-5.4-mini            │   2 │      2 │  0.0305 │  0.0153 │  0.0000 │  1.6651 │   1.6651 │ 0.37… │   1.0195 │ 0.80… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - No correct programs found yet, cannot determine best solution.
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 10646) - program 3303bc0a-10ca-49df-b7b5-5fc56f3abd74 added (gen 12)
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 9 -> 10 (cost: $0.1315)
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=40.11s, evaluation_ewma=3.62s, timing_samples=9, active_proposals=3, running_jobs=0)
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=0, active_proposals=3/6), Remaining completed work: 87 (completed=10/100, next_generation=13)
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - Started proposal task for generation 13 (cost: $0.1315)
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - Generating proposal for generation 13
+2026-05-11 20:12:06 - shinka.database.dbase - INFO - No correct programs. Randomly sampled incorrect program ba217464-313c-4e7a-87e7-f202050db513 (Gen: 11) [from 13 incorrect programs].
+2026-05-11 20:12:06 - shinka.database.dbase - INFO - Retrieved 1 ancestors for program ba217464-313c-4e7a-87e7-f202050db513 (generations: [0])
+              Parent & Context Sampling Summary - Gen 13 | Total Cost: $0.13 (Novelty: 1/3, Resample: 1/3)              
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ FIX TARGET  │  11  │   I-1   │   ✗   │  -10.000 │ fix_prediction_collapse_and_al  │ fix    │    1.0 │  $0.017 │ 1.8s │
+│ ANCESTOR-1  │  0   │   I-1   │   ✗   │   -0.516 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.0s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - FIX MODE: Attempting to fix incorrect program ba217464-313c-4e7a-87e7-f202050db513 (Gen: 11)
+2026-05-11 20:12:06 - shinka.core.sampler - INFO - Generated FIX prompt for incorrect program (Gen: 11, Score: -10.0000, Ancestors: 1)
+2026-05-11 20:12:06 - shinka.core.async_runner - INFO - Generated FIX patch type: fix
+2026-05-11 20:12:06 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-haiku-4-5-20251001        0.0000
+  gemini-3-flash-preview           0.0000
+  gpt-5.4-mini                     1.0000
+2026-05-11 20:12:06 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-5.4-mini', '1.0', '16384', "{'effort': 'low', 'summary': 'auto'}"]
+2026-05-11 20:12:06 - shinka.database.dbase - INFO - Recomputing PCA-reduced embedding features for 13 programs.
+2026-05-11 20:12:06 - shinka.database.dbase - INFO - Computing 2D PCA reduction...
+2026-05-11 20:12:06 - shinka.database.dbase - INFO - 2D PCA reduction completed
+2026-05-11 20:12:06 - shinka.database.dbase - INFO - Computing 3D PCA reduction...
+2026-05-11 20:12:06 - shinka.database.dbase - INFO - 3D PCA reduction completed
+2026-05-11 20:12:06 - shinka.database.dbase - INFO - Computing GMM clustering with 4 clusters...
+2026-05-11 20:12:08 - shinka.database.dbase - INFO - GMM clustering completed
+2026-05-11 20:12:08 - shinka.database.dbase - INFO - Successfully updated embedding features for 13 programs.
+2026-05-11 20:12:08 - shinka.database.async_dbase - INFO - Background embedding recomputation completed
+2026-05-11 20:12:16 - shinka.database.async_dbase - INFO - 🔧 Closing async database with monitoring...
+2026-05-11 20:12:16 - shinka.database.async_dbase - INFO - Async database closed

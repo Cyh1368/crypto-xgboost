@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_invariant_zscore_v2",
+  "patch_description": "The strategy focuses on solving the 'slope collapse' and 'prediction collapse' by ensuring features are regime-invariant and the model is forced to learn robust, high-sample patterns.\n\nKey improvements:\n1. **Rolling Z-Score Normalization**: Most features (returns, volatility, volume, RSI) are transformed into rolling z-scores (40-bar window). This ensures that a \"big move\" is relative to current local volatility, making the features generalize better across different market regimes (e.g., from high-vol to low-vol periods).\n2. **Short Lookbacks**: Lookback windows are restricted to 5-30 bars to prevent the model from latching onto long-term trends that don't persist into the validation period.\n3. **Market Character Features**: Added Kaufman's Efficiency Ratio and Rolling Autocorrelation to measure \"trendiness\" vs \"mean-reversion\" character, which helps the model adapt to regime shifts.\n4. **Interaction Terms**: Included a Momentum \u00d7 Volatility Regime interaction. This allows the model to scale its directional conviction based on whether the market is currently in an expanding or contracting volatility state.\n5. **Regularization Tuning**: Increased `min_child_weight` and decreased `max_depth` to prevent overfitting to training-specific noise, while keeping `learning_rate` moderate to ensure the model captures enough signal to maintain a healthy predictive slope.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:48:26.890079",
+  "llm_cost": 0.015189999999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

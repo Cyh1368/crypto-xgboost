@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_restore_features",
+  "patch_description": "The current model suffers from a severe 'prediction collapse' (pred_std_ratio < 0.01), where it predicts values too close to the mean, resulting in heavy penalties. This is caused by overly conservative hyperparameters (low depth, high min_child_weight, very low learning rate) and a sparse feature set.\n\nI am proposing to:\n1. Increase model expressivity by increasing `max_depth` to 6, decreasing `min_child_weight` to 2, and increasing the `learning_rate` to 0.05. This forces the model to capture more granular signals.\n2. Restore and expand the feature set to include mean-reversion indicators (SMA deviations), momentum-volatility interactions, and price positioning within recent ranges. These features provide the necessary signal for the model to differentiate between market regimes and generate more varied predictions.\n3. Increase `n_estimators` and `early_stopping_rounds` to allow the more complex model sufficient time to converge.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:21:03.807553",
+  "llm_cost": 0.013623,
+  "llm_model": "gemini-3-flash-preview"
+}

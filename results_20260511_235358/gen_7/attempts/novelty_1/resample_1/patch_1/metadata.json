@@ -1,0 +1,14 @@
+{
+  "generation": 7,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_invariant_features_and_robust_xgb",
+  "patch_description": "This edit addresses the primary problem of slope collapse (0.074 train -> 0.006 val) by implementing regime-invariant features and more robust hyperparameters.\n\n1.  **Hyperparameters:** Reduced `n_estimators` and `learning_rate`, and significantly increased `min_child_weight` (from 1 to 25) and `reg_lambda` (from 0 to 5.0). This forces the model to learn only the most robust patterns that appear in many samples, preventing overfitting to regime-specific noise.\n2.  **Feature Engineering:**\n    *   **Shorter Lookbacks:** Replaced long-term lags (up to 60+) with shorter, more responsive windows (1, 2, 4, 8, 16).\n    *   **Z-Score Normalization:** Added rolling Z-scores for returns and volatility. This makes features regime-invariant (e.g., a 1% move is normalized by current volatility).\n    *   **Rate of Change:** Added `vol_roc_5` to capture changes in market character.\n    *   **Efficiency Ratio:** Added a shorter `efficiency_10` to detect trending vs. mean-reverting regimes faster.\n    *   **Optimized OBI:** Replaced the slow `apply(axis=1)` with a faster column-wise `apply` for top-of-book imbalance.\n    *   **Interaction Terms:** Refined momentum-volatility interactions to use normalized components.\n3.  **Target Metrics:** Increased `MIN_PRED_STD_RATIO` to 0.18 to encourage more expressive predictions while maintaining robustness.",
+  "error_msg": "No changes applied",
+  "timestamp": "2026-05-11T23:56:01.746399",
+  "llm_cost": 0.0043745,
+  "llm_model": "gemini-3-flash-preview"
+}

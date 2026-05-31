@@ -1,0 +1,14 @@
+{
+  "generation": 68,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_shift_xgb",
+  "patch_description": "This crossover version keeps the strongest ideas from the prior scripts while reducing regime-specific overfitting.\n\nKey changes:\n- Uses shorter, more regime-invariant lookbacks as the core signal set.\n- Adds rolling z-score features for momentum, volatility, volume, and RSI to normalize across market regimes.\n- Adds \u201cchange in market character\u201d features such as volatility trend, autocorrelation trend, efficiency trend, and dispersion trend.\n- Keeps a few robust interactions like momentum \u00d7 volatility regime and volume \u00d7 price-position, but avoids excessive long-horizon features that appear to collapse out-of-sample.\n- Moderates XGBoost regularization relative to the current underfit/mean-collapse setup, with enough expressivity to recover prediction slope.\n\nThe feature count is kept safely under 80, all features use only past data, and the program preserves the same inputs/outputs and run interface.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:38:52.959913",
+  "llm_cost": 0.0393615,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,119 @@
+Looking at the performance metrics, the key issue is **predictions collapsing toward the mean** (pred_std_ratio = 0.0063, extremely low). This suggests the model is severely underfitting and regularization is too aggressive.
+
+The current hyperparameters have:
+- Very high regularization (reg_alpha=0.05, reg_lambda=0.5)
+- Still too conservative learning_rate=0.05
+- Collapse penalty of 0.719 is dominating the score
+
+My strategy:
+1. **Dramatically reduce regularization** to allow the model to learn signal
+2. **Increase learning rate** for faster convergence
+3. **Reduce n_estimators** since we're overly regularized anyway
+4. **Add interaction features** that capture cross-asset and momentum relationships
+5. **Add momentum-decay features** to capture short-term predictive patterns
+6. **Improve target clipping** with a more lenient percentile
+
+The analysis shows val_DA and test_DA are both around 0.52, which means the model *can* achieve decent accuracy - it's just being strangled by regularization preventing it from expressing this signal.
+
+<NAME>
+reduce_regularization_add_interactions
+</NAME>
+
+<DESCRIPTION>
+The primary issue is extreme regularization preventing the model from expressing any signal (pred_std_ratio=0.0063). The collapse penalty dominates the score. I will:
+
+1. Drastically reduce regularization (reg_alpha → 0.001, reg_lambda → 0.1) to allow signal learning
+2. Increase learning_rate to 0.1 for faster convergence with fewer estimators
+3. Reduce n_estimators to 200 to avoid overfitting with looser regularization
+4. Adjust min_child_weight to 3 to allow finer splits capturing signal
+5. Add interaction features: ret_momentum (momentum of recent returns), volatility-weighted returns, cross-regime features
+6. Add decay-weighted momentum features that emphasize recent bars more
+7. Use less aggressive target clipping (98th percentile instead of 99th)
+
+This addresses the core constraint violation: regularization is so tight it's killing expressivity. The target accuracy of 0.52 is achievable - we just need the model to use the signal.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 5,
+    "min_child_weight": 5,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.7,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 200,
+    "max_depth": 6,
+    "min_child_weight": 3,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+=======
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+
+    # --- Momentum & Interaction Features ---
+    # Decay-weighted momentum: emphasize recent returns
+    ret_1 = close.pct_change(1)
+    ret_3 = close.pct_change(3)
+    ret_6 = close.pct_change(6)
+    feat['momentum_decay_6'] = (ret_1 * 0.5 + ret_3 * 0.3 + ret_6 * 0.2)
+
+    # Volatility-weighted return momentum
+    vol_5 = log_ret.rolling(5).std()
+    feat['vol_weighted_ret'] = ret_1 / (vol_5 + 1e-6)
+
+    # Return acceleration (momentum of momentum)
+    feat['ret_accel_3'] = ret_1 - ret_3 / 3.0
+
+    # Cross-regime signal: vol regime × momentum
+    feat['vol_regime_x_momentum'] = feat['vol_regime'] * feat['momentum_decay_6']
+
+    # RSI interaction: RSI slope
+    rsi_6 = feat['rsi_6']
+    feat['rsi_6_slope'] = rsi_6 - rsi_6.shift(1)
+
+    # MACD × Momentum interaction
+    feat['macd_x_momentum'] = feat['macd_signal'] * feat['momentum_decay_6']
+
+    # Volume surge + momentum combination
+    feat['volume_momentum'] = feat['volume_ratio_5'] * feat['momentum_decay_6']
+>>>>>>> REPLACE
+
+</DIFF>

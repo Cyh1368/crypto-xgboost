@@ -1,0 +1,63 @@
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 500,
+    "max_depth": 8,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    # Remove early stopping rounds to avoid premature stopping
+    # "early_stopping_rounds": 30,
+}
+# EVOLVE-BLOCK-END
+
+def run_experiment(
+    X_train, y_train,
+    X_test,  y_test,
+    X_val,   y_val,
+):
+    """
+    Train an XGBoost model and return raw predictions for all three splits.
+    Called by evaluate.py via shinka.core.run_shinka_eval.
+    """
+    # Clip targets
+    clip_val = np.percentile(np.abs(y_train), CLIP_PERCENTILE)
+    y_train_c = y_train.clip(-clip_val, clip_val)
+    y_test_c = y_test.clip(-clip_val, clip_val)  # clip test targets for eval_set
+
+    # Scale
+    scaler = StandardScaler()
+    X_tr = scaler.fit_transform(X_train)
+    X_te = scaler.transform(X_test)
+    X_va = scaler.transform(X_val)
+
+    params = {k: v for k, v in XGB_PARAMS.items()
+              if k != 'early_stopping_rounds'}
+    early = XGB_PARAMS.get('early_stopping_rounds', None)
+
+    model = xgb.XGBRegressor(**params)
+    if early is not None:
+        model.fit(
+            X_tr, y_train_c,
+            eval_set=[(X_te, y_test_c)],
+            early_stopping_rounds=early,
+            verbose=False,
+        )
+    else:
+        model.fit(
+            X_tr, y_train_c,
+            verbose=False,
+        )
+
+    return {
+        'train': {'pred': model.predict(X_tr), 'actual': y_train.values},
+        'test':  {'pred': model.predict(X_te), 'actual': y_test.values},
+        'val':   {'pred': model.predict(X_va), 'actual': y_val.values},
+        'model': model,
+    }

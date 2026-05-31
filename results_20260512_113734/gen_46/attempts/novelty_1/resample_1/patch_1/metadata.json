@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 8,
+  "patch_name": "short_regime_boost",
+  "patch_description": "This edit attacks the two dominant failure modes in the current model: prediction collapse and regime fragility.\n\n1. Hyperparameters:\n   - Increase learning rate modestly and reduce excessive L1/L2 + child weight regularization so trees can express more signal.\n   - Keep depth shallow to avoid overfit, but raise subsampling slightly and reduce `min_child_weight` so the model can use more splits.\n   - Lower `early_stopping_rounds` a bit to match the higher learning rate.\n   - Slightly relax target clipping to preserve more tail information, which helps slope/variance.\n\n2. Features:\n   - Replace longer-horizon, regime-specific signals with shorter lookback versions where possible.\n   - Add rolling z-score normalization for price, return, volume, and volatility so the model sees regime-invariant inputs.\n   - Add explicit change-in-market-character features: volatility trend, autocorr trend, efficiency trend, dispersion trend.\n   - Add a compact momentum \u00d7 volatility-regime interaction, which often generalizes better than the raw components alone.\n   - Keep feature count safely under 80 by pruning a few weaker long-horizon features.\n\nThese changes should improve val slope and pred_std_ratio while preserving the already decent DA. The goal is to make the model less \u201cmean-collapsed\u201d and less dependent on one regime.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:14:59.722755",
+  "llm_cost": 0.0379815,
+  "llm_model": "gpt-5.4-mini"
+}

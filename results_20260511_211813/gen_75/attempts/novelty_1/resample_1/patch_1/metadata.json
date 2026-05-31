@@ -1,0 +1,14 @@
+{
+  "generation": 75,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_efficiency_model",
+  "patch_description": "This algorithm implements a novel approach centered on \"Multi-Horizon Efficiency and Volatility-Normalized Momentum.\" Drawing inspiration from Kaufman's Efficiency Ratio (ER), it distinguishes between \"clean\" trending moves and \"noisy\" mean-reverting regimes. Key innovations include:\n1. **Efficiency-Weighted Momentum**: Interacting Kaufman's ER with multi-horizon returns to identify high-conviction trend continuations.\n2. **Volatility-Adjusted Momentum (VAM)**: Normalizing returns by rolling volatility to create a Sharpe-like signal per bar, reducing noise in high-volatility regimes.\n3. **Microstructure Divergence**: Using Orderbook Imbalance (OBI) and its rate of change, interacted with trend strength, to capture leading signals of price exhaustion.\n4. **Expressive Hyperparameters**: To combat the \"collapse toward mean\" warning, I've significantly reduced regularization (reg_lambda, reg_alpha) and increased the learning rate and model depth, forcing the model to be more \"opinionated\" while maintaining generalization through subsampling.\n5. **Regime-Conditioned Interactions**: Explicitly modeling the interaction between volatility regimes, trend efficiency, and candle anatomy to capture non-linear market dynamics.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-11T21:36:00.384854",
+  "llm_cost": 0.01313,
+  "llm_model": "gemini-3-flash-preview"
+}

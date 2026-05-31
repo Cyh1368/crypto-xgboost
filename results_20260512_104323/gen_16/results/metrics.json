@@ -1,0 +1,28 @@
+{
+  "combined_score": -2.058392066235688,
+  "public": {
+    "combined_score": -2.0584,
+    "val_da": 0.5231,
+    "test_da": 0.535,
+    "train_da": 0.5689,
+    "train_pearson": 0.3156,
+    "test_pearson": 0.0781,
+    "val_pearson": 0.0285,
+    "train_slope": 0.0279,
+    "test_slope": 0.0053,
+    "val_slope": 0.0025,
+    "slope_ratio": 0.0905,
+    "generalization_ratio": 0.3646,
+    "pred_std_ratio": 0.0886,
+    "overfit_gap": 0.0458
+  },
+  "private": {
+    "collapse_penalty": 0.8916,
+    "slope_penalty": 1.2568,
+    "gen_penalty": 0.1769,
+    "overfit_penalty": 0.0,
+    "invert_penalty": 0.0,
+    "signal_score": 0.2668
+  },
+  "text_feedback": "val_DA=0.5231  test_DA=0.5350  train_DA=0.5689\nval_r=0.0285  test_r=0.0781  train_r=0.3156\nval_slope=0.0025  train_slope=0.0279  slope_ratio=9.0%\npred_std_ratio=0.0886  generalization_ratio=36.5%  overfit_gap=0.0458\npenalties \u2192 collapse=0.892  slope=1.257  gen=0.177  overfit=0.000  invert=0.000\nSCORE=-2.0584\nWARNING: predictions collapsed toward mean \u2014 increase model expressivity or remove regularization.\nWARNING: val slope (0.0025) is only 9.0% of train slope (0.0279). Features are regime-specific. Try shorter lookbacks, z-score normalization within rolling windows, or regime-conditional feature scaling.\nWARNING: val_r is only 36.5% of test_r. The model generalizes across the train\u2192test boundary but breaks at the test\u2192val boundary. This is a second-order regime shift. Add features that measure the CHANGE in market character, not just the current state."
+}

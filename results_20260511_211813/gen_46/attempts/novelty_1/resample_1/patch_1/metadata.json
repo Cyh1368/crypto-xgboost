@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "structural_regime_divergence",
+  "patch_description": "This implementation addresses the \"prediction collapse\" issue by significantly increasing model expressivity and introducing features that capture structural market shifts. \n\nKey innovations:\n1. **Expressivity Boost**: Reduced `min_child_weight` to 2 and `reg_lambda` to 0.1, while increasing `max_depth` to 6. This forces the model to capture more granular signals rather than defaulting to the mean.\n2. **Structural Divergence Features**: Added \"Efficiency Ratio\" (Kaufman) and \"Volatility of Volatility\" to distinguish between trending and noisy regimes.\n3. **Relative State Normalization**: Implemented rolling Z-scores and ranks for returns and volume to make the model invariant to absolute price levels while sensitive to local anomalies.\n4. **Microstructure Dynamics**: Introduced \"Price Velocity\" and \"Volume Force\" to capture the momentum of capital flow rather than just price action.\n5. **Target Sensitivity**: Adjusted `CLIP_PERCENTILE` to 95 to focus the model on the most predictable part of the return distribution, reducing the impact of fat-tailed noise that often causes XGBoost to collapse toward zero.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-11T21:28:58.512758",
+  "llm_cost": 0.012796,
+  "llm_model": "gemini-3-flash-preview"
+}

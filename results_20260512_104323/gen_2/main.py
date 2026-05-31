@@ -1,0 +1,164 @@
+# evolve/initial.py
+
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 350,
+    "max_depth": 3,              # Shallow trees for better generalization
+    "min_child_weight": 20,      # Higher weight forces patterns from larger samples
+    "reg_alpha": 0.5,
+    "reg_lambda": 10.0,          # Stronger L2 regularization to stop prediction collapse
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.07,       # Slower learning for more robust gradient steps
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          
+MIN_PRED_STD_RATIO = 0.18     # Targeted metric
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build regime-invariant features using local normalization and ranking.
+    Focuses on 5-30 bar windows to minimize lookback decay.
+    """
+    feat = pd.DataFrame(index=df.index)
+
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    open_p = df['open']
+
+    # 1. Log returns and local volatility (basis for normalization)
+    log_ret = np.log(close / close.shift(1))
+    vol_12 = log_ret.rolling(12).std().replace(0, 1e-9)
+    vol_24 = log_ret.rolling(24).std().replace(0, 1e-9)
+
+    # 2. Local Z-Score Returns (Regime-invariant returns)
+    # Scales current returns by the volatility of the most recent past.
+    for lag in [1, 3, 6, 12]:
+        raw_ret = close.pct_change(lag)
+        feat[f'z_ret_{lag}'] = raw_ret / (vol_24 * np.sqrt(lag) + 1e-9)
+
+    # 3. Micro-Trend and Efficiency
+    # Kaufman Efficiency Ratio: net move / absolute move sum
+    for w in [5, 15]:
+        net_move = (close - close.shift(w)).abs()
+        total_move = close.diff().abs().rolling(w).sum()
+        feat[f'efficiency_{w}'] = net_move / (total_move + 1e-9)
+        
+    # 4. Volatility Character Features
+    feat['vol_regime'] = vol_12 / (vol_24.rolling(100).mean() + 1e-9)
+    feat['vol_acceleration'] = vol_12 / (vol_12.shift(12) + 1e-9)
+
+    # 5. Price Position in Rolling Window (Rank/Percentile features)
+    for w in [15, 40]:
+        low_w = low.rolling(w).min()
+        high_w = high.rolling(w).max()
+        feat[f'pos_in_range_{w}'] = (close - low_w) / (high_w - low_w + 1e-9)
+        # Percentile rank of current close price relative to window
+        feat[f'rank_close_{w}'] = close.rolling(w).rank(pct=True)
+
+    # 6. Volume Normalization (Relative to past, not absolute levels)
+    for w in [10, 30]:
+        feat[f'rel_volume_{w}'] = volume / (volume.rolling(w).mean() + 1e-9)
+        feat[f'vol_rank_{w}'] = volume.rolling(w).rank(pct=True)
+
+    # 7. Candle Shape Descriptors (Normalized)
+    body = (close - open_p).abs()
+    tr = pd.concat([high - low, (high - close.shift(1)).abs()], axis=1).max(axis=1)
+    feat['body_to_range'] = body / (tr + 1e-9)
+    feat['upper_wick_ratio'] = (high - df[['open', 'close']].max(axis=1)) / (tr + 1e-9)
+    feat['lower_wick_ratio'] = (df[['open', 'close']].min(axis=1) - low) / (tr + 1e-9)
+    
+    # 8. RSI (Demeaned for better variance)
+    for w in [7, 14]:
+        delta = close.diff()
+        u = delta.clip(lower=0).rolling(w).mean()
+        d = (-delta.clip(upper=0)).rolling(w).mean()
+        rs = u / (d + 1e-9)
+        rsi = 100 - (100 / (1 + rs))
+        feat[f'rsi_norm_{w}'] = (rsi - 50) / 50.0
+
+    # 9. Cross-Correlation Dynamics
+    # Is volume rising or falling during price increases?
+    feat['price_vol_corr_12'] = log_ret.rolling(12).corr(volume.pct_change(1))
+
+    # 10. Temporal Cyclicality
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+
+    # 11. Funding (if available) - scaled to be regime-agnostic
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_z'] = (fr - fr.rolling(48).mean()) / (fr.rolling(48).std() + 1e-9)
+        feat['funding_dir'] = np.sign(fr)
+
+    # Interaction: Momentum * Relative Volatility
+    # Captures "breakouts" vs "grinds"
+    feat['mom_vol_inter'] = feat['z_ret_3'] * feat['vol_regime']
+
+    feat = feat.replace([np.inf, -np.inf], 0.0)
+    feat = feat.fillna(method='ffill').fillna(0.0)
+    
+    return feat
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# DO NOT MODIFY BELOW THIS LINE
+# run_experiment is the fixed interface called by evaluate.py
+
+def run_experiment(
+    X_train, y_train,
+    X_test,  y_test,
+    X_val,   y_val,
+):
+    """
+    Train an XGBoost model and return raw predictions for all three splits.
+    Called by evaluate.py via shinka.core.run_shinka_eval.
+    """
+    # Clip targets
+    clip_val = np.percentile(np.abs(y_train), CLIP_PERCENTILE)
+    y_train_c = y_train.clip(-clip_val, clip_val)
+
+    # Scale
+    scaler = StandardScaler()
+    X_tr = scaler.fit_transform(X_train)
+    X_te = scaler.transform(X_test)
+    X_va = scaler.transform(X_val)
+
+    params = {k: v for k, v in XGB_PARAMS.items()
+              if k != 'early_stopping_rounds'}
+    early = XGB_PARAMS.get('early_stopping_rounds', 30)
+
+    model = xgb.XGBRegressor(**params, early_stopping_rounds=early)
+    model.fit(
+        X_tr, y_train_c,
+        eval_set=[(X_te, y_test)],
+        verbose=False,
+    )
+
+    return {
+        'train': {'pred': model.predict(X_tr), 'actual': y_train.values},
+        'test':  {'pred': model.predict(X_te), 'actual': y_test.values},
+        'val':   {'pred': model.predict(X_va), 'actual': y_val.values},
+        'model': model,
+    }

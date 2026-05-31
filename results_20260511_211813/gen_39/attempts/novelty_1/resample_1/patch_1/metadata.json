@@ -1,0 +1,14 @@
+{
+  "generation": 39,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "none",
+  "patch_description": "The current model is suffering from prediction collapse (pred_std_ratio = 0.0349), which indicates it is being too conservative and regularized. To fix this, I am increasing the model's expressivity by:\n1. Increasing `learning_rate` from 0.03 to 0.08 and `max_depth` from 7 to 8.\n2. Significantly reducing regularization (`reg_lambda` from 0.5 to 0.01, `reg_alpha` to 0.0, and `min_child_weight` to 1).\n3. Increasing `colsample_bytree` to 0.8 to allow trees to consider more features.\n4. Adding new features that capture volatility regimes (`vol_zscore_100`), price extremes (`dist_high_100`, `dist_low_100`), and momentum velocity. These features provide more \"punchy\" signals that help the model predict variance more effectively.\n5. Adjusting `CLIP_PERCENTILE` to 98 to focus the model on predictable variance rather than extreme outliers.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:26:42.629096",
+  "llm_cost": 0.0134075,
+  "llm_model": "gemini-3-flash-preview"
+}

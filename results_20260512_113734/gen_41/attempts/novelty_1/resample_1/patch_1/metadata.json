@@ -1,0 +1,14 @@
+{
+  "generation": 41,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "short_regime_xgb",
+  "patch_description": "This version keeps XGBoost but changes the feature design to be much more regime-invariant and shorter-horizon. Instead of relying on broad absolute levels, it emphasizes rolling z-scores, compact momentum/volatility character changes, and a small set of multiplicative interactions that are more likely to survive regime shifts. The model itself is also made a bit more expressive by reducing over-regularization and using moderately deeper trees with stronger sample requirements, which should help recover prediction variance without reintroducing excessive overfit.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:59:20.215296",
+  "llm_cost": 0.038577,
+  "llm_model": "gpt-5.4-mini"
+}

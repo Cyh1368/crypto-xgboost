@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_shortlookbacks",
+  "patch_description": "This edit targets the main failure mode: the model is learning medium/long-horizon patterns that disappear in the validation regime. I\u2019m switching the feature set toward shorter, regime-invariant signals and explicit rate-of-change features:\n\n- add rolling z-score normalization on price returns, volume, and volatility using only past data\n- emphasize short lookbacks (5\u201320 bars) instead of relying heavily on 60-bar constructs\n- add trend-of-regime features such as volatility trend, efficiency trend, and autocorrelation trend\n- add one compact interaction: short momentum \u00d7 volatility regime\n- slightly regularize XGBoost and reduce tree count to encourage robust, high-sample patterns\n\nThis should help the model keep predictive slope in later regimes while also reducing the train\u2192val collapse in slope and prediction standard deviation.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:43:55.002715",
+  "llm_cost": 0.02296575,
+  "llm_model": "gpt-5.4-mini"
+}

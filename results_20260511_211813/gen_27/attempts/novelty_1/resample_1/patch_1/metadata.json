@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "expressive_regime_boost",
+  "patch_description": "The previous model suffered from \"prediction collapse,\" meaning it was too conservative and its predicted standard deviation was far below the actual market standard deviation. To fix this, I am:\n1. Increasing model expressivity by increasing `max_depth` (8) and `learning_rate` (0.08), and significantly lowering the `reg_lambda` regularization (0.01).\n2. Implementing a strict \"shift-by-1\" feature engineering pipeline to ensure 100% compliance with the \"use only past data\" constraint, which also helps stabilize directional signals.\n3. Adding a broader set of features including Parkinson volatility (high-low range measure), market efficiency ratios, and volume z-scores to provide clearer signal-to-noise.\n4. Setting `CLIP_PERCENTILE` to 99.0 to allow the model to learn from a wider distribution of returns, reducing the incentive for the model to \"hide\" at the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:24:10.587314",
+  "llm_cost": 0.012083,
+  "llm_model": "gemini-3-flash-preview"
+}

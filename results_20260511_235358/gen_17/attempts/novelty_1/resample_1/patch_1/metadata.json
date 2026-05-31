@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "reduce_overregularization_add_regime_change_features",
+  "patch_description": "The current model is severely over-regularized (min_child_weight=12, reg_lambda=5.0), which has collapsed both train and val slopes to near-zero. This is worse than all prior attempts.\n\nKey changes:\n1. **Hyperparameters**: Reduce regularization to allow learning. Increase n_estimators and learning_rate to compensate. This mirrors the -1.62 attempt which had better slope.\n2. **New regime-change features**: Add volatility-of-volatility (vol_accel), momentum-of-momentum (mom_accel_2), and autocorrelation trend to detect when market character is shifting. These measure the RATE OF CHANGE of market properties, not just current state.\n3. **Adaptive z-scoring**: Normalize key features within shorter rolling windows (10-20 bars) to make them regime-invariant while preserving signal.\n4. **Remove weak features**: Drop some of the longest-lookback features (sma_40, atr_20) that don't generalize across regimes.\n\nTarget: val_slope >= 0.015, pred_std_ratio >= 0.12, val_DA >= 0.53",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:57:01.082288",
+  "llm_cost": 0.031417,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

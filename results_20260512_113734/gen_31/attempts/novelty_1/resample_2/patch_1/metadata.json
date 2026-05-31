@@ -1,0 +1,14 @@
+{
+  "generation": 31,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "none",
+  "patch_description": "This crossover combines the best elements from both parent programs to address the core issue: val_slope collapse from ~0.037 (train) to ~0.0025 (val).\n\nKey improvements from the crossover:\n1. **Hyperparameters**: Takes the more regularized approach from the inspiration code (higher reg_lambda=1.8, min_child_weight=6, lower learning_rate=0.045) which showed better generalization (val_r=0.03 vs 0.04) and lower overfit_gap (0.01 vs 0.04).\n\n2. **Feature Engineering Balance**: \n   - Keeps the richer volatility trend features from current program (vol_trend_5_20, vol_trend_10_20, vol_trend_20_60) which capture rate-of-change better\n   - Adopts the simpler, more focused approach from inspiration for RSI/BB calculations (avoiding redundancy)\n   - Maintains vol_regime_change and vol_regime_z from both (proven effective)\n   \n3. **Regime Normalization**: Uses z-scored returns (ret_z_5, ret_z_10, ret_z_20) from both parents - this makes features regime-invariant\n\n4. **Reduced Feature Explosion**: The inspiration code showed that ~70 carefully chosen features work better than ~80+ features with redundancy. This crossover eliminates duplicate volume calculations and focuses on the most predictive interactions.\n\n5. **Better Interactions**: Keeps the proven momentum \u00d7 vol_regime interactions but ensures they're computed cleanly with the updated vol_regime definitions.\n\nThe logic: The current program has better expressivity (max_depth=4, train_slope=0.037) but overfits. The inspiration has better generalization (lower overfit_gap=0.01) but underfits (train_slope=0.015). By taking the inspiration's regularization + the current program's richer volatility features, we aim for the middle ground: train_slope ~0.025-0.030 with val_slope retention >10%.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:17:35.135613",
+  "llm_cost": 0.160434,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

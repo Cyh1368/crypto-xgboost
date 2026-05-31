@@ -1,0 +1,180 @@
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 550,
+    "max_depth": 4,
+    "min_child_weight": 10,
+    "reg_alpha": 0.5,
+    "reg_lambda": 1.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+    "gamma": 0.1,
+}
+
+CLIP_PERCENTILE = 96          # tighter clip to remove extreme tail noise
+MIN_PRED_STD_RATIO = 0.20     # target higher pred_std/actual_std ratio
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build regime-invariant features using rolling Z-scores and market character indicators.
+    """
+    feat = pd.DataFrame(index=df.index)
+
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    
+    # helper for Z-score normalization
+    def zscore(s, window):
+        return (s - s.rolling(window).mean()) / (s.rolling(window).std() + 1e-9)
+
+    # --- Returns & Local Normalization (Sharpe-like features) ---
+    ret1 = close.pct_change(1)
+    for lag in [1, 2, 4, 8, 16, 24]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+    
+    # Local Z-score of returns (makes features regime-independent)
+    feat['ret_z_8'] = zscore(ret1, 8)
+    feat['ret_z_24'] = zscore(ret1, 24)
+
+    # --- Volatility Dynamics ---
+    log_ret = np.log(close / close.shift(1))
+    vols = {}
+    for w in [8, 16, 32]:
+        vols[w] = log_ret.rolling(w).std()
+        feat[f'vol_{w}'] = vols[w]
+    
+    # Volatility Trend & Acceleration
+    feat['vol_acceleration'] = vols[8] / (vols[32] + 1e-9)
+    feat['vol_change'] = vols[8].diff(4)
+
+    # --- Market Character (Regime Indicators) ---
+    # Autocorrelation: Are we trending (+) or mean-reverting (-)?
+    feat['autocorr_8'] = log_ret.rolling(8).corr(log_ret.shift(1))
+    
+    # Efficiency Ratio: (Total Move) / (Sum of Absolute Moves)
+    def get_efficiency(w):
+        return (close - close.shift(w)).abs() / (close.diff().abs().rolling(w).sum() + 1e-9)
+    
+    feat['efficiency_12'] = get_efficiency(12)
+    feat['efficiency_24'] = get_efficiency(24)
+    feat['eff_trend'] = feat['efficiency_12'] - feat['efficiency_12'].rolling(12).mean()
+
+    # --- Technical Indicators (Z-normalized) ---
+    # RSI
+    for period in [7, 14]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        feat[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+    
+    # Distance from rolling extremes (Range position)
+    feat['dist_max_24'] = (close - high.rolling(24).max()) / (close + 1e-9)
+    feat['dist_min_24'] = (close - low.rolling(24).min()) / (close + 1e-9)
+    feat['close_pos_24'] = (close - low.rolling(24).min()) / (high.rolling(24).max() - low.rolling(24).min() + 1e-9)
+
+    # Bollinger Band Z-Score
+    bb_mid = close.rolling(24).mean()
+    bb_std = close.rolling(24).std()
+    feat['bb_zscore'] = (close - bb_mid) / (bb_std + 1e-9)
+
+    # --- Volume & Flow (Normalized) ---
+    feat['volume_z_24'] = zscore(volume, 24)
+    feat['volume_ratio_8'] = volume / (volume.rolling(8).mean() + 1e-9)
+    vwap_24 = (close * volume).rolling(24).sum() / (volume.rolling(24).sum() + 1e-9)
+    feat['vwap_dev_z'] = zscore((close - vwap_24) / close, 24)
+
+    # --- Price-Volume Interaction ---
+    feat['pv_corr_16'] = log_ret.rolling(16).corr(volume.pct_change(1))
+    feat['mom_vol_interaction'] = feat['ret_z_8'] * feat['vol_8']
+
+    # --- Candle Geometry ---
+    feat['body_size'] = (close - df['open']).abs() / (high - low + 1e-9)
+    feat['upper_wick'] = (high - df[['open', 'close']].max(axis=1)) / (high - low + 1e-9)
+    feat['hl_range_norm'] = (high - low) / close
+
+    # --- Time cyclical features ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+
+    # --- Orderbook Interaction (if available) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row, tau=1):
+            try:
+                b = np.array(row['bids'])
+                a = np.array(row['asks'])
+                bv = np.sum(b[:, 1] * np.exp(-tau * np.arange(len(b))))
+                av = np.sum(a[:, 1] * np.exp(-tau * np.arange(len(a))))
+                return (bv - av) / (bv + av + 1e-9)
+            except: return 0.0
+        feat['obi_t1'] = df.apply(lambda r: obi(r, 1), axis=1)
+
+    # --- Funding Logic ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_raw'] = fr
+        feat['funding_z'] = zscore(fr, 32)
+        feat['funding_mom'] = fr.diff(4)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan).fillna(method='ffill').dropna()
+    return feat
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# DO NOT MODIFY BELOW THIS LINE
+
+def run_experiment(
+    X_train, y_train,
+    X_test,  y_test,
+    X_val,   y_val,
+):
+    """
+    Train an XGBoost model and return raw predictions for all three splits.
+    """
+    # Clip targets
+    clip_val = np.percentile(np.abs(y_train), CLIP_PERCENTILE)
+    y_train_c = y_train.clip(-clip_val, clip_val)
+
+    # Scale
+    scaler = StandardScaler()
+    X_tr = scaler.fit_transform(X_train)
+    X_te = scaler.transform(X_test)
+    X_va = scaler.transform(X_val)
+
+    params = {k: v for k, v in XGB_PARAMS.items() if k != 'early_stopping_rounds'}
+    early = XGB_PARAMS.get('early_stopping_rounds', 30)
+
+    model = xgb.XGBRegressor(**params, early_stopping_rounds=early)
+    model.fit(
+        X_tr, y_train_c,
+        eval_set=[(X_te, y_test)],
+        verbose=False,
+    )
+
+    return {
+        'train': {'pred': model.predict(X_tr), 'actual': y_train.values},
+        'test':  {'pred': model.predict(X_te), 'actual': y_test.values},
+        'val':   {'pred': model.predict(X_va), 'actual': y_val.values},
+        'model': model,
+    }

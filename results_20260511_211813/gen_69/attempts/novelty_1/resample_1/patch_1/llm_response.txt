@@ -1,0 +1,151 @@
+<NAME>
+increase_expressivity_and_rank_features
+</NAME>
+
+<DESCRIPTION>
+The current model suffers from a significant 'collapse' penalty (0.56), indicating that predictions are too clustered around the mean (pred_std_ratio = 0.038, while the target is 0.15). To address this, I am increasing the model's expressivity and adding scale-invariant features that help the model distinguish between different market regimes.
+
+Key changes:
+1. **Hyperparameters**: Increased `max_depth` to 7 and `learning_rate` to 0.1, while significantly reducing `reg_lambda` to 0.05 and `min_child_weight` to 1. This allows the model to fit more complex, 'spikier' patterns in the data, which is necessary to increase the prediction standard deviation.
+2. **Feature Engineering**:
+    - Added **Rolling Ranks** (`ret_qpos_60`, `vol_qpos_60`): These provide scale-invariant relative positioning, which is often more robust than raw values across different volatility regimes.
+    - Added **Directional Persistence** (`dir_persist_12`): Captures the 'trendiness' or 'choppiness' of recent price action.
+    - Added **Amihud Illiquidity Proxy** (`amihud_20`): Captures the relationship between price moves and volume, a key indicator of market stress or conviction.
+    - Added **Wick Imbalance**: Refines the candle microstructure signal.
+    - Added **Volatility Acceleration**: Helps identify the start of volatility breakouts.
+3. **Target Clipping**: Adjusted `CLIP_PERCENTILE` to 97 to allow slightly more signal from extreme moves to reach the model gradients.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 5,
+    "min_child_weight": 2,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+=======
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 97          # clip targets at this percentile (both tails)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Returns ---
+    for lag in [1, 3, 6, 12, 48]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # --- Volatility ---
+=======
+    # --- Returns ---
+    for lag in [1, 3, 6, 12, 48]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+    
+    ret_1 = close.pct_change(1)
+    feat['ret_qpos_60'] = ret_1.rolling(60).rank(pct=True)
+
+    # --- Volatility ---
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Volume ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+=======
+    # --- Volume ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+    feat['vol_qpos_60'] = volume.rolling(60).rank(pct=True)
+    feat['amihud_20'] = (ret_1.abs() / (volume + 1e-9)).rolling(20).mean()
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+
+    # --- Momentum, micro-trend, and regime interaction features ---
+    ret_1 = close.pct_change(1)
+    ret_3 = close.pct_change(3)
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+
+    feat['momentum_decay_6'] = (ret_1 * 0.5 + ret_3 * 0.3 + ret_6 * 0.2)
+=======
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+    feat['vol_state'] = np.tanh((feat['vol_5'] / (feat['vol_60'] + 1e-9)) - 1.0)
+    feat['vol_accel'] = feat['vol_5'] / (feat['vol_20'] + 1e-9) - 1.0
+
+    # --- Momentum, micro-trend, and regime interaction features ---
+    ret_3 = close.pct_change(3)
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+
+    feat['momentum_decay_6'] = (ret_1 * 0.5 + ret_3 * 0.3 + ret_6 * 0.2)
+    feat['dir_persist_12'] = np.sign(ret_1).rolling(12).mean()
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Candle structure / breakout pressure
+    candle_range = (high - low).replace(0, np.nan)
+    feat['candle_body'] = (close - df['open']) / (candle_range + 1e-9)
+    feat['upper_wick'] = (high - np.maximum(close, df['open'])) / (candle_range + 1e-9)
+    feat['lower_wick'] = (np.minimum(close, df['open']) - low) / (candle_range + 1e-9)
+
+    # Price location within recent range
+    roll_high_20 = high.rolling(20).max()
+    roll_low_20 = low.rolling(20).min()
+    feat['range_pos_20'] = (close - roll_low_20) / ((roll_high_20 - roll_low_20) + 1e-9)
+    feat['range_width_20'] = (roll_high_20 - roll_low_20) / (close + 1e-9)
+=======
+    # Candle structure / breakout pressure
+    candle_range = (high - low).replace(0, np.nan)
+    feat['candle_body'] = (close - df['open']) / (candle_range + 1e-9)
+    feat['upper_wick'] = (high - np.maximum(close, df['open'])) / (candle_range + 1e-9)
+    feat['lower_wick'] = (np.minimum(close, df['open']) - low) / (candle_range + 1e-9)
+    feat['wick_imbalance'] = feat['lower_wick'] - feat['upper_wick']
+
+    # Price location within recent range
+    roll_high_20 = high.rolling(20).max()
+    roll_low_20 = low.rolling(20).min()
+    roll_high_60 = high.rolling(60).max()
+    roll_low_60 = low.rolling(60).min()
+    feat['range_pos_20'] = (close - roll_low_20) / ((roll_high_20 - roll_low_20) + 1e-9)
+    feat['range_pos_60'] = (close - roll_low_60) / ((roll_high_60 - roll_low_60) + 1e-9)
+    feat['range_width_20'] = (roll_high_20 - roll_low_20) / (close + 1e-9)
+>>>>>>> REPLACE
+
+</DIFF>

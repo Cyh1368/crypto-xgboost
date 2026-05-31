@@ -1,0 +1,65 @@
+REPLACE
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.07,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 95.0       # tighter clipping to focus on typical moves
+MIN_PRED_STD_RATIO = 0.08    # target a healthier prediction dispersion
+>>>>>>> REPLACE
+```
+
+Wait, I need to make sure the SEARCH block is correct.
+
+```python
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98.0       # clip more to reduce outlier influence on gradients
+MIN_PRED_STD_RATIO = 0.05    # lower threshold to reduce collapse penalty
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.07,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 95.0       # tighter clipping to focus on typical moves
+MIN_PRE

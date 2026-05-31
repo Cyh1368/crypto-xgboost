@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "aggressive_deregularization_with_binary_regimes",
+  "patch_description": "The model is suffering from excessive regularization (collapse penalty 0.549). The best historical result (-0.16) used much lower regularization + binary regime signals. I will:\n\n1. Drastically reduce reg_lambda (0.1\u21920.02) and reg_alpha (0.005\u21920.0005) to increase model expressivity\n2. Increase learning_rate (0.05\u21920.08) for faster convergence\n3. Reduce gamma (0.5\u21920.1) to allow more tree splits\n4. Add binary regime indicator features (momentum_positive, vol_high_binary, trend_up/down, momentum_strong, etc.) that create natural decision boundaries and help trees learn regime-specific patterns\n5. Increase n_estimators slightly (600\u2192750) to compensate for lower regularization\n\nThe binary features act as \"regime gates\" that allow XGBoost to learn different directional patterns in different market conditions, dramatically improving pred_std_ratio while maintaining validation DA.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:22:32.139691",
+  "llm_cost": 0.038348999999999994,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

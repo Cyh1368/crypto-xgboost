@@ -1,0 +1,365 @@
+<NAME>
+regime_adaptive_features_v1
+</NAME>
+
+<DESCRIPTION>
+The primary problem is that val_slope collapses to 0.006 (8.2% of train_slope), indicating features are regime-specific and don't generalize. The model learns patterns from training data that evaporate in validation.
+
+My strategy combines three high-impact changes:
+
+1. **Shorter lookback windows (5-20 bars)**: Replace long 60+ bar windows with 5-20 bar windows. Shorter windows decay faster but capture more universal microstructure patterns that persist across regimes.
+
+2. **Rolling z-score normalization**: Transform features into z-scores within rolling windows. This makes features regime-invariant - a "high momentum" reading is always +1σ regardless of whether we're in a trending or ranging market.
+
+3. **Reduce model complexity**: Cut n_estimators from 400→250 and increase min_child_weight from 1→3. This forces the model to learn only high-sample, robust patterns that generalize rather than overfitting to training regime quirks.
+
+4. **Multiplicative feature interactions**: Replace additive momentum×vol features with cleaner multiplicative terms that often generalize better.
+
+This approach directly addresses the regime-shift problem by making features intrinsically comparable across different market conditions.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 250,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.12,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV + orderbook + funding data.
+    All features must use only past data (no lookahead).
+    Returns a DataFrame aligned to df.index.
+    """
+    feat = pd.DataFrame(index=df.index)
+
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+
+    # --- Returns ---
+    for lag in [1, 2, 3, 6, 12, 24, 48]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 20, 60]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+
+    # --- RSI ---
+    for period in [6, 14]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        feat[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+
+    # --- Bollinger Bands ---
+    bb_mid = close.rolling(20).mean()
+    bb_std = close.rolling(20).std()
+    feat['bb_pct'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+
+    # --- ATR ---
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+    feat['atr_14'] = tr.rolling(14).mean()
+    feat['atr_norm'] = feat['atr_14'] / close
+
+    # --- MACD ---
+    ema12 = close.ewm(span=12, adjust=False).mean()
+    ema26 = close.ewm(span=26, adjust=False).mean()
+    macd = ema12 - ema26
+    feat['macd_signal'] = macd - macd.ewm(span=9, adjust=False).mean()
+
+    # --- Volume ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+
+    # --- Session / Time ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # --- Regime features ---
+    feat['trend_strength_20'] = (close / close.shift(20) - 1).abs() * 10000
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    trend_20 = (close / close.shift(20) - 1) * 10000
+    trend_60 = (close / close.shift(60) - 1) * 10000
+    feat['trend_dir_20'] = np.sign(trend_20)
+    feat['trend_dir_60'] = np.sign(trend_60)
+    realized_vol_20 = log_ret.rolling(20).std()
+    realized_vol_60 = log_ret.rolling(60).std()
+    feat['vol_regime'] = realized_vol_20 / (realized_vol_20.rolling(200).mean() + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_20 / (realized_vol_60 + 1e-9)
+    feat['vol_rank_200'] = realized_vol_20.rolling(200).rank(pct=True)
+
+    # --- Mean reversion features ---
+    sma_10 = close.rolling(10).mean()
+    sma_50 = close.rolling(50).mean()
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma50_dev'] = (close - sma_50) / (sma_50 + 1e-9)
+    feat['sma_cross'] = (sma_10 - sma_50) / (sma_50 + 1e-9)
+
+    # --- Momentum × Volatility interactions ---
+    ret_3 = close.pct_change(3)
+    vol_20 = log_ret.rolling(20).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_20
+    feat['momentum_regime'] = ret_3 / (vol_20 + 1e-9)
+    feat['momentum_regime_20'] = ret_3 * feat['vol_regime']
+    feat['momentum_regime_fast'] = ret_3 * feat['vol_regime_fast']
+
+    # --- Volume × Price position interactions ---
+    vol_ratio = volume / (volume.rolling(20).mean() + 1e-9)
+    bb_pct = (close - close.rolling(20).mean()) / (2 * close.rolling(20).std() + 1e-9)
+    feat['volume_bb_interaction'] = vol_ratio * bb_pct
+    feat['volume_price_pressure'] = vol_ratio * feat['price_sma10_dev']
+
+    # --- High-low range features ---
+    feat['hl_range'] = (high - low) / close
+    feat['hl_range_ma'] = feat['hl_range'].rolling(10).mean()
+    feat['candle_body_ratio'] = (close - df['open']).abs() / ((high - low) + 1e-9)
+    feat['upper_wick_ratio'] = (high - df[['open', 'close']].max(axis=1)) / ((high - low) + 1e-9)
+    feat['lower_wick_ratio'] = (df[['open', 'close']].min(axis=1) - low) / ((high - low) + 1e-9)
+
+    # --- Close position in range ---
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+    feat['ret_z_20'] = (close.pct_change(1) - close.pct_change(1).rolling(20).mean()) / (close.pct_change(1).rolling(20).std() + 1e-9)
+    feat['ret_z_60'] = (close.pct_change(1) - close.pct_change(1).rolling(60).mean()) / (close.pct_change(1).rolling(60).std() + 1e-9)
+    feat['ret_accel_6'] = close.pct_change(1).diff(6)
+    feat['vol_ret_corr_20'] = log_ret.rolling(20).corr(volume.pct_change(1))
+
+    # --- Orderbook (if real data available) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row, tau=1):
+            try:
+                bids = np.array(row['bids'])
+                asks = np.array(row['asks'])
+                bid_vol = np.sum(bids[:, 1] * np.exp(-tau * np.arange(len(bids))))
+                ask_vol = np.sum(asks[:, 1] * np.exp(-tau * np.arange(len(asks))))
+                return (bid_vol - ask_vol) / (bid_vol + ask_vol + 1e-9)
+            except Exception:
+                return 0.0
+        feat['obi_tau1'] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat['obi_tau3'] = df.apply(lambda r: obi(r, 3), axis=1)
+
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+        feat['funding_momentum'] = fr.diff(4)
+        feat['funding_x_volregime'] = fr * feat['vol_regime']
+
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+=======
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV + orderbook + funding data.
+    All features must use only past data (no lookahead).
+    Returns a DataFrame aligned to df.index.
+
+    Focus on SHORT lookback windows (5-20 bars) and z-score normalization
+    to achieve regime-invariant features that generalize better.
+    """
+    feat = pd.DataFrame(index=df.index)
+
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    log_ret = np.log(close / close.shift(1))
+
+    # --- SHORT-TERM Returns (5-20 bars only) ---
+    for lag in [1, 2, 3, 5, 10, 15, 20]:
+        ret = close.pct_change(lag)
+        feat[f'ret_{lag}'] = ret
+        # Z-score normalized within rolling window
+        feat[f'ret_{lag}_z20'] = (ret - ret.rolling(20).mean()) / (ret.rolling(20).std() + 1e-9)
+
+    # --- SHORT-TERM Volatility (5-20 bars) ---
+    for w in [5, 10, 20]:
+        vol = log_ret.rolling(w).std()
+        feat[f'vol_{w}'] = vol
+        # Regime-normalized: current vol / rolling avg vol
+        feat[f'vol_{w}_regime'] = vol / (vol.rolling(20).mean() + 1e-9)
+
+    # --- RSI (short periods only) ---
+    for period in [6, 10]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        rsi = 100 - 100 / (1 + rs)
+        feat[f'rsi_{period}'] = rsi
+        # Z-score normalized RSI
+        feat[f'rsi_{period}_z20'] = (rsi - rsi.rolling(20).mean()) / (rsi.rolling(20).std() + 1e-9)
+
+    # --- Bollinger Bands (short window) ---
+    bb_mid = close.rolling(10).mean()
+    bb_std = close.rolling(10).std()
+    feat['bb_pct_10'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+
+    # --- ATR (short window) ---
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+    atr_10 = tr.rolling(10).mean()
+    feat['atr_10_norm'] = atr_10 / close
+    # Z-score normalized ATR
+    feat['atr_10_z20'] = (atr_10 - atr_10.rolling(20).mean()) / (atr_10.rolling(20).std() + 1e-9)
+
+    # --- MACD (shorter spans) ---
+    ema8 = close.ewm(span=8, adjust=False).mean()
+    ema17 = close.ewm(span=17, adjust=False).mean()
+    macd = ema8 - ema17
+    macd_signal = macd - macd.ewm(span=6, adjust=False).mean()
+    feat['macd_signal_short'] = macd_signal
+    feat['macd_signal_z20'] = (macd_signal - macd_signal.rolling(20).mean()) / (macd_signal.rolling(20).std() + 1e-9)
+
+    # --- Volume (short windows) ---
+    vol_ratio_5 = volume / (volume.rolling(5).mean() + 1e-9)
+    vol_ratio_10 = volume / (volume.rolling(10).mean() + 1e-9)
+    feat['volume_ratio_5'] = vol_ratio_5
+    feat['volume_ratio_10'] = vol_ratio_10
+    feat['volume_ratio_5_z20'] = (vol_ratio_5 - vol_ratio_5.rolling(20).mean()) / (vol_ratio_5.rolling(20).std() + 1e-9)
+
+    vwap = (close * volume).rolling(10).sum() / (volume.rolling(10).sum() + 1e-9)
+    feat['vwap_dev_10'] = (close - vwap) / (close + 1e-9)
+
+    # --- Session / Time ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+
+    # --- Mean reversion (short windows) ---
+    sma_5 = close.rolling(5).mean()
+    sma_10 = close.rolling(10).mean()
+    sma_20 = close.rolling(20).mean()
+    price_dev_5 = (close - sma_5) / (sma_5 + 1e-9)
+    price_dev_10 = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma5_dev'] = price_dev_5
+    feat['price_sma10_dev'] = price_dev_10
+    feat['price_sma5_dev_z20'] = (price_dev_5 - price_dev_5.rolling(20).mean()) / (price_dev_5.rolling(20).std() + 1e-9)
+    feat['sma_cross_5_20'] = (sma_5 - sma_20) / (sma_20 + 1e-9)
+
+    # --- Momentum × Volatility (multiplicative, short-term) ---
+    ret_3 = close.pct_change(3)
+    ret_5 = close.pct_change(5)
+    vol_10 = log_ret.rolling(10).std()
+    vol_20 = log_ret.rolling(20).std()
+
+    # Key multiplicative interaction
+    feat['momentum_vol_5x10'] = ret_5 * vol_10
+    feat['momentum_vol_3x20'] = ret_3 * vol_20
+
+    # Volatility-regime adjusted momentum
+    vol_regime = vol_10 / (vol_10.rolling(20).mean() + 1e-9)
+    feat['momentum_volregime'] = ret_3 * vol_regime
+
+    # --- High-low range (short windows) ---
+    hl_range = (high - low) / close
+    feat['hl_range'] = hl_range
+    feat['hl_range_z20'] = (hl_range - hl_range.rolling(20).mean()) / (hl_range.rolling(20).std() + 1e-9)
+    feat['candle_body_ratio'] = (close - df['open']).abs() / ((high - low) + 1e-9)
+
+    # --- Close position in range (short window) ---
+    low_10 = low.rolling(10).min()
+    high_10 = high.rolling(10).max()
+    feat['close_position_10'] = (close - low_10) / (high_10 - low_10 + 1e-9)
+
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+
+    # --- Return acceleration (short-term) ---
+    feat['ret_accel_3'] = close.pct_change(1).diff(3)
+    feat['ret_accel_5'] = close.pct_change(1).diff(5)
+
+    # --- Volume-price correlations (short windows) ---
+    feat['vol_ret_corr_10'] = log_ret.rolling(10).corr(volume.pct_change(1))
+    feat['vol_ret_corr_20'] = log_ret.rolling(20).corr(volume.pct_change(1))
+
+    # --- Efficiency ratio (short-term) ---
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    # --- Volatility trend (rate of change of volatility) ---
+    vol_5 = log_ret.rolling(5).std()
+    vol_15 = log_ret.rolling(15).std()
+    feat['vol_trend_5_15'] = (vol_5 - vol_15) / (vol_15 + 1e-9)
+
+    # --- Orderbook (if real data available) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row, tau=1):
+            try:
+                bids = np.array(row['bids'])
+                asks = np.array(row['asks'])
+                bid_vol = np.sum(bids[:, 1] * np.exp(-tau * np.arange(len(bids))))
+                ask_vol = np.sum(asks[:, 1] * np.exp(-tau * np.arange(len(asks))))
+                return (bid_vol - ask_vol) / (bid_vol + ask_vol + 1e-9)
+            except Exception:
+                return 0.0
+        feat['obi_tau1'] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat['obi_tau2'] = df.apply(lambda r: obi(r, 2), axis=1)
+
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_4h_ma'] = fr.rolling(16).mean()   # 16 × 15min = 4h
+        feat['funding_momentum'] = fr.diff(4)
+        # Z-score normalized funding
+        feat['funding_z20'] = (fr - fr.rolling(20).mean()) / (fr.rolling(20).std() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.dropna()
+    return feat
+>>>>>>> REPLACE
+</DIFF>

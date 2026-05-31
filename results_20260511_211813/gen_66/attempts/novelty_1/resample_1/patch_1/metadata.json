@@ -1,0 +1,14 @@
+{
+  "generation": 66,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "aggressive_prune_and_amplify",
+  "patch_description": "The model is collapsing toward the mean despite regularization reduction. The root cause is likely feature noise and dilution rather than hyperparameter settings. This edit:\n\n1. **Prunes redundant features**: Removes interaction terms, extreme RSI signals, and weak momentum divergence features that add noise without clear signal.\n\n2. **Keeps core signal features**: Retains momentum (ret_1, ret_3, ret_6, ret_12), volatility (vol_5, vol_20, vol_60), regime indicators (vol_regime, trend_regime), and price action (RSI, BB, MACD).\n\n3. **Amplifies signal through hyperparameters**: \n   - Increases learning_rate from 0.08 to 0.15 to allow more aggressive fitting\n   - Reduces max_depth from 6 to 5 to force cleaner splits on high-signal features\n   - Reduces early_stopping_rounds from 50 to 35 to prevent over-regularization\n   - Lowers reg_lambda from 0.02 to 0.01 further\n\n4. **Improves feature quality**: Removes ~20 weak/redundant features, keeping total count around 40-45 (down from 60+), which reduces curse of dimensionality and improves signal-to-noise ratio.\n\nExpected impact: Higher pred_std_ratio (target 0.08+), lower collapse penalty, and improved val_DA through clearer gradient signals.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:32:51.748342",
+  "llm_cost": 0.041997,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

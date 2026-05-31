@@ -1,0 +1,100 @@
+<NAME>
+regime_lagged_expansion
+</NAME>
+
+<DESCRIPTION>
+The current model is still collapsing toward the mean, which usually means the trees are too constrained and the feature space does not provide enough separable structure. I would address this in two complementary ways:
+
+1. Loosen the XGBoost bias slightly:
+   - reduce `min_child_weight` and regularization,
+   - increase tree count a bit,
+   - use a slightly higher learning rate with more expressive trees.
+   This should increase prediction variance without pushing into heavy overfit, since the current train/val gap is small.
+
+2. Add a small set of regime-conditioned lagged features:
+   - short-horizon return and volatility ratios,
+   - volatility-adjusted momentum,
+   - trend slope proxy,
+   - rolling correlation between volume and returns,
+   - candlestick body/wick structure,
+   - normalized mean-reversion distance and range position.
+   These are all past-only and help the model distinguish when momentum vs reversion is more likely. The feature count remains comfortably below the 80-feature limit.
+
+I am also slightly tightening the target clipping from 99 to 98.5 to reduce extreme-label noise while keeping enough signal.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 300,
+    "max_depth": 4,
+    "min_child_weight": 10,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "subsample": 0.6,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.01,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 30,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 650,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.02,
+    "reg_lambda": 0.25,
+    "subsample": 0.75,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.04,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 98.5       # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+
+    # --- Orderbook (if real data available) ---
+=======
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+
+    # --- Lagged / normalized structure features ---
+    ret_1 = close.pct_change(1)
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+    feat['ret_momentum_6_12'] = ret_6 - ret_12
+    feat['ret_z_20'] = (ret_1 - ret_1.rolling(20).mean()) / (ret_1.rolling(20).std() + 1e-9)
+    feat['ret_z_60'] = (ret_1 - ret_1.rolling(60).mean()) / (ret_1.rolling(60).std() + 1e-9)
+    feat['vol_ratio_5_20'] = feat['vol_5'] / (feat['vol_20'] + 1e-9)
+    feat['vol_ratio_20_60'] = feat['vol_20'] / (feat['vol_60'] + 1e-9)
+    feat['trend_slope_20'] = (close / close.shift(20) - 1) / 20.0
+    feat['trend_slope_60'] = (close / close.shift(60) - 1) / 60.0
+    feat['vol_ret_corr_20'] = log_ret.rolling(20).corr(volume.pct_change(1))
+    feat['vol_ret_corr_60'] = log_ret.rolling(60).corr(volume.pct_change(1))
+    feat['range_pos_20'] = (close - low.rolling(20).min()) / (high.rolling(20).max() - low.rolling(20).min() + 1e-9)
+    feat['body_ratio'] = (close - df['open']).abs() / ((high - low) + 1e-9)
+    feat['upper_wick_ratio'] = (high - df[['open', 'close']].max(axis=1)) / ((high - low) + 1e-9)
+    feat['lower_wick_ratio'] = (df[['open', 'close']].min(axis=1) - low) / ((high - low) + 1e-9)
+    feat['mean_rev_dev_20'] = (close - close.rolling(20).mean()) / (close.rolling(20).mean() + 1e-9)
+
+    # --- Orderbook (if real data available) ---
+>>>>>>> REPLACE
+</DIFF>

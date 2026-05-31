@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_agnostic_accelerator",
+  "patch_description": "The core issue identified in the feedback is \"slope collapse,\" where the model's predictive power evaporates during regime shifts (Test to Val). To combat this, I am implementing a \"Regime-Agnostic\" feature set. \n\nKey changes include:\n1. **Dynamic Scaling**: All return-based and distance-based features are normalized by both rolling volatility (z-scoring) and Kaufman's Efficiency Ratio. This transforms absolute moves into \"standardized effort\" units, which are more consistent across market regimes.\n2. **Acceleration Features**: Instead of just using momentum, I include the 'rate of change' for volatility, price position (Bollinger Band momentum), and market efficiency. This helps the model detect the *onset* of a regime shift rather than just reacting to it.\n3. **Volatility-of-Volatility**: Added a feature to measure the stability of the current volatility regime, allowing the model to discount signals during \"chaotic\" periods.\n4. **Regularization for Robustness**: Increased `min_child_weight` and `reg_lambda` to force the XGBoost model to find broader, more universal patterns that survive the transition from the training distribution to the validation distribution.\n5. **Shortened Lookbacks**: Heavily focused on 5-20 bar windows for features to ensure the model reacts quickly to the most relevant recent information while using a longer (100-bar) window for z-score normalization to define the local \"normal.\"",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:51:38.229540",
+  "llm_cost": 0.021116,
+  "llm_model": "gemini-3-flash-preview"
+}

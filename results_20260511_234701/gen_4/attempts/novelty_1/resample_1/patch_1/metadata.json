@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "short_regime_zscores",
+  "patch_description": "This edit targets the regime-shift issue directly by making the model rely more on short-horizon, normalized, regime-invariant signals and by simplifying XGBoost so it prefers robust patterns over regime-specific memorization.\n\nKey ideas:\n- Reduce tree depth and add regularization to prevent overfitting to the training regime.\n- Use shorter feature horizons (5-20 bars) and rolling z-scores so the same price/volume move is interpreted relative to recent local context.\n- Add trend-of-regime features such as changes in volatility and efficiency, which should generalize better across the test\u2192val shift.\n- Add one multiplicative interaction between short momentum and volatility regime, as suggested, but in a normalized form.\n\nThe feature count stays comfortably below 80, and all features use only past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:47:30.718121",
+  "llm_cost": 0.02238525,
+  "llm_model": "gpt-5.4-mini"
+}

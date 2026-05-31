@@ -1,0 +1,14 @@
+{
+  "generation": 71,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "aggressive_deregularization_with_signal_boost",
+  "patch_description": "**Key Analysis of Current Performance:**\n\nThe current program achieves val_DA=0.5226 and pred_std_ratio=0.0607, indicating prediction collapse toward the mean. All six previous iterations show the same symptom: the model is being over-regularized, suppressing prediction variance to only ~6% of actual variance. The collapse penalty consistently dominates the score (0.447\u20130.681 across iterations).\n\n**Root Cause:**\n- Regularization is too aggressive (reg_lambda, reg_alpha, min_child_weight all constraining tree growth)\n- Learning rate is too conservative (0.03) combined with high L2 regularization\n- Feature engineering is sophisticated but the model cannot express the learned patterns due to regularization choking the output\n\n**New Strategy:**\n1. **Dramatically reduce L2/L1 regularization** (reg_lambda: 0.35\u21920.02, reg_alpha: 0.02\u21920.0)\n2. **Increase tree depth and leaf expressivity** (max_depth: 5\u21927, min_child_weight: 3\u21921)\n3. **Boost learning rate** (0.03\u21920.08) to escape underfitting\n4. **Increase estimators moderately** (850\u21921100) to allow more complex ensemble patterns\n5. **Relax subsampling** (0.82\u21920.9) to give trees more data to learn from\n6. **Add signal-amplifying features** (momentum z-scores, volatility-adjusted returns, interaction compression)\n7. **Reduce target clipping** (CLIP_PERCENTILE: 98\u219295) to preserve signal amplitude in tails\n8. **Shorter early stopping window** (70\u219260) to prevent overfitting while allowing more iterations\n\nThese changes prioritize model expressivity and signal capture over regularization, which matches the clear feedback that pred_std_ratio is the dominant failure mode.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:33:58.787475",
+  "llm_cost": 0.047148,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

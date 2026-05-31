@@ -1,0 +1,125 @@
+<NAME>
+robust_regime_invariant_features
+</NAME>
+
+<DESCRIPTION>
+The current model suffers from a severe predictive slope collapse (0.0017 on validation), indicating that it learns patterns that do not generalize across market regimes. 
+
+To fix this, I am implementing the following changes:
+1. **Hyperparameter Robustness**: Reduced `max_depth` to 4 and increased `min_child_weight` to 5. This forces the model to learn from larger, more robust samples and prevents overfitting to regime-specific noise. I also added L1/L2 regularization (`reg_alpha`, `reg_lambda`) and slowed the `learning_rate` to 0.07.
+2. **Z-Score Normalization**: Added Z-scored volatility and volume features. Normalizing these by their own rolling mean/std makes them regime-invariant (e.g., a "high volume" period is defined relative to the recent past, not an absolute level).
+3. **Kaufman Efficiency Ratio**: Added Efficiency Ratio (ER) for multiple windows. ER measures the "trendiness" of price action (net move vs. total path), which is a highly robust indicator of market character across regimes.
+4. **Volatility-Adjusted Momentum**: Added a momentum feature scaled by its own realized volatility, ensuring the signal strength is consistent regardless of the volatility regime.
+5. **Target Clipping**: Adjusted `CLIP_PERCENTILE` to 97 to reduce the influence of extreme outliers that rarely repeat across different market periods.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 300,
+    "max_depth": 6,
+    "min_child_weight": 0.5,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 450,
+    "max_depth": 4,
+    "min_child_weight": 5,
+    "reg_alpha": 0.5,
+    "reg_lambda": 1.5,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.07,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 97          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.20     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Returns ---
+    for lag in [1, 2, 3, 6, 12, 24, 48]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 20]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+
+    # --- Z-score normalized returns (regime-invariant) ---
+=======
+    # --- Returns ---
+    for lag in [1, 2, 3, 6, 12, 24]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 20]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+    # Z-scored volatility (regime-invariant)
+    vol_20_tmp = log_ret.rolling(20).std()
+    feat['vol_zscore_20'] = (vol_20_tmp - vol_20_tmp.rolling(100).mean()) / (vol_20_tmp.rolling(100).std() + 1e-9)
+
+    # --- Z-score normalized returns (regime-invariant) ---
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Volume ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+=======
+    # --- Volume ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+    # Volume Z-score
+    v_mean_20 = volume.rolling(20).mean()
+    v_std_20 = volume.rolling(20).std()
+    feat['volume_zscore_20'] = (volume - v_mean_20) / (v_std_20 + 1e-9)
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Adaptive momentum: scale momentum by vol trend (capture regime-specific behavior)
+    feat['momentum_vol_trend'] = ret_3 * feat['vol_trend_ratio']
+=======
+    # Adaptive momentum: scale momentum by vol trend (capture regime-specific behavior)
+    feat['momentum_vol_trend'] = ret_3 * feat['vol_trend_ratio']
+    feat['mom_vol_adj_10'] = close.pct_change(10) / (log_ret.rolling(10).std() * np.sqrt(10) + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    # --- Z-score normalized price deviation (regime-invariant mean reversion) ---
+=======
+    # --- Trend Consistency and Efficiency ---
+    for w in [10, 20, 40]:
+        net_chg = (close - close.shift(w)).abs()
+        sum_chg = close.diff().abs().rolling(w).sum()
+        feat[f'er_{w}'] = net_chg / (sum_chg + 1e-9)
+
+    # --- Z-score normalized price deviation (regime-invariant mean reversion) ---
+>>>>>>> REPLACE
+</DIFF>

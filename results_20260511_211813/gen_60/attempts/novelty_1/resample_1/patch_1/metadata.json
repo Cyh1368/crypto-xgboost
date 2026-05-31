@@ -1,0 +1,14 @@
+{
+  "generation": 60,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "regime_momentum_boost",
+  "patch_description": "The current model is still collapsing toward the mean, which suggests the feature set is not giving XGBoost enough sharp, regime-dependent splits. I\u2019m proposing a targeted upgrade that does two things:\n\n1. **Increase expressivity slightly in the booster**\n   - Reduce `reg_lambda` and `gamma` a bit, keep `min_child_weight` low, and add a modest increase in trees.\n   - This should help the model use the already-strong features more aggressively without blowing up overfit too much.\n\n2. **Add a compact set of higher-signal regime/momentum features**\n   - Focus on normalized momentum, short-term trend slope, volatility compression, rolling skew, and a few interactions that XGBoost can split on cleanly.\n   - These are past-only features and should help distinguish when momentum should be trusted vs faded.\n   - Keep feature count well below the 80-feature limit.\n\n3. **Reduce target clipping slightly less aggressively**\n   - The current 95th percentile clip may be suppressing useful directional signal.\n   - Moving back to a more moderate clip should improve prediction variance and reduce collapse penalty.\n\nOverall, this aims to raise `pred_std_ratio` while preserving or improving validation DA.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:32:01.943276",
+  "llm_cost": 0.027082500000000002,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "none",
+  "patch_description": "This crossover combines the best elements from both programs to address the primary problem: val_slope collapse from 0.024 to 0.004.\n\nKey improvements:\n1. **Shorter lookback windows**: Reduced from 60+ bars to 5-20 bars for most features, following the first program's approach which showed better generalization (val_DA=0.53 vs 0.52)\n2. **Enhanced z-score normalization**: Applied rolling z-scores to more features (returns, volatility, volume) to make them regime-invariant\n3. **Reduced regularization**: Decreased reg_alpha from 0.5 to 0.3 and reg_lambda from 3.0 to 2.0 to allow more model expressivity while maintaining some stability\n4. **Increased min_child_weight**: From 5 to 7 to force learning only high-sample robust patterns\n5. **Removed redundant long-horizon features**: Eliminated 60+ bar lookbacks that were causing regime-specific overfitting\n6. **Kept best interaction terms**: Retained momentum\u00d7volatility and volume\u00d7price interactions that showed predictive power\n7. **Streamlined feature set**: Reduced from 80+ to ~65 features by removing duplicates and low-signal features\n\nThe strategy focuses on features that measure RATE OF CHANGE (vol_trend, autocorr_trend, efficiency) rather than absolute levels, which should generalize better across regime shifts.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:16:35.286322",
+  "llm_cost": 0.106173,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

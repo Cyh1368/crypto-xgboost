@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_expansion",
+  "patch_description": "The current model is still too conservative: pred_std_ratio is very low, which means the booster is collapsing toward the mean. To improve directional accuracy, I\u2019m making two targeted changes:\n\n1. Hyperparameters: increase tree capacity a bit, reduce regularization, and add column/bagging randomness so XGBoost can fit more directional structure without becoming unstable. This should raise prediction dispersion while keeping overfit controlled by using moderately deep trees and a slightly lower learning rate.\n\n2. Features: add regime-aware and normalized momentum features that are still causal and cheap to compute:\n   - short-horizon return z-scores to detect local bursts vs. drift,\n   - multi-window momentum direction features,\n   - trend strength and volatility regime from shorter windows,\n   - wick/body imbalance to capture candle structure,\n   - rolling correlation between returns and volume change as a simple flow proxy.\n   \nThese features are designed to help the model separate trending from mean-reverting periods, which is often critical for perp futures DA. The total feature count remains comfortably below the limit.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:23:39.788979",
+  "llm_cost": 0.0188415,
+  "llm_model": "gpt-5.4-mini"
+}

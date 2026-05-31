@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reduce_regularization_increase_expressivity",
+  "patch_description": "The model predictions have collapsed toward the mean, indicated by a very low pred_std_ratio (0.0091), and the warning suggests increasing model expressivity or removing regularization. The current XGB_PARAMS have a high min_child_weight=10 and reg_alpha=0.1 which strongly regularize the model, likely causing underfitting and collapsed predictions. To fix this, I reduce min_child_weight to 1, reduce reg_alpha to 0, and slightly increase learning_rate to 0.05 to allow the model to learn stronger signals. I keep max_depth=4 and n_estimators=300 for moderate complexity and avoid overfitting. These changes should increase model expressivity and prevent prediction collapse while maintaining reasonable training time and feature count constraints. No changes are made to build_features since features are reasonable and no leakage is detected.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T19:59:37.467166",
+  "llm_cost": 0.0040652,
+  "llm_model": "gpt-4.1-mini"
+}

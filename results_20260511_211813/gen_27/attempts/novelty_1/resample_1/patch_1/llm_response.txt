@@ -1,0 +1,194 @@
+<NAME>
+expressive_regime_boost
+</NAME>
+
+<DESCRIPTION>
+The previous model suffered from "prediction collapse," meaning it was too conservative and its predicted standard deviation was far below the actual market standard deviation. To fix this, I am:
+1. Increasing model expressivity by increasing `max_depth` (8) and `learning_rate` (0.08), and significantly lowering the `reg_lambda` regularization (0.01).
+2. Implementing a strict "shift-by-1" feature engineering pipeline to ensure 100% compliance with the "use only past data" constraint, which also helps stabilize directional signals.
+3. Adding a broader set of features including Parkinson volatility (high-low range measure), market efficiency ratios, and volume z-scores to provide clearer signal-to-noise.
+4. Setting `CLIP_PERCENTILE` to 99.0 to allow the model to learn from a wider distribution of returns, reducing the incentive for the model to "hide" at the mean.
+</DESCRIPTION>
+
+<CODE>
+```python
+# evolve/expressive_regime_boost.py
+
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 8,
+    "min_child_weight": 1,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.01,
+    "gamma": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.6,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 99.0
+MIN_PRED_STD_RATIO = 0.15
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV. 
+    Strict adherence to 'past data only' using a 1-bar shift of the entire source.
+    """
+    # Shift entire dataframe by 1 to ensure that at index 't' we only 
+    # use information available as of bar 't-1'.
+    dfp = df.shift(1)
+    
+    feat = pd.DataFrame(index=df.index)
+    
+    close = dfp['close'].astype(float)
+    high = dfp['high'].astype(float)
+    low = dfp['low'].astype(float)
+    volume = dfp['volume'].astype(float)
+    
+    eps = 1e-9
+
+    # --- Momentum (Pct Change) ---
+    for lag in [1, 2, 3, 5, 8, 13, 21, 34, 55]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1).clip(lower=eps))
+    for w in [10, 30, 60]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+    
+    # Parkinson Volatility (more sensitive to intraday range)
+    feat['parkinson_vol'] = np.sqrt(
+        (np.log(high / low.clip(lower=eps))**2).rolling(20).mean() / (4 * np.log(2))
+    )
+
+    # --- Mean Reversion / Relative Distance ---
+    for w in [20, 50, 100]:
+        ma = close.rolling(w).mean()
+        feat[f'dist_ma_{w}'] = (close - ma) / (ma + eps)
+    
+    # RSI
+    for w in [9, 14, 25]:
+        delta = close.diff()
+        up = delta.clip(lower=0).rolling(w).mean()
+        dn = (-delta.clip(upper=0)).rolling(w).mean()
+        rs = up / (dn + eps)
+        feat[f'rsi_{w}'] = 100 - (100 / (1 + rs))
+
+    # --- Volume Features ---
+    for w in [10, 30]:
+        v_ma = volume.rolling(w).mean()
+        v_std = volume.rolling(w).std()
+        feat[f'vol_z_{w}'] = (volume - v_ma) / (v_std + eps)
+        feat[f'vol_ratio_{w}'] = volume / (v_ma + eps)
+
+    # --- Candle Structure ---
+    c_range = (high - low).clip(lower=eps)
+    feat['upper_wick'] = (high - np.maximum(close, dfp['open'])) / c_range
+    feat['lower_wick'] = (np.minimum(close, dfp['open']) - low) / c_range
+    feat['body_pct'] = (close - dfp['open']).abs() / c_range
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (c_range.rolling(10).sum() + eps)
+
+    # --- Regime Features ---
+    feat['vol_regime'] = feat['vol_10'] / (feat['vol_60'] + eps)
+    feat['trend_strength'] = feat['ret_13'].abs() / (feat['vol_30'] + eps)
+    
+    # Interaction
+    feat['mom_vol_inter'] = feat['ret_5'] * feat['vol_10']
+
+    # --- Funding (if available) ---
+    if 'funding_rate' in dfp.columns:
+        fr = dfp['funding_rate'].astype(float)
+        feat['funding_val'] = fr
+        feat['funding_ma_8h'] = fr.rolling(32).mean()
+        feat['funding_momentum'] = fr - fr.shift(4)
+
+    # --- Orderbook (if available) ---
+    if 'bids' in dfp.columns and 'asks' in dfp.columns:
+        def calc_obi(r):
+            try:
+                b = np.array(r['bids'])
+                a = np.array(r['asks'])
+                b_sum = np.sum(b[:, 1])
+                a_sum = np.sum(a[:, 1])
+                return (b_sum - a_sum) / (b_sum + a_sum + eps)
+            except: return 0.0
+        feat['obi_raw'] = dfp.apply(calc_obi, axis=1)
+
+    # --- Session Timing ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # Cleanup
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+    feat = feat.fillna(method='ffill').dropna()
+
+    # Cap at 80 features to maintain efficiency and reduce noise
+    if feat.shape[1] > 80:
+        feat = feat.iloc[:, :80]
+
+    return feat
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# DO NOT MODIFY BELOW THIS LINE
+# run_experiment is the fixed interface called by evaluate.py
+
+def run_experiment(
+    X_train, y_train,
+    X_test,  y_test,
+    X_val,   y_val,
+):
+    """
+    Train an XGBoost model and return raw predictions for all three splits.
+    Called by evaluate.py via shinka.core.run_shinka_eval.
+    """
+    # Clip targets
+    clip_val = np.percentile(np.abs(y_train), CLIP_PERCENTILE)
+    y_train_c = y_train.clip(-clip_val, clip_val)
+
+    # Scale
+    scaler = StandardScaler()
+    X_tr = scaler.fit_transform(X_train)
+    X_te = scaler.transform(X_test)
+    X_va = scaler.transform(X_val)
+
+    params = {k: v for k, v in XGB_PARAMS.items()
+              if k != 'early_stopping_rounds'}
+    early = XGB_PARAMS.get('early_stopping_rounds', 30)
+
+    model = xgb.XGBRegressor(**params, early_stopping_rounds=early)
+    model.fit(
+        X_tr, y_train_c,
+        eval_set=[(X_te, y_test)],
+        verbose=False,
+    )
+
+    return {
+        'train': {'pred': model.predict(X_tr), 'actual': y_train.values},
+        'test':  {'pred': model.predict(X_te), 'actual': y_test.values},
+        'val':   {'pred': model.predict(X_va), 'actual': y_val.values},
+        'model': model,
+    }
+```
+</CODE>

@@ -1,0 +1,152 @@
+<NAME>
+increase_expressivity_and_vol_features
+</NAME>
+
+<DESCRIPTION>
+The model currently suffers from a "collapse toward the mean" (pred_std_ratio ~0.06), which limits its performance despite decent directional accuracy. To address this, I am increasing model expressivity by:
+1. Tuning hyperparameters: Higher `max_depth`, lower `min_child_weight`, and reduced `reg_lambda` to allow the model to capture more granular signals.
+2. Adjusting `CLIP_PERCENTILE` to 97 to slightly reduce the influence of extreme bps outliers which can dampen the gradient for typical bars.
+3. Adding "Amihud Illiquidity" (price change per volume) and "Volatility of Volatility" features to help the model distinguish between noisy churn and high-conviction moves.
+4. Adding price-distance features normalized by ATR to better capture overextended regimes.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 850,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.02,
+    "reg_lambda": 0.35,
+    "subsample": 0.82,
+    "colsample_bytree": 0.82,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 70,
+}
+
+CLIP_PERCENTILE = 98
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.04,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 97
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    r1 = close.pct_change(1)
+    r3 = close.pct_change(3)
+    r6 = close.pct_change(6)
+    r12 = close.pct_change(12)
+    r24 = close.pct_change(24)
+
+    feat["ret_accel_3"] = r1 - r3 / 3.0
+=======
+    r1 = close.pct_change(1)
+    r3 = close.pct_change(3)
+    r6 = close.pct_change(6)
+    r12 = close.pct_change(12)
+    r24 = close.pct_change(24)
+
+    feat["ret_std_20"] = r1.rolling(20).std()
+    feat["ret_accel_3"] = r1 - r3 / 3.0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Volatility regime, compression, and expansion
+    rv_8 = log_ret.rolling(8).std()
+    rv_24 = log_ret.rolling(24).std()
+    rv_96 = log_ret.rolling(96).std()
+    rv_192 = log_ret.rolling(192).std()
+
+    feat["rv_8"] = rv_8
+    feat["rv_24"] = rv_24
+    feat["rv_96"] = rv_96
+    feat["vol_ratio_8_96"] = rv_8 / (rv_96 + 1e-9)
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+
+    # A smooth compression/expansion state
+    feat["vol_state"] = np.tanh((feat["vol_ratio_8_96"] - 1.0) * 1.5)
+=======
+    # ── Volatility regime, compression, and expansion
+    rv_8 = log_ret.rolling(8).std()
+    rv_24 = log_ret.rolling(24).std()
+    rv_96 = log_ret.rolling(96).std()
+    rv_192 = log_ret.rolling(192).std()
+
+    feat["rv_8"] = rv_8
+    feat["rv_24"] = rv_24
+    feat["rv_96"] = rv_96
+    feat["vol_ratio_8_96"] = rv_8 / (rv_96 + 1e-9)
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+    feat["vol_of_vol_24"] = rv_8.rolling(24).std() / (rv_24 + 1e-9)
+
+    # A smooth compression/expansion state
+    feat["vol_state"] = np.tanh((feat["vol_ratio_8_96"] - 1.0) * 1.5)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Volume state
+    vol_mean_20 = volume.rolling(20).mean()
+    vol_mean_60 = volume.rolling(60).mean()
+    vol_std_20 = volume.rolling(20).std()
+
+    feat["volume_ratio_5"] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat["volume_ratio_20"] = volume / (vol_mean_20 + 1e-9)
+    feat["volume_ratio_60"] = volume / (vol_mean_60 + 1e-9)
+    feat["volume_z_20"] = (volume - vol_mean_20) / (vol_std_20 + 1e-9)
+    feat["volume_chg_1"] = volume.pct_change(1)
+    feat["volume_chg_4"] = volume.pct_change(4)
+=======
+    # ── Volume state
+    vol_mean_20 = volume.rolling(20).mean()
+    vol_mean_60 = volume.rolling(60).mean()
+    vol_std_20 = volume.rolling(20).std()
+
+    feat["volume_ratio_5"] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat["volume_ratio_20"] = volume / (vol_mean_20 + 1e-9)
+    feat["volume_ratio_60"] = volume / (vol_mean_60 + 1e-9)
+    feat["volume_z_20"] = (volume - vol_mean_20) / (vol_std_20 + 1e-9)
+    feat["volume_chg_1"] = volume.pct_change(1)
+    feat["volume_chg_4"] = volume.pct_change(4)
+    feat["amihud_20"] = (r1.abs() / (feat["volume_ratio_20"] + 1e-9)).rolling(20).mean()
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Cross-regime interactions: only a few, but structurally different
+    feat["trend_x_vol"] = feat["trend_ratio"] * feat["vol_state"]
+    feat["momentum_x_vol"] = (feat["ret_1"] if "ret_1" in feat.columns else r1) * feat["vol_state"]
+    feat["range_x_volume"] = feat["range_norm"] * feat["volume_ratio_20"]
+    feat["rsi_x_trend"] = (feat["rsi_14"] / 100.0) * feat["trend_ratio"]
+    feat["wick_imbalance"] = feat["lower_wick"] - feat["upper_wick"]
+    feat["breakout_pressure"] = feat["range_pos_20"] * (feat["volume_ratio_5"] - 1.0)
+=======
+    # ── Cross-regime interactions: only a few, but structurally different
+    feat["trend_x_vol"] = feat["trend_ratio"] * feat["vol_state"]
+    feat["momentum_x_vol"] = (feat["ret_1"] if "ret_1" in feat.columns else r1) * feat["vol_state"]
+    feat["range_x_volume"] = feat["range_norm"] * feat["volume_ratio_20"]
+    feat["rsi_x_trend"] = (feat["rsi_14"] / 100.0) * feat["trend_ratio"]
+    feat["wick_imbalance"] = feat["lower_wick"] - feat["upper_wick"]
+    feat["breakout_pressure"] = feat["range_pos_20"] * (feat["volume_ratio_5"] - 1.0)
+    feat["vol_adj_mom_24"] = r24 / (rv_24 + 1e-9)
+>>>>>>> REPLACE
+
+</DIFF>

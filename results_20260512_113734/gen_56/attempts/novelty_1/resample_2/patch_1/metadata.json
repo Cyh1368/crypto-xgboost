@@ -1,0 +1,14 @@
+{
+  "generation": 56,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "extend_multiscale_zscore_and_add_regime_shift_indicators",
+  "patch_description": "The current program achieves a strong 96.0% generalization ratio (val_r/test_r), indicating that the rolling z-score normalization at [10, 20, 40] windows is working well for regime invariance. However, the 19.9% slope ratio (val_slope/train_slope) shows that the model still struggles to transfer predictive patterns to the validation period.\n\nThe key insight is that while z-scores make features regime-invariant at individual timescales, we need to explicitly capture when SHORT-TERM behavior diverges from LONG-TERM behavior - these divergences signal regime transitions that are predictive across periods.\n\nThis edit:\n1. Extends the multi-scale z-score normalization to include 60 and 80-bar windows for enhanced long-term regime awareness\n2. Creates explicit regime shift indicators: `regime_shift_short_long = ret_z_20 - ret_z_60` and `regime_shift_medium_long = ret_z_40 - ret_z_80`\n3. Removes the least important time-of-day features (`hour_sin`, `hour_cos`, `dow_sin`, `dow_cos`) to stay within the 80-feature limit while adding more predictive regime indicators\n\nThe regime shift indicators measure when normalized short/medium-term momentum deviates from normalized long-term momentum, which is a transferable signal that works across different market regimes. This should improve val_slope while maintaining the strong generalization ratio.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:25:37.828643",
+  "llm_cost": 0.10941000000000001,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

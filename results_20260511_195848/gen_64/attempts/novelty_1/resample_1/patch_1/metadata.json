@@ -1,0 +1,14 @@
+{
+  "generation": 64,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse_remove_shift_and_add_features",
+  "patch_description": "The main issue causing prediction collapse (very low pred_std_ratio ~0.01) is overly cautious feature shifting, which removes too much useful signal, and not enough model expressivity or informative features to allow non-trivial predictions. This causes the model to regress heavily to the mean.\n\nThe program attempts to avoid lookahead by shifting nearly all features by 1 but applied shifts inside rolling calculations leading to effectively stale info and low signal variance.\n\nFixes applied:\n- Remove unnecessary shifting inside rolling computations where it causes data to lag excessively.\n- Apply only one final shift for all features after computation where needed to ensure no lookahead.\n- Add a few more expressive features (momentum and volume related) without shift loss.\n- Maintain past-only data usage but avoid compounding shifts that reduce signal.\n- Keep model hyperparameters as is to allow enough expressivity (max_depth=5, learning_rate=0.05).\n- These changes restore signal diversity and avoid mean collapse, improving pred_std_ratio without inducing overfit.\n\nThis fix addresses the root cause shown by warnings and low pred_std_ratio through better feature construction.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:08:21.387891",
+  "llm_cost": 0.0059284,
+  "llm_model": "gpt-4.1-mini"
+}

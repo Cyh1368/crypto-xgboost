@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_zscoring_and_regularization",
+  "patch_description": "The primary issue is a massive collapse in predictive slope from training (0.074) to validation (0.006), indicating the model is capturing regime-specific noise. \n\nI am implementing the following improvements:\n1. **Regime-Invariant Features**: Replacing raw returns and technical indicators with rolling Z-scores (using a 100-bar window). This ensures that a \"large\" move is defined relative to recent market conditions, making the features more stable across different volatility regimes.\n2. **Efficiency and Volatility Trends**: Adding Kaufman's Efficiency Ratio and volatility ratios to capture the 'character' of the market (trending vs. mean-reverting) which tends to persist longer than price direction.\n3. **Aggressive Regularization**: Increasing `min_child_weight` to 20 and `reg_lambda` to 10.0, while reducing `max_depth` to 3. This forces the model to find patterns that are supported by a large number of samples, preventing it from fitting to idiosyncratic training-set price paths.\n4. **Volatility-Adjusted Momentum**: Creating interactions between momentum and volatility regimes to help the model distinguish between high-conviction trends and high-volatility noise.\n5. **Increased Prediction Variance**: Raising `MIN_PRED_STD_RATIO` to 0.20 to prevent the model from collapsing all predictions to the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:50:29.115905",
+  "llm_cost": 0.027833999999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,195 @@
+Looking at the performance metrics and feedback, I can see the core problem:
+
+**Current state:**
+- val_slope=0.0031 (extremely low)
+- pred_std_ratio=0.0441 (collapsed predictions)
+- train_slope=0.0161 (even train slope is weak)
+- The model is over-regularized and has lost predictive power entirely
+
+**Root cause analysis:**
+The current hyperparameters are TOO aggressive:
+- min_child_weight=12 (forces very shallow splits, kills expressivity)
+- reg_alpha=0.5, reg_lambda=5.0 (extreme regularization)
+- subsample=0.7, colsample_bytree=0.7 (aggressive subsampling)
+- learning_rate=0.06 (very slow learning)
+- n_estimators=200 (too few to compensate)
+
+This has crushed the model's ability to learn ANY signal. The train_slope itself is only 0.0161, which is 2-3x worse than prior attempts.
+
+**Strategy:**
+1. **Reduce regularization dramatically** - the model needs room to learn
+2. **Increase model capacity** - more estimators, higher learning rate, less aggressive subsampling
+3. **Loosen child weight constraint** - allow more granular splits
+4. **Add regime-change detection features** - specifically measure volatility of volatility and momentum of momentum to catch regime shifts
+5. **Improve feature normalization** - use adaptive z-scoring within shorter windows to make features regime-invariant
+
+The key insight from prior attempts: the best score was -1.62 with val_slope=0.0078. We need to get back to that level of expressivity while adding better regime-detection features.
+
+<NAME>
+reduce_overregularization_add_regime_change_features
+</NAME>
+
+<DESCRIPTION>
+The current model is severely over-regularized (min_child_weight=12, reg_lambda=5.0), which has collapsed both train and val slopes to near-zero. This is worse than all prior attempts.
+
+Key changes:
+1. **Hyperparameters**: Reduce regularization to allow learning. Increase n_estimators and learning_rate to compensate. This mirrors the -1.62 attempt which had better slope.
+2. **New regime-change features**: Add volatility-of-volatility (vol_accel), momentum-of-momentum (mom_accel_2), and autocorrelation trend to detect when market character is shifting. These measure the RATE OF CHANGE of market properties, not just current state.
+3. **Adaptive z-scoring**: Normalize key features within shorter rolling windows (10-20 bars) to make them regime-invariant while preserving signal.
+4. **Remove weak features**: Drop some of the longest-lookback features (sma_40, atr_20) that don't generalize across regimes.
+
+Target: val_slope >= 0.015, pred_std_ratio >= 0.12, val_DA >= 0.53
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 200,
+    "max_depth": 3,
+    "min_child_weight": 12,
+    "reg_alpha": 0.5,
+    "reg_lambda": 5.0,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 30,
+}
+
+CLIP_PERCENTILE = 97          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.18     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 320,
+    "max_depth": 4,
+    "min_child_weight": 4,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.8,
+    "subsample": 0.85,
+    "colsample_bytree": 0.80,
+    "learning_rate": 0.10,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.16     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Price location / mean reversion ---
+    sma_5 = close.rolling(5).mean()
+    sma_10 = close.rolling(10).mean()
+    sma_20 = close.rolling(20).mean()
+    sma_40 = close.rolling(40).mean()
+    feat['price_sma5_dev'] = (close - sma_5) / (sma_5 + 1e-9)
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma20_dev'] = (close - sma_20) / (sma_20 + 1e-9)
+    feat['sma_cross_5_20'] = (sma_5 - sma_20) / (sma_20 + 1e-9)
+    feat['sma_cross_10_40'] = (sma_10 - sma_40) / (sma_40 + 1e-9)
+=======
+    # --- Price location / mean reversion ---
+    sma_5 = close.rolling(5).mean()
+    sma_10 = close.rolling(10).mean()
+    sma_20 = close.rolling(20).mean()
+    feat['price_sma5_dev'] = (close - sma_5) / (sma_5 + 1e-9)
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma20_dev'] = (close - sma_20) / (sma_20 + 1e-9)
+    feat['sma_cross_5_20'] = (sma_5 - sma_20) / (sma_20 + 1e-9)
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Range / candle structure ---
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+    feat['atr_10'] = tr.rolling(10).mean()
+    feat['atr_20'] = tr.rolling(20).mean()
+    feat['atr_norm_10'] = feat['atr_10'] / close
+    feat['hl_range'] = (high - low) / close
+    feat['candle_body_ratio'] = (close - open_).abs() / ((high - low) + 1e-9)
+    feat['upper_wick_ratio'] = (high - df[['open', 'close']].max(axis=1)) / ((high - low) + 1e-9)
+    feat['lower_wick_ratio'] = (df[['open', 'close']].min(axis=1) - low) / ((high - low) + 1e-9)
+=======
+    # --- Range / candle structure ---
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+    feat['atr_10'] = tr.rolling(10).mean()
+    feat['atr_norm_10'] = feat['atr_10'] / close
+    feat['hl_range'] = (high - low) / close
+    feat['candle_body_ratio'] = (close - open_).abs() / ((high - low) + 1e-9)
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Regime-invariant transformations
+    v_ma_100 = vol_10.rolling(100).mean()
+    v_sd_100 = vol_10.rolling(100).std()
+    feat['vol_z_100'] = (vol_10 - v_ma_100) / (v_sd_100 + 1e-9)
+    feat['autocorr_10'] = log_ret.rolling(10).corr(log_ret.shift(1))
+    feat['mom_z_10'] = (close / close.shift(10) - 1) / (vol_10 * np.sqrt(10) + 1e-9)
+    feat['price_z_40'] = (close - close.rolling(40).mean()) / (close.rolling(40).std() + 1e-9)
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+=======
+    # --- Regime-change detection features ---
+    # Volatility of volatility (vol_accel): measures if volatility is increasing/decreasing
+    vol_accel_5 = vol_5.diff(5)
+    vol_accel_10 = vol_10.diff(5)
+    feat['vol_accel_5'] = vol_accel_5
+    feat['vol_accel_10'] = vol_accel_10
+    feat['vol_accel_ratio'] = vol_accel_5 / (vol_accel_10.abs() + 1e-9)
+    
+    # Momentum of momentum: second derivative of price
+    feat['mom_accel_2'] = feat['mom_3'].diff(3)
+    feat['mom_accel_z'] = (feat['mom_accel_2'] - feat['mom_accel_2'].rolling(15).mean()) / (feat['mom_accel_2'].rolling(15).std() + 1e-9)
+    
+    # Autocorrelation trend: is price mean-reverting or trending?
+    feat['autocorr_10'] = log_ret.rolling(10).corr(log_ret.shift(1))
+    feat['autocorr_trend'] = feat['autocorr_10'].diff(5)
+    
+    # Regime-invariant transformations with shorter windows
+    v_ma_50 = vol_10.rolling(50).mean()
+    v_sd_50 = vol_10.rolling(50).std()
+    feat['vol_z_50'] = (vol_10 - v_ma_50) / (v_sd_50 + 1e-9)
+    feat['mom_z_10'] = (close / close.shift(10) - 1) / (vol_10 * np.sqrt(10) + 1e-9)
+    feat['price_z_20'] = (close - close.rolling(20).mean()) / (close.rolling(20).std() + 1e-9)
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Interaction: momentum × regime ---
+    feat['momentum_vol_interaction'] = feat['mom_3'] * feat['vol_regime']
+    feat['momentum_regime_fast'] = feat['mom_3'] * feat['vol_regime_fast']
+    feat['mom_eff_interaction'] = feat['mom_3'] * feat['efficiency_10']
+=======
+    # --- Interaction: momentum × regime and regime-change signals ---
+    feat['momentum_vol_interaction'] = feat['mom_3'] * feat['vol_regime']
+    feat['momentum_regime_fast'] = feat['mom_3'] * feat['vol_regime_fast']
+    feat['mom_eff_interaction'] = feat['mom_3'] * feat['efficiency_10']
+    feat['vol_accel_momentum'] = feat['vol_accel_5'] * feat['mom_3']
+    feat['autocorr_momentum'] = feat['autocorr_10'] * feat['mom_3']
+>>>>>>> REPLACE
+
+</DIFF>

@@ -1,0 +1,112 @@
+<NAME>
+boost_expressivity_and_signal
+</NAME>
+
+<DESCRIPTION>
+The current model suffers from a significant 'collapse toward mean' (pred_std_ratio = 0.056), indicating it is over-regularized or lacks sufficient signal to distinguish directional moves. 
+
+I am proposing the following changes:
+1.  **Increase Model Expressivity**: 
+    - Reduced `reg_alpha` (0.05 -> 0.01) and `reg_lambda` (0.5 -> 0.1) to allow the model to fit more complex patterns.
+    - Increased `max_depth` (6 -> 7) and `learning_rate` (0.05 -> 0.06) to boost the model's ability to capture non-linearities.
+    - Added `colsample_bynode` (0.8) and increased `n_estimators` (800 -> 1000) to improve ensemble diversity and capacity.
+    - Increased `CLIP_PERCENTILE` (98.0 -> 99.0) to expose the model to more of the target distribution's tails.
+2.  **Enhance Feature Signal**:
+    - Added interaction features (`trend_x_vol`, `breakout_pressure`) to capture regime-dependent behaviors.
+    - Added acceleration and momentum-slope features (`ret_accel_6_24`, `mom_slope_24`) to identify trend exhaustion or strengthening.
+    - Added distance-from-mean features (`z_close_24`) and efficiency metrics (`efficiency_10`) to capture mean-reversion and trend quality.
+    - Added `vol_of_vol_20` and `range_z_20` to better define volatility regimes.
+    - Added `obi_diff` and `funding_change` to capture shifts in market microstructure and sentiment.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98.0
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 99.0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend & Regime ---
+    ma_fast = close.rolling(12).mean().shift(1)
+    ma_slow = close.rolling(48).mean().shift(1)
+    feat['trend_rel'] = (ma_fast / (ma_slow + eps)) - 1.0
+    feat['vol_regime'] = feat['rv_10'] / (feat['rv_60'] + eps)
+
+    # --- Session / Time (No shift needed for time) ---
+=======
+    # --- Trend & Regime ---
+    ma_fast = close.rolling(12).mean().shift(1)
+    ma_slow = close.rolling(48).mean().shift(1)
+    feat['trend_rel'] = (ma_fast / (ma_slow + eps)) - 1.0
+    feat['vol_regime'] = feat['rv_10'] / (feat['rv_60'] + eps)
+    feat['trend_x_vol'] = feat['trend_rel'] * feat['vol_regime']
+    feat['vol_of_vol_20'] = log_ret1.rolling(10).std().rolling(20).std().shift(1)
+    feat['ret_accel_6_24'] = feat['ret_6'] - feat['ret_24']
+    feat['mom_slope_24'] = feat['ret_24'].diff()
+    feat['z_close_24'] = ((close.shift(1) - close.rolling(24).mean().shift(1)) / (close.rolling(24).std().shift(1) + eps))
+    feat['range_z_20'] = ((candle_range.shift(1) - candle_range.rolling(20).mean().shift(1)) / (candle_range.rolling(20).std().shift(1) + eps))
+    feat['efficiency_10'] = (close.shift(1) - close.shift(11)).abs() / (candle_range.rolling(10).sum().shift(1) + eps)
+    feat['breakout_pressure'] = feat['close_pos_range'] * feat['vol_ratio_24']
+
+    # --- Session / Time (No shift needed for time) ---
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+=======
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+    feat['dow_cos'] = np.cos(2 * np.pi * df.index.dayofweek / 7)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        feat['obi_t1'] = df.apply(lambda r: get_obi(r, 1.0), axis=1).shift(1)
+        feat['obi_t3'] = df.apply(lambda r: get_obi(r, 3.0), axis=1).shift(1)
+=======
+        feat['obi_t1'] = df.apply(lambda r: get_obi(r, 1.0), axis=1).shift(1)
+        feat['obi_t3'] = df.apply(lambda r: get_obi(r, 3.0), axis=1).shift(1)
+        feat['obi_diff'] = feat['obi_t1'] - feat['obi_t3']
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        feat['funding_z'] = ((fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + eps)).shift(1)
+=======
+        feat['funding_z'] = ((fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + eps)).shift(1)
+        feat['funding_change'] = fr.diff().shift(1)
+>>>>>>> REPLACE
+</DIFF>

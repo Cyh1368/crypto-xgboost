@@ -1,0 +1,14 @@
+{
+  "generation": 45,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "aggressive_capacity_signal_boost",
+  "patch_description": "This edit aggressively reduces regularization and increases model capacity to combat the collapse penalty. The strategy:\n\n1. **Hyperparameters**: Reduce reg_lambda from 0.5 to 0.15, increase max_depth from 5 to 6, boost learning_rate from 0.05 to 0.08, increase n_estimators to 1200, and reduce min_child_weight to 1 to allow more expressive trees.\n\n2. **Features**: Remove low-signal features (MACD, some redundant momentum variants) and add high-signal microstructure features:\n   - Candle body direction and wick imbalance (strong microstructure signals)\n   - Multi-scale volatility ratios (vol_5/vol_20, vol_20/vol_60) for regime detection\n   - Return quantile position (rank-based, scale-invariant)\n   - Direction persistence (sign consistency over windows)\n   - Volatility-adjusted returns (return / vol normalization)\n   - Simpler, more direct interactions (vol_state \u00d7 momentum, range_pos \u00d7 volume)\n\n3. **Target clipping**: Increase CLIP_PERCENTILE from 98 to 96 to allow the model to learn from more extreme moves without clipping too aggressively.\n\nThe goal is to increase pred_std_ratio from 0.04 to 0.08+ while maintaining val_DA \u2265 0.51.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:28:01.746794",
+  "llm_cost": 0.052439,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

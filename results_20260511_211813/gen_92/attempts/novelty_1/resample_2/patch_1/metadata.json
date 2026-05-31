@@ -1,0 +1,14 @@
+{
+  "generation": 92,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "increase_expressivity_and_prune",
+  "patch_description": "The model is currently suffering from prediction collapse (pred_std_ratio = 0.06), indicating it is too conservative. To address this, I am increasing model expressivity by raising the learning rate to 0.1, increasing max_depth to 6, and significantly reducing reg_lambda to 0.01. \n\nOn the feature engineering side, I am pruning several redundant or less impactful features (ret_24, vol_192, rsi_28, volume_chg_8, range_pos_60, range_width_60, momentum_slow, obi_lag1) to stay within the 80-feature limit. I am introducing three high-signal features:\n1. Efficiency Ratio (Kaufman's ER): To distinguish between trending and noisy market states.\n2. Range Relative: To identify volatility breakouts relative to recent history.\n3. Volume Price Impulse: To capture momentum confirmed by volume surges.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:47:50.426374",
+  "llm_cost": 0.015789499999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

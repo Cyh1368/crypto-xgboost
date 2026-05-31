@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover keeps the stronger regime-aware ideas from the better-performing scripts, but shifts the feature set toward shorter, more stationary lookbacks to reduce train-to-validation slope collapse. It adds rolling z-normalized returns, short-window volatility/efficiency/autocorrelation trends, compact regime transition features, and a few multiplicative interactions that often generalize better than raw levels. \n\nOn the model side, it slightly increases expressivity versus the most collapsed configurations while keeping enough regularization and a modest tree depth to avoid overfitting. The feature set stays comfortably below the 80-feature cap and uses only past data.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T11:58:34.837738",
+  "llm_cost": 0.04191525,
+  "llm_model": "gpt-5.4-mini"
+}

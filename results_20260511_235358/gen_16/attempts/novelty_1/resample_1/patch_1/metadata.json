@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_features_short_lookback",
+  "patch_description": "Redesign feature engineering to be regime-invariant:\n1. Replace long lookback windows (20-60) with shorter (5-10) for faster adaptation\n2. Add z-score normalization within rolling windows for volatility/trend invariance\n3. Add rate-of-change features (vol_trend, efficiency_trend) instead of absolute levels\n4. Simplify interactions to be normalized together\n5. Increase n_estimators (to learn variance) and reduce regularization (lambda/alpha)\n6. This addresses the core problem: features that mean different things across regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:57:08.988662",
+  "llm_cost": 0.035946000000000006,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

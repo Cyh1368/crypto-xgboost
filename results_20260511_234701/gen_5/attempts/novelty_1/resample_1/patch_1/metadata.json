@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "robust_regime_normalization",
+  "patch_description": "The primary issue is a severe slope collapse (0.074 to 0.006) and directional accuracy degradation between training and validation sets, indicating the model is learning regime-specific patterns that do not generalize. \n\nTo solve this, I am:\n1.  **Normalizing features via rolling Z-scores**: This makes features like returns, volume, and volatility regime-invariant. A 1% move is normalized by the current volatility, ensuring the model interprets it consistently across high and low vol periods.\n2.  **Regularizing XGBoost**: Increasing `min_child_weight` from 1 to 20 and reducing `max_depth` from 5 to 4 forces the model to learn only the most robust, high-sample patterns.\n3.  **Slowing down learning**: Reducing the `learning_rate` to 0.05 and increasing `n_estimators` allows for more stable convergence.\n4.  **Adding regime-invariant features**: Introducing \"Volatility Trend\" (short-term vs long-term vol) and \"Distance from High/Low\" to capture market character regardless of absolute price levels.\n5.  **Clipping targets more aggressively**: Reducing `CLIP_PERCENTILE` to 95 to focus the model on the predictable bulk of the distribution rather than outliers.",
+  "error_msg": "No changes applied",
+  "timestamp": "2026-05-11T23:48:53.483206",
+  "llm_cost": 0.0043745,
+  "llm_model": "gemini-3-flash-preview"
+}

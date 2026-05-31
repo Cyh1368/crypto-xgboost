@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "regime_shift_shortlook",
+  "patch_description": "This edit targets the main failure mode: the model has enough fit on train/test, but its predictive slope collapses in the most recent regime. I\u2019m making the feature set more regime-invariant and more sensitive to changes in market character by:\n\n- shifting several long lookbacks down to shorter horizons\n- adding rolling z-scores for price/volatility/momentum so the model sees relative state, not raw level\n- adding explicit \u201cchange in regime\u201d features like volatility trend, efficiency trend, and autocorrelation trend\n- adding a simple momentum \u00d7 volatility interaction that often survives regime shifts better than either component alone\n- slightly loosening the model regularization and reducing tree count so XGBoost can keep some expressivity without overfitting too hard\n\nThis should help recover val slope and pred_std_ratio while keeping the train\u2192val gap controlled.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:57:57.760113",
+  "llm_cost": 0.027231,
+  "llm_model": "gpt-5.4-mini"
+}

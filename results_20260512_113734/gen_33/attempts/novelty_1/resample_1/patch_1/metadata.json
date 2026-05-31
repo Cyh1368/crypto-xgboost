@@ -1,0 +1,14 @@
+{
+  "generation": 33,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_conditional_features",
+  "patch_description": "The current best program achieves 96.0% generalization ratio but suffers from a val_slope that's only 7.8% of train_slope. The key insight from the best performer is that it includes `vol_regime_rank` and `vol_regime_20_40` but doesn't use them to modulate other features adaptively.\n\nI will implement regime-conditional versions of the top-performing features by creating multiplicative interactions between momentum, efficiency, and autocorrelation features with volatility regime indicators. This approach makes features explicitly adapt to market conditions rather than assuming static relationships.\n\nSpecifically, I will:\n1. Create high-volatility versions of momentum features (ret_3, ret_5) by multiplying with (vol_regime_rank > 0.7)\n2. Create low-volatility versions of efficiency and autocorrelation features by multiplying with (vol_regime_rank < 0.3)\n3. Add regime-conditional RSI features that behave differently in different volatility environments\n4. Create a volatility regime transition indicator to capture regime shifts\n\nThis should improve the slope ratio by making the model learn regime-specific patterns that generalize better across the train\u2192test\u2192val boundaries.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:57:45.763843",
+  "llm_cost": 0.124215,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

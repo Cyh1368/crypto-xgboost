@@ -1,0 +1,14 @@
+{
+  "generation": 39,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_rank_shortlookups",
+  "patch_description": "This edit targets the current failure mode directly: the model is still too conservative and its slope collapses in the validation regime. I am making two coordinated changes.\n\n1. Hyperparameters are loosened slightly so XGBoost can express stronger patterns without becoming overly deep or unstable:\n- a bit more tree count\n- slightly deeper trees\n- lower min_child_weight\n- less regularization\n- slightly higher learning rate\n\nThis should help recover prediction amplitude, which is currently extremely compressed.\n\n2. Feature engineering is shifted further toward regime-invariant, short-memory signals:\n- add rolling percentile-rank features for momentum, RSI, efficiency, and volatility regime\n- add a short-term volatility acceleration term\n- add a regime-conditional momentum interaction using the rank-transformed volatility regime\n\nThese features are designed to survive the train\u2192val regime shift better than raw level features, while staying within the feature limit and using only past data.",
+  "error_msg": "SEARCH text not found in editable regions\n\nLooking for 7-line block starting with: '# --- RSI / oscillators ---'\n\nFull search pattern:\n```\n# --- RSI / oscillators ---\n    delta = close.diff()\n    gain = delta.clip(lower=0)\n    loss = (-delta.clip(upper=0))\n    for period in [5, 9, 14]:\n        rs = gain.rolling(period).mean() / (loss.rolling(period).mean() + eps)\n        feat[f\"rsi_{period}\"] = 100 - 100 / (1 + rs)\n```\n\nFound similar code block at line 108 (\u2713 editable):\n\nDifferences between search pattern and actual code:\n```diff\n-  # --- RSI / oscillators ---\n+      # --- Oscillators ---\n```\n\nEditable regions where you can make changes:\n  Region 1 (lines 12-32):\n    (hyperparameters)\n    XGB_PARAMS = {\n        \"n_estimators\": 320,\n    ... (14 more lines)\n    \n    CLIP_PERCENTILE = 96\n    MIN_PRED_STD_RATIO = 0.18\n\n  Region 2 (lines 36-230):\n    (feature engineering)\n    def build_features(df: pd.DataFrame) -> pd.DataFrame:\n        \"\"\"\n    ... (188 more lines)\n            feat = feat.iloc[:, :80]\n    \n        return feat\n\nQuick fixes:\n\u2022 Check indentation - search text must match exactly including spaces/tabs\n\u2022 Look for typos in the search text\n\u2022 Try searching for just the first line instead of the full block",
+  "timestamp": "2026-05-12T11:58:28.128023",
+  "llm_cost": 0.0258015,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_short_horizon_crossover",
+  "patch_description": "This crossover combines the best elements from both programs to address the primary problem of slope collapse from train (0.02) to val (0.00):\n\n1. **Hyperparameters**: Takes the better-performing configuration from the crossover inspiration (n_estimators=280, max_depth=4, min_child_weight=4, reg_lambda=1.0) which showed better val_pearson (0.04) and generalization_ratio (0.40) compared to current (0.33).\n\n2. **Feature Engineering Strategy**:\n   - Adopts the comprehensive short-horizon approach from the inspiration program (5, 10, 20 windows instead of 20, 60)\n   - Keeps the rolling z-scored returns (ret_z_5, ret_z_10, ret_z_20) for regime normalization\n   - Adds volatility trend features (vol_trend_5_20, vol_trend_10_20) that measure RATE OF CHANGE\n   - Includes autocorrelation trend features (ret_autocorr_5, ret_autocorr_10, autocorr_trend) to capture persistence changes\n   - Adds efficiency features at multiple horizons with efficiency_trend to measure market character change\n   - Incorporates trend acceleration features (trend_accel_5, trend_accel_10) for second-order dynamics\n   - Adds regime change interactions (trend_x_vol_change, efficiency_x_vol, autocorr_x_vol)\n\n3. **Key Improvements**:\n   - Shorter lookback windows (5-20 bars) generalize better across regime shifts\n   - Z-score normalization makes features regime-invariant\n   - Features measuring CHANGE in market character (vol_trend_change, efficiency_change, autocorr_trend) address the second-order regime shift problem\n   - Maintains feature count under 80 while maximizing information density\n\nThe inspiration program achieved val_slope=0.0025 (vs current 0.0017) and better generalization_ratio (40.4% vs 33.2%), suggesting this feature set is more robust to regime changes.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:04:38.862604",
+  "llm_cost": 0.160842,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

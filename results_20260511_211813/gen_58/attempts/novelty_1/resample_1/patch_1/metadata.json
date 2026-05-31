@@ -1,0 +1,14 @@
+{
+  "generation": 58,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_regime_features",
+  "patch_description": "The current model suffers from a 'collapse toward mean' (pred_std_ratio = 0.11, target >= 0.15) and validation DA is just above 0.51. To move the combined score towards positive territory, we must increase model expressivity while adding features that capture volatility regimes, as these often precede significant directional moves in 15m crypto futures.\n\nChanges:\n1. Increase `max_depth` to 6 and `n_estimators` to 750 to allow the model to capture more complex non-linear relationships, aiming to push the `pred_std_ratio` above 0.15.\n2. Add a small L2 regularization (`reg_lambda = 0.05`) to maintain stability given the increased depth.\n3. Add 'Choppiness Index' to identify ranging vs. trending regimes.\n4. Add 'Volatility Compression' (short-term vs. long-term ATR) to signal potential breakout periods.\n5. Add price 'Velocity' and 'Acceleration' to capture short-term momentum dynamics.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:31:35.552975",
+  "llm_cost": 0.0139295,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 54,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "increase_learning_rate_reduce_early_stopping",
+  "patch_description": "The current program achieves val_DA=0.536 and test_DA=0.518 with good generalization (79.3% generalization_ratio), but suffers from severe prediction collapse (pred_std_ratio=0.0568, slope_ratio=9.7%). The model has 80 well-designed features capturing regime shifts and market character changes, but the predictions are under-expressed.\n\nThe current configuration uses learning_rate=0.06 with n_estimators=260 and early_stopping_rounds=45. This conservative setup prevents overfitting but also prevents the model from fully expressing the signal captured by the features.\n\nFollowing the recommendation to \"increase learning rate to 0.065-0.075 with proportionally reduced early stopping,\" I will:\n\n1. Increase learning_rate from 0.06 to 0.070 (16.7% increase)\n2. Increase n_estimators from 260 to 560 to maintain training budget\n3. Reduce early_stopping_rounds from 45 to 55 to allow more training while maintaining similar effective iterations\n4. Keep max_depth=4 and existing regularization (reg_alpha=0.08, reg_lambda=1.2) to prevent overfitting\n\nThis should increase pred_std_ratio from 0.057 toward 0.10-0.15 and slope_ratio from 9.7% toward 25-30%, while the depth-4 trees and regularization prevent the overfitting that plagued programs with shallower trees or extreme learning rates (like the program with max_depth=5, learning_rate=0.15 that achieved pred_std_ratio=0.112 but had overfit_gap=0.061).\n\nThe key insight is that the current model is learning the right patterns (good generalization_ratio) but not expressing them strongly enough (low pred_std_ratio). A higher learning rate with more estimators and controlled early stopping will allow stronger individual tree contributions while maintaining the robust generalization properties.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:34:52.382394",
+  "llm_cost": 0.11156100000000001,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

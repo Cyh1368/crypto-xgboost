@@ -1,0 +1,14 @@
+{
+  "generation": 50,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_short_xgb",
+  "patch_description": "This crossover keeps the strongest elements from the prior variants: short-horizon returns, rolling z-normalization, volatility/efficiency regime shifts, and momentum \u00d7 volatility interactions. It also tightens the feature set around 5\u201320 bar windows to improve regime robustness while preserving a small number of longer anchors for context. \n\nOn the model side, I reduce over-regularization and slightly increase effective expressivity to fight prediction collapse and recover slope on validation. The result is intended to generalize better across the train\u2192test\u2192val regime shift without exceeding the feature limit or changing the external interface.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:15:53.847608",
+  "llm_cost": 0.042029250000000004,
+  "llm_model": "gpt-5.4-mini"
+}

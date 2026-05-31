@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_signals",
+  "patch_description": "The previous model was severely underfitting ('collapsed toward mean'), likely due to overly aggressive regularization and low learning rate. \n\n1. Hyperparameter Tuning: I increased the learning rate (0.01 -> 0.05) and max_depth (4 -> 6) while significantly lowering the min_child_weight and regularization parameters (reg_alpha, reg_lambda). This aims to increase the 'pred_std_ratio' above the 0.15 threshold and allow the model to capture more signal.\n2. Feature Engineering: Added mean-reversion signals (SMA deviations, price position in recent 20-bar range), volatility-normalized range (HL range), and momentum acceleration (RSI diff). These provide additional directional context that was missing in the 'current' version but is critical for 15-minute timeframe directional accuracy.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:20:14.276156",
+  "llm_cost": 0.0061530000000000005,
+  "llm_model": "gemini-3-flash-preview"
+}

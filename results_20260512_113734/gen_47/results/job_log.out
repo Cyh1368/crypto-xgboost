@@ -1,0 +1,10 @@
+val_DA=0.5364  test_DA=0.5184  train_DA=0.5788
+val_r=0.0555  test_r=0.0700  train_r=0.4246
+val_slope=0.0032  train_slope=0.0326  slope_ratio=9.7%
+pred_std_ratio=0.0568  generalization_ratio=79.3%  overfit_gap=0.0424
+penalties → collapse=1.146  slope=1.220  gen=0.000  overfit=0.000  invert=0.000
+SCORE=-2.0564
+WARNING: predictions collapsed toward mean — increase model expressivity or remove regularization.
+WARNING: val slope (0.0032) is only 9.7% of train slope (0.0326). Features are regime-specific. Try shorter lookbacks, z-score normalization within rolling windows, or regime-conditional feature scaling.
+
+Final score: -2.0564

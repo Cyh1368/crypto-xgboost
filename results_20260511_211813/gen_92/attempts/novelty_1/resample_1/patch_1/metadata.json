@@ -1,0 +1,14 @@
+{
+  "generation": 92,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "dynamic_regime_zscore_boost",
+  "patch_description": "This algorithm addresses the \"prediction collapse\" issue by significantly increasing model expressivity and introducing regime-invariant features. Key innovations include:\n1. **Z-Score Normalization**: Momentum and volatility features are normalized by their rolling distributions, allowing the model to identify relative signal strength regardless of the current market volatility regime.\n2. **Microstructure Price Action**: Features like upper/lower wick ratios and body-to-ATR ratios capture candle-level exhaustion and momentum signals often missed by simple returns.\n3. **Donchian-Style Positioning**: Distance from 24-hour highs and lows provides context for mean reversion vs. breakout regimes.\n4. **Expressive XGB Configuration**: By reducing regularization (reg_alpha/lambda) and increasing the learning rate and depth, the model is forced to \"commit\" to directional predictions, increasing the prediction standard deviation ratio and reducing the collapse penalty.\n5. **Momentum Persistence**: A rolling autocorrelation proxy identifies whether the current market is in a trending or mean-reverting state.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-11T21:46:36.604679",
+  "llm_cost": 0.013911499999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

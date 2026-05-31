@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "regime_short_horizon_boost",
+  "patch_description": "This edit targets the two main failure modes: prediction collapse and regime fragility. I reduce over-regularization slightly so XGBoost can express more slope, while keeping depth moderate to avoid overfit. On the feature side, I add more regime-invariant short-horizon signals: rolling z-scored volatility, rolling z-scored trend, and a compact volatility-adjusted momentum interaction. These are designed to survive the train\u2192test\u2192val regime shift better than absolute-level indicators. The new features are all causal and keep the total feature count safely below the 80-feature limit.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:55:52.531636",
+  "llm_cost": 0.018885,
+  "llm_model": "gpt-5.4-mini"
+}

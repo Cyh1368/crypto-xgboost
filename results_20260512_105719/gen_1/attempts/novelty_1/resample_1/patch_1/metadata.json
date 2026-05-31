@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "shorter_lookback_zscore_normalization",
+  "patch_description": "The primary issue is that val_slope collapses to 0.006 (8.2% of train_slope), indicating severe regime-specific overfitting. The model learns patterns from the training period that don't generalize to the validation period's market regime.\n\nMy strategy addresses this through three coordinated changes:\n\n1. **Shorter lookback windows (5-20 bars instead of 60+)**: Market microstructure patterns decay faster but are more consistent across regimes. A 5-bar momentum pattern is more universal than a 60-bar trend.\n\n2. **Rolling z-score normalization**: Instead of raw values, normalize features within rolling windows. This makes features regime-invariant - a \"high\" momentum reading is relative to recent context, not absolute levels. This is critical for crypto markets where volatility regimes shift dramatically.\n\n3. **Rate-of-change features**: Add features that measure how market character is CHANGING (volatility trend, autocorrelation trend) rather than absolute levels. These meta-features often generalize better.\n\n4. **Regularization increase**: Boost min_child_weight from 1 to 3 and add L1/L2 regularization to force the model to learn only the most robust patterns with sufficient sample support.\n\n5. **Reduce n_estimators**: Cut from 400 to 250 to prevent overfitting to training regime nuances.\n\nThe key insight: we're trading some training performance for validation generalization by making features more regime-agnostic through normalization and shorter memory.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:58:26.377688",
+  "llm_cost": 0.10572300000000001,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

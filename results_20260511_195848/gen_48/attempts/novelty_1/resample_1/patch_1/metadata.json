@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse_add_lookback_shift_and_adjust_hyperparams",
+  "patch_description": "The key issue is the model's predictions collapsed toward the mean, indicated by a very low pred_std_ratio (0.0253), below the required 0.15. This means the model lacks expressivity or the features lack direct predictive power, causing the model to predict near-zero changes mostly.\n\nRoot causes:\n- In build_features(), features are computed directly on current or future data without shifting, allowing potential subtle leakage or misalignment with target, causing non-informative or unstable features.\n- Some momentum features used immediate returns with no proper past-only shifting.\n- The larger learning rate and full feature/sample subsampling could cause less stable training.\n- The \"momentum_3\" feature adds 'ret_1' and 'ret_3' without shifting, possibly leaking info.\n- The rolling windows for volatility/regime might overlap current bar target.\n- No explicit lag shift on features to guarantee past-only.\n\nFixes applied:\n1. Shift all features by at least one bar to ensure no lookahead.\n2. Fix momentum feature to sum properly lagged returns.\n3. Add stronger regularization (reg_alpha and reg_lambda) to improve generalization.\n4. Reduce learning rate to a smaller value (0.01) for smoother optimization.\n5. Use subsample and colsample_bytree less aggressive (0.8) for ensemble diversity.\n6. Drop lag=24 return to keep features simpler / stable for 15m bar scale.\n7. Keep total features well below 80.\n8. Maintain clipping and standard scaling as before.\n\nWith these changes, the model should better capture predictive signals without collapsing predictions toward the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:06:08.126623",
+  "llm_cost": 0.005348,
+  "llm_model": "gpt-4.1-mini"
+}

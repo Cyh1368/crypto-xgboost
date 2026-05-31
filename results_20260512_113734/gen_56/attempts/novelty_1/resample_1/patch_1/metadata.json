@@ -1,0 +1,14 @@
+{
+  "generation": 56,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_crossover_v1",
+  "patch_description": "This crossover combines the best elements from both programs to address the primary issue: val_slope collapse (currently 7.8% of train_slope).\n\nKey improvements:\n1. **Hyperparameters from inspiration program**: Uses max_depth=5, min_child_weight=2, lower regularization (reg_alpha=0.05, reg_lambda=0.8) to increase model expressivity and reduce prediction collapse. The inspiration program had better pred_std_ratio (0.04 vs 0.07).\n\n2. **Feature engineering from current program**: Retains the comprehensive short-horizon feature set with regime-invariant z-scores, efficiency metrics, and autocorrelation trends that showed better generalization (42% vs 51% in inspiration).\n\n3. **Strategic additions**:\n   - Removed redundant long-horizon features (ret_16, autocorr_8) to stay under 80 features\n   - Kept vol_regime_10_20 from current (captures faster regime shifts)\n   - Retained atr_5 from current (more responsive to recent volatility changes)\n   - Kept all interaction terms that measure CHANGE in market character\n\n4. **Learning rate adjustment**: Slightly increased to 0.05 (from 0.045) to allow the less regularized model to converge properly within the early stopping window.\n\nThe strategy is to use the inspiration program's more expressive model configuration (which avoids over-regularization) while keeping the current program's superior feature engineering that focuses on short horizons and regime-invariant transformations. This should improve val_slope while maintaining or improving directional accuracy.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:24:21.603346",
+  "llm_cost": 0.170298,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

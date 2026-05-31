@@ -1,0 +1,14 @@
+{
+  "generation": 95,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "more_signal_less_collapse",
+  "patch_description": "The current model is still under-dispersed (`pred_std_ratio=0.11`) and the validation edge is only slightly above chance. The safest way to improve both directional signal and output variance is to make the booster a bit more expressive while adding a few high-value, strictly past-looking features that capture short-horizon momentum, trend persistence, and regime shifts.\n\nI\u2019m proposing:\n1. Loosen the XGBoost regularization slightly and lower the learning rate with more estimators so the model can fit richer nonlinear structure without becoming too brittle.\n2. Add a compact set of lagged / regime-aware features built from shifted series only:\n   - short-horizon return stack on past closes\n   - return trend and return acceleration\n   - rolling slope proxy for trend persistence\n   - breakout position and range expansion\n   - volume surprise and volume trend\n   - volatility compression / expansion\n   - optional orderbook imbalance change and funding momentum, shifted to remain past-only\n\nThese features are aimed at reducing mean-prediction collapse while preserving generalization. The feature count stays comfortably under the limit, and the changes are small enough to keep runtime practical.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:45:54.486728",
+  "llm_cost": 0.02509425,
+  "llm_model": "gpt-5.4-mini"
+}

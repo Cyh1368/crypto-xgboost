@@ -1,0 +1,14 @@
+{
+  "generation": 65,
+  "novelty_attempt": 2,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "shorter_regime_shift_features",
+  "patch_description": "This edit targets the core failure mode: the model is still learning patterns that vanish in the newest regime, so the validation slope collapses despite acceptable directional accuracy.\n\nI\u2019m proposing two coordinated changes:\n\n1. Feature engineering:\n   - add longer-window rolling z-scores for returns to make the signal more regime-invariant\n   - add explicit regime-shift features that measure divergence between short-, medium-, and longer-horizon normalized return behavior\n   - add short-horizon volatility/efficiency trend features to capture changes in market character rather than just absolute levels\n   - remove low-value time-of-day Fourier features to keep the feature count under the 80 limit and reduce regime-specific leakage\n\n2. Hyperparameters:\n   - slightly increase model expressivity with a modestly deeper tree and lower child weight\n   - reduce regularization a bit so the model can use the new regime-shift features\n   - keep estimator count and learning rate conservative enough to avoid exploding overfit\n\nThe goal is to lift validation slope and prediction spread while preserving the current directional edge.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:39:09.535020",
+  "llm_cost": 0.03342225,
+  "llm_model": "gpt-5.4-mini"
+}

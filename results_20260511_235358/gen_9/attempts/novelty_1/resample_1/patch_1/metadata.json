@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_shift_features",
+  "patch_description": "This edit targets the main failure mode: the model learns train-regime-specific slopes that vanish in validation. I\u2019m making two coordinated changes:\n\n1. Hyperparameters:\n   - Reduce excessive damping that is likely collapsing predictions toward the mean.\n   - Use a slightly deeper but more regularized tree setup with more estimators and a lower learning rate, which usually helps XGBoost recover slope without overfitting as badly.\n   - Relax target clipping a bit so the model can still learn tail sensitivity.\n\n2. Features:\n   - Add more regime-invariant, rolling z-scored signals on very short windows.\n   - Add explicit \u201ccharacter change\u201d features: volatility trend, efficiency trend, autocorrelation trend.\n   - Add a momentum \u00d7 volatility-regime interaction, which often generalizes better than raw momentum alone across regime shifts.\n   - Keep the feature count comfortably under 80 and use only past data.\n\nThe goal is to increase val slope and prediction dispersion while preserving or improving DA.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:55:39.899315",
+  "llm_cost": 0.04036125,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "adaptive_expressivity_boost",
+  "patch_description": "The current model is severely over-regularized, causing predictions to collapse toward the mean (pred_std_ratio=0.035, train_slope=0.0076). The primary issue is excessive regularization combined with insufficient model capacity.\n\nAnalysis of the problem:\n1. The model has max_depth=3, min_child_weight=10, reg_lambda=8.0, reg_alpha=1.5, and gamma=0.2 - all extremely conservative\n2. This heavy regularization is destroying the model's ability to learn even the training patterns\n3. The slope collapse (val_slope=0.0016, train_slope=0.0076) indicates the model cannot express directional predictions\n4. The good news: generalization_ratio=85.4% means what little the model learns does generalize well\n\nStrategy:\n1. Significantly increase model expressivity by reducing regularization and increasing depth\n2. Add more estimators but with a higher learning rate to maintain training speed\n3. Keep min_child_weight moderate to preserve some generalization\n4. The features are already well-designed with z-score normalization and short lookbacks, so we mainly need to let the model use them\n\nExpected outcome:\n- Train slope should increase from 0.0076 to at least 0.020 (3x improvement)\n- Pred_std_ratio should increase from 0.035 to at least 0.10 (3x improvement)\n- With the strong feature engineering already in place, the generalization ratio should remain good (>60%)\n- Target: val_slope >= 0.020, val_DA >= 0.520",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:48:22.356003",
+  "llm_cost": 0.076368,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

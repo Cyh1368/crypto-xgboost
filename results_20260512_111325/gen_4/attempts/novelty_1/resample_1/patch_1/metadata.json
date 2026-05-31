@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "adaptive_regime_ensemble",
+  "patch_description": "This approach fundamentally reimagines the problem as a regime-detection + ensemble strategy rather than a single global model. The key insights:\n\n1. **Regime Clustering**: Instead of trying to learn one model across all market conditions, we first cluster the training data into distinct market regimes using unsupervised learning (K-means on volatility/trend/volume features).\n\n2. **Regime-Specific Models**: Train separate lightweight XGBoost models for each regime. Each specialist model learns patterns specific to its regime, avoiding the generalization collapse.\n\n3. **Adaptive Feature Sets**: Each regime gets a custom feature set optimized for that market condition:\n   - High-vol regimes: short-term momentum, volatility ratios\n   - Low-vol regimes: mean reversion, microstructure\n   - Trending regimes: trend-following indicators\n   - Ranging regimes: support/resistance features\n\n4. **Rolling Normalization**: All features are z-scored within short rolling windows (20-bar) to make them regime-invariant at the raw level, then regime-specific patterns are learned.\n\n5. **Ensemble Weighting**: At prediction time, compute regime probabilities using a softmax over distances to regime centroids, then blend predictions from all regime models weighted by these probabilities.\n\n6. **Shorter Lookbacks**: Features use max 20-bar lookbacks (5 hours) instead of 60+ bars, making them more robust to regime shifts.\n\nThis solves the core problem: the model no longer tries to learn a single set of patterns that work everywhere (which collapses on val). Instead, it learns multiple specialized patterns and adaptively selects which to use based on current market conditions.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:14:52.825841",
+  "llm_cost": 0.10341,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

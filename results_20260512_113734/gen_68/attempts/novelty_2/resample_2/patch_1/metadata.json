@@ -1,0 +1,14 @@
+{
+  "generation": 68,
+  "novelty_attempt": 2,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb_crossover",
+  "patch_description": "This crossover version blends the strongest parts of the prior programs while explicitly targeting the main failure mode: regime-specific features that collapse out-of-sample. It emphasizes shorter lookbacks, rolling z-score normalization, change-of-market-character features, and a few robust interactions such as momentum \u00d7 volatility regime. The model is made slightly less over-regularized to reduce mean-collapsing while still controlling overfit with modest depth and sample subsampling. The feature set stays safely below 80 columns and uses only past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:39:35.335333",
+  "llm_cost": 0.039246,
+  "llm_model": "gpt-5.4-mini"
+}

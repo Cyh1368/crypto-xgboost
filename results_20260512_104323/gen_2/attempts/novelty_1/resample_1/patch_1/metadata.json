@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_zscaling",
+  "patch_description": "The key innovation is the use of local rolling normalization (Z-scaling and Percentile Ranking) for every core feature to ensure regime-invariance. The primary obstacle in the previous version was the collapse of the predictive slope (0.07 train vs 0.006 val), indicating that the model's absolute-value features (like raw returns or volatility) lost their meaning across market regime shifts. \n\nBy replacing raw returns with returns scaled by local idiosyncratic volatility (Z-scores) and raw indicators with rolling percentile ranks (e.g., volume rank, candle-range rank), the model identifies relative patterns that are statistically identical whether BTC is at $20k or $60k, or whether local volatility is 0.5% or 5.0%. I also increased `min_child_weight` and added L2 regularization (`reg_lambda`) to the XGBoost parameters to prevent overfitting to regime-specific noise and force a more substantial predictive slope.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:43:50.909717",
+  "llm_cost": 0.009089,
+  "llm_model": "gemini-3-flash-preview"
+}

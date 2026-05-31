@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_zscore_and_interaction",
+  "patch_description": "The model suffers from severe slope collapse (0.0013 on val vs 0.018 on train) and prediction collapse (std ratio 0.06). This indicates the model is overfitting to noise and failing to generalize across market regimes. \n\nI am proposing three key changes:\n1. **Regime-Invariant Normalization**: Increasing the Z-score rolling window from 15-20 to 100-200. A 15-bar window (3.75 hours) is too short and removes the actual signal, while a 100-200 bar window (25-50 hours) captures the \"state\" of the market relative to recent history without losing the trend.\n2. **Feature Interaction**: Adding a `momentum_vol_interaction` (Return * Volatility Regime). This allows the model to learn that momentum in a high-volatility regime has different predictive power than in a low-volatility regime.\n3. **Hyperparameter Tuning**: Reducing `max_depth` to 4 and increasing `min_child_weight` to 5 to force the model to learn more robust, higher-sample patterns. Lowering `reg_lambda` and `reg_alpha` to combat the \"prediction collapse\" and encourage the model to output a wider range of values (improving slope and std ratio).",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:51:35.876363",
+  "llm_cost": 0.017421,
+  "llm_model": "gemini-3-flash-preview"
+}

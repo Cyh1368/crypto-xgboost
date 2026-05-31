@@ -1,0 +1,14 @@
+{
+  "generation": 76,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "microstructure_regime_expressivity",
+  "patch_description": "This approach addresses the \"mean-collapse\" problem (low pred_std_ratio) by significantly increasing model expressivity and focusing on relative price-action microstructure. \n\n1. **Expressivity Boost**: We increase `max_depth` to 8 and lower `min_child_weight` to 1 while setting `reg_lambda` and `reg_alpha` to near-zero. This forces the XGBoost model to capture specific, high-variance signals rather than settling for a conservative mean prediction.\n2. **Vol-Adjusted Velocity**: Features like `ret_speed` (returns normalized by short-term volatility) help the model identify signals that are statistically significant relative to recent noise.\n3. **Exhaustion & Divergence**: We introduce features capturing \"Time Since X\" (bars since N-period high/low) and \"Range Efficiency\" to detect overextended trends that are likely to revert or accelerate.\n4. **Regime-Conditional Logic**: Instead of broad statistical features, we use binary regime flags (High Vol, Up Trend) to allow the deep trees to branch into specialized sub-strategies for different market states.\n5. **Standardization & Cleaning**: We keep features within a manageable count (~50) to ensure the model focuses on the highest-quality signals without the curse of dimensionality.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:36:41.146831",
+  "llm_cost": 0.021497,
+  "llm_model": "gemini-3-flash-preview"
+}

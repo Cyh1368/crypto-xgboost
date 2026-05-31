@@ -1,0 +1,14 @@
+{
+  "generation": 79,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "regime_aware_features_with_regularization",
+  "patch_description": "This edit addresses both overfitting and prediction collapse by:\n\n1. **Increasing regularization** (reg_lambda from 0.05 to 0.25, reg_alpha from 0.0 to 0.005) to reduce overfitting gap while maintaining some model expressivity.\n\n2. **Reducing max_depth** from 7 to 6 and adjusting learning_rate to 0.04 to prevent the model from fitting noise.\n\n3. **Adding regime-aware features** that explicitly encode market state:\n   - Volatility regime classification (high/normal/low)\n   - Trend strength indicator\n   - Momentum-volatility interaction features\n   - These help the model make regime-conditional predictions\n\n4. **Adding lagged features** that capture recent prediction patterns:\n   - Recent return momentum with different decay weights\n   - Volatility persistence features\n   - These provide additional signal for the model to learn from\n\n5. **Adjusting CLIP_PERCENTILE** from 95 to 96 to preserve slightly more signal in extreme moves.\n\nThe rationale: Previous attempts show pred_std_ratio stuck around 0.03-0.09 despite feature engineering. This suggests the model needs explicit regime indicators to know when to make strong predictions. Combined with tighter regularization, this should improve both generalization and prediction variance.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:35:46.568943",
+  "llm_cost": 0.039239,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

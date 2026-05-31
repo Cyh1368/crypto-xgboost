@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "aggressive_expressivity_and_microstructure",
+  "patch_description": "The model is currently suffering from prediction collapse (pred_std_ratio < 0.15), meaning it is too conservative and predicts values close to the mean. To address this, I am proposing several changes:\n1. **Increase Model Expressivity**: Increased `max_depth` to 8 and `learning_rate` to 0.07, while removing `reg_lambda` entirely. This forces the model to fit the variance in the data more aggressively.\n2. **Loosen Target Clipping**: Increased `CLIP_PERCENTILE` to 99.5. This allows the model to see more of the tail moves, which often contain the strongest directional signals.\n3. **Microstructure Features**: Added several new features to capture price action dynamics:\n    - `bb_width` and `vol_sqz`: To identify volatility cycles and breakouts.\n    - `vpt` (Volume-Price Trend): To capture the strength of price moves confirmed by volume.\n    - `tail_ratio`: To identify candle-level exhaustion or rejection.\n    - `directional_intensity`: To measure the 'cleanliness' of a move over 5 bars.\n    - `vwap_dev_atr`: To normalize price deviations from VWAP by recent volatility.\n    - `vol_of_vol`: To capture regime shifts in volatility itself.\n4. **Regularization Tuning**: Added a small `gamma` (0.01) to ensure that while the model is more expressive, it only splits when there is a tangible gain, helping to manage the increased depth.",
+  "error_msg": "No changes applied",
+  "timestamp": "2026-05-11T21:30:43.973627",
+  "llm_cost": 0.013841,
+  "llm_model": "gemini-3-flash-preview"
+}

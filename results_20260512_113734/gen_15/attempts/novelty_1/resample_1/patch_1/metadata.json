@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_pipeline",
+  "patch_description": "This redesign fundamentally restructures the program around a modular, regime-adaptive architecture:\n\n1. **Feature Factory Pattern**: Separates feature computation into specialized modules (momentum, volatility, microstructure, regime) that can be independently tuned and tested.\n\n2. **Adaptive Normalization Layer**: Implements a two-stage normalization strategy:\n   - First: Rolling z-score normalization within short windows (10-20 bars) to make features regime-invariant\n   - Second: Global standardization for model input\n   This addresses the core problem of regime shifts between train/test/val.\n\n3. **Regime-Conditional Feature Engineering**: Instead of computing absolute features, focuses on:\n   - Rate-of-change features (volatility acceleration, trend momentum changes)\n   - Relative position features (percentile ranks within rolling windows)\n   - Cross-regime stability indicators (autocorrelation trends, efficiency ratios)\n\n4. **Reduced Model Complexity with Better Regularization**: Uses fewer estimators (180 vs 260) but with better-tuned regularization to force the model to learn only the most robust patterns that generalize across regime shifts.\n\n5. **Feature Interaction Pruning**: Reduces from 70+ features to ~55 by eliminating redundant interactions and focusing on multiplicative terms that capture regime-dependent behavior (momentum \u00d7 volatility regime, volume \u00d7 price pressure).\n\nThe key insight: the val_slope collapse from 0.023 to 0.002 indicates the model learns training-specific patterns. By making features regime-invariant through adaptive normalization and focusing on rate-of-change rather than absolute levels, we improve cross-regime generalization.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T11:44:03.357870",
+  "llm_cost": 0.11088600000000001,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

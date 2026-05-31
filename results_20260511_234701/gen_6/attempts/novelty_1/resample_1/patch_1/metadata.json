@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_invariant_zscore_model",
+  "patch_description": "The primary structural change is the transition from 'absolute' features to 'regime-invariant' features using rolling Z-score normalization and scale-independent metrics. \n\n1. **Z-Score Normalization:** Instead of raw returns or absolute indicators, most features are normalized by their rolling mean and standard deviation (Z-scores) over 20-60 bar windows. This ensures a \"2 standard deviation move\" is interpreted identically by the model regardless of whether the market is in a high or low volatility regime.\n2. **Shorter Lookbacks:** Distant lags are pruned in favor of higher-resolution local dynamics (5-30 bars) to minimize the impact of long-term regime drift.\n3. **Robust Hyperparameters:** n_estimators is reduced and min_child_weight is increased significantly (from 1 to 15). This forces the XGBoost model to find patterns that exist in larger, more stable clusters of data, preventing it from 'locking on' to the micro-regimes of the training set.\n4. **Volatility-Adjusted Momentum:** Features are explicitly scaled by local volatility to maintain a consistent signal-to-noise ratio across different market conditions.\n5. **Efficiency and Acceleration:** Added features like the Efficiency Ratio (fractal dimension) and Return Acceleration to capture the 'character' of price action rather than just its direction.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:48:02.986512",
+  "llm_cost": 0.0093185,
+  "llm_model": "gemini-3-flash-preview"
+}

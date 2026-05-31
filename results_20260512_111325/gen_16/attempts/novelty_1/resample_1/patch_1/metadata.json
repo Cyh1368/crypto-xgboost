@@ -1,0 +1,14 @@
+{
+  "generation": 16,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_delta_xgb",
+  "patch_description": "This design is inspired by the earlier programs\u2019 use of short-horizon momentum, volatility, efficiency, and interaction features, but it shifts the emphasis from \u201cstate\u201d features to \u201cstate change\u201d features. The key idea is that the validation period appears to be a second regime shift, so absolute levels like volatility or trend strength are less useful than how those quantities are evolving.\n\nThe novel part is a compact regime-delta feature set:\n- rolling z-scored price/volume/range features to reduce dependence on scale,\n- first-difference and slope features for volatility, efficiency, and order-flow proxies,\n- regime-conditional interactions such as momentum \u00d7 volatility-shift,\n- a small number of orthogonalized short lookbacks to preserve responsiveness without overfitting,\n- slightly more expressive XGBoost settings with stronger sample constraints to prevent memorization while still allowing nonlinearity.\n\nOverall, this is a regime-transition detector rather than a static regime classifier, which should help recover slope on the most recent period while keeping prediction dispersion above the collapse threshold.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:16:33.269924",
+  "llm_cost": 0.023829000000000003,
+  "llm_model": "gpt-5.4-mini"
+}

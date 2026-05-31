@@ -1,0 +1,14 @@
+{
+  "generation": 47,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_signal",
+  "patch_description": "The current model suffers from \"collapsed predictions\" (pred_std_ratio = 0.009), meaning it is too conservative and predicts values very close to the mean. To fix this, I am:\n1. Increasing model expressivity: Increasing `max_depth` (4 -> 6), decreasing `min_child_weight` (10 -> 1), and increasing `learning_rate` (0.01 -> 0.05).\n2. Reducing regularization: Lowering `reg_lambda` and `reg_alpha` to allow the model to fit the signal more closely.\n3. Enhancing features: Adding multi-horizon log-returns, rolling Z-scores for returns and volume, and candle anatomy features (wick/body ratios).\n4. Strict Past-Data Compliance: Ensuring all features derived from OHLCV are explicitly shifted by at least 1 bar to prevent any lookahead and comply with constraints.\n5. Outlier Robustness: Adjusting `CLIP_PERCENTILE` to 98.0 to reduce the influence of extreme tails on the RMSE objective, which often causes the model to bias towards the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:28:43.698862",
+  "llm_cost": 0.0153785,
+  "llm_model": "gemini-3-flash-preview"
+}

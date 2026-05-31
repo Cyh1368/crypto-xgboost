@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "robust_regime_invariant_features",
+  "patch_description": "The current model suffers from a severe predictive slope collapse (0.0017 on validation), indicating that it learns patterns that do not generalize across market regimes. \n\nTo fix this, I am implementing the following changes:\n1. **Hyperparameter Robustness**: Reduced `max_depth` to 4 and increased `min_child_weight` to 5. This forces the model to learn from larger, more robust samples and prevents overfitting to regime-specific noise. I also added L1/L2 regularization (`reg_alpha`, `reg_lambda`) and slowed the `learning_rate` to 0.07.\n2. **Z-Score Normalization**: Added Z-scored volatility and volume features. Normalizing these by their own rolling mean/std makes them regime-invariant (e.g., a \"high volume\" period is defined relative to the recent past, not an absolute level).\n3. **Kaufman Efficiency Ratio**: Added Efficiency Ratio (ER) for multiple windows. ER measures the \"trendiness\" of price action (net move vs. total path), which is a highly robust indicator of market character across regimes.\n4. **Volatility-Adjusted Momentum**: Added a momentum feature scaled by its own realized volatility, ensuring the signal strength is consistent regardless of the volatility regime.\n5. **Target Clipping**: Adjusted `CLIP_PERCENTILE` to 97 to reduce the influence of extreme outliers that rarely repeat across different market periods.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:50:40.097250",
+  "llm_cost": 0.0097615,
+  "llm_model": "gemini-3-flash-preview"
+}

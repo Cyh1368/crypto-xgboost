@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_crossover_v1",
+  "patch_description": "This crossover combines the best elements from both programs:\n\n1. **From the current program (score -3.97):**\n   - Higher model expressivity (n_estimators=250, max_depth=5, no regularization)\n   - Strong base feature set that achieves good train performance (train_slope=0.0973)\n\n2. **From the inspiration program (score -1.74):**\n   - Comprehensive z-score normalization (zscore function for rolling windows)\n   - Efficiency ratio features (eff_10, eff_20, eff_trend)\n   - Autocorrelation trend features (measuring CHANGE in market character)\n   - Return dispersion features (stability/regime shift indicators)\n   - Shorter lookback windows (5, 10, 20 instead of 20, 50, 60)\n\n**Key improvements to address the primary problem:**\n- The val_slope collapse (0.0002 vs train 0.0973) is caused by regime-specific features\n- Z-score normalization within rolling windows makes features regime-invariant\n- Efficiency and autocorrelation TREND features capture changes in market character\n- Shorter lookbacks (5-20 bars) decay faster but generalize better across regimes\n- Balanced regularization (moderate alpha/lambda) to prevent overfitting while maintaining expressivity\n\n**Strategy:**\n- Keep the higher model expressivity from current (more estimators, deeper trees)\n- Add z-score normalization to all momentum and volatility features\n- Replace long lookbacks (50, 60) with shorter ones (10, 20, 40)\n- Add efficiency ratio and autocorrelation trend features\n- Add dispersion trend and momentum_regime_x_eff interaction\n- Moderate regularization to balance between the two extremes",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T11:47:38.512985",
+  "llm_cost": 0.13728300000000002,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

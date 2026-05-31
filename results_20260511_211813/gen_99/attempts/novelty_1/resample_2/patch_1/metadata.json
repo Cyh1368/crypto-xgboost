@@ -1,0 +1,14 @@
+{
+  "generation": 99,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "model_expressivity_and_vol_scaled_features",
+  "patch_description": "To address the 'predictions collapsed toward mean' warning (low pred_std_ratio), I am increasing model expressivity by raising max_depth to 7 and decreasing the learning rate while increasing the number of estimators. This allows the gradient boosting process to fit more complex patterns across a larger number of smaller steps.\n\nOn the feature engineering side, I am introducing:\n1. Volatility-adjusted momentum (Sharpe-like ratios) to better capture movement quality relative to noise.\n2. Efficiency Ratio (Fractal efficiency) to distinguish between trending and range-bound regimes.\n3. Volatility Acceleration to capture explosive regime shifts.\n4. Range standardization (Z-score of candle range) to detect abnormal price behavior.\n5. Improved time features (adding week periodicity).\n\nThese changes aim to provide the model with higher variance, high-signal inputs, improving the prediction spread and directional accuracy.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:48:12.928344",
+  "llm_cost": 0.020875499999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "short_lookback_regime_normalization",
+  "patch_description": "This edit focuses on making the feature set more regime-invariant and less dependent on long historical contexts that tend to break under a second regime shift.\n\nMain ideas:\n- Replace several absolute/long-horizon features with shorter-window versions (5\u201320 bars).\n- Add rolling z-score normalization for returns, volume, volatility, and range so the model learns relative state rather than raw magnitude.\n- Add trend-of-regime features such as volatility change and autocorrelation change, which capture whether market character is shifting.\n- Add a momentum \u00d7 volatility-regime interaction using a shorter momentum window.\n- Strengthen XGBoost regularization slightly and reduce tree count so it favors robust patterns over train-only idiosyncrasies.\n\nThis should help reduce slope collapse on validation while also improving prediction dispersion, which is currently too low.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:14:00.553848",
+  "llm_cost": 0.02453625,
+  "llm_model": "gpt-5.4-mini"
+}

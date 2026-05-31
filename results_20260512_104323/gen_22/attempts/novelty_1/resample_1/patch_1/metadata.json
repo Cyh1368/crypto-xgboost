@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "rolling_zscore_and_regime_robustness",
+  "patch_description": "The primary goal is to address the model's collapse in predictive slope and regression in performance from test to validation periods. This indicates the model is overfitting to specific market regimes (volatility levels, trendiness) present in the training data that do not persist.\n\nKey changes:\n1.  **Local Z-Score Normalization**: All core features (returns, volume, RSI, MACD) are now normalized using rolling Z-scores (using a 50-bar window). This makes features regime-invariant; for example, a return of 0.5% is interpreted relative to recent volatility rather than as an absolute value.\n2.  **Market Character Change Features**: Added \"Efficiency Ratio\" (Kaufman), \"Volatility Trend\", and \"Autocorrelation\" to explicitly measure whether the market is currently trending, mean-reverting, or shifting between these states.\n3.  **Interaction Terms**: Simplified interactions to `momentum / volatility` and `momentum * efficiency` to capture how price action behaves in different regimes.\n4.  **XGBoost Regularization**: Switched to a shallower `max_depth` (3) and significantly higher `min_child_weight` (25). This forces the model to find patterns that are supported by a large number of samples, improving generalization across the regime shift observed between the test and validation sets.\n5.  **Target Clipping**: Increased `CLIP_PERCENTILE` to 98 to allow the model to see slightly more of the tail distribution, which helps prevent slope collapse.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:48:37.635860",
+  "llm_cost": 0.019631,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 59,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "multiscale_regime_shift",
+  "patch_description": "This edit targets the core failure mode: the model\u2019s slope collapses in the newest regime because it relies too much on absolute-state features and not enough on regime-invariant, short-memory signals.\n\nThe feature changes add:\n- longer rolling return z-scores at 40/60/80 bars, which are more stable across volatility regimes than raw returns,\n- explicit regime-shift deltas between short and long z-scores, so the model can detect when the market character is changing rather than only its current level,\n- a short-horizon momentum \u00d7 volatility-regime interaction that is easier to transfer across regimes than raw momentum alone.\n\nTo keep feature count bounded and reduce low-value periodicity noise, the time-of-day features are removed. This makes room for the new regime features while staying comfortably under the 80-feature limit.\n\nThe hyperparameter changes slightly increase expressivity while keeping regularization present:\n- a bit more depth and trees,\n- lower min_child_weight,\n- slightly weaker regularization,\n- slightly slower learning with more boosting rounds.\n\nThis is intended to recover slope without reverting to the very overfit, regime-specific behavior seen earlier.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:26:56.112567",
+  "llm_cost": 0.02809275,
+  "llm_model": "gpt-5.4-mini"
+}

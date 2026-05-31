@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "shorter_lookback_zscore_regime_adaptive",
+  "patch_description": "The primary issue is that val_slope collapses to 0.006 (8.2% of train_slope), indicating features are regime-specific and don't generalize to the most recent period. The strategy is:\n\n1. **Shorter lookback windows**: Reduce feature lookbacks from 60+ bars to 5-20 bars maximum. This captures patterns that decay faster but generalize better across regime shifts.\n\n2. **Z-score normalization within rolling windows**: Transform features to be regime-invariant by computing z-scores over rolling windows. A 1% move in low volatility vs high volatility will have similar z-scores.\n\n3. **Rate-of-change features**: Instead of absolute levels, measure how market character is changing (volatility trend, momentum acceleration, efficiency trend).\n\n4. **Reduced model complexity**: Lower n_estimators to 200, increase min_child_weight to 3, and add regularization (reg_alpha=0.5, reg_lambda=1.0) to force the model to learn only robust patterns.\n\n5. **Momentum \u00d7 volatility regime interaction**: A single multiplicative feature that combines momentum with volatility regime, which often generalizes better than separate features.\n\n6. **Feature count reduction**: Cut from 80+ features to ~50 by removing long-lookback features and redundant interactions.\n\nThe goal is to achieve:\n- val_slope >= 0.020 (currently 0.006)\n- val_DA >= 0.525 (currently 0.511)\n- pred_std_ratio_val >= 0.18 (currently 0.112)\n- train_DA - val_DA <= 0.06 (currently 0.061)",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:14:58.282988",
+  "llm_cost": 0.075537,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

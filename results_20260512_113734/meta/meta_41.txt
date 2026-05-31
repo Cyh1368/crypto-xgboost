@@ -1,0 +1,434 @@
+# INDIVIDUAL PROGRAM SUMMARIES
+
+The following are summaries of individual programs evaluated since the last meta update:
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Indicators**
+
+- **Implementation**: Uses XGBoost (400 trees, depth 5, lr=0.15) with 80+ engineered features including multi-timeframe returns (1-48 lags), volatility regimes, RSI, Bollinger bands, MACD, volume ratios, momentum-volatility interactions, candle patterns, and optional orderbook/funding rate features. Applies 98th percentile target clipping and StandardScaler normalization with early stopping on test set.
+
+- **Performance**: Combined score of -1.85 with moderate directional accuracy (val_DA=0.51, test_DA=0.53) but very weak correlations (val_r=0.05, test_r=0.11) and severe slope degradation (val_slope only 8.2% of train_slope), indicating poor generalization.
+
+- **Feedback**: Predictions collapsed toward the mean due to excessive regularization or insufficient model expressivity (pred_std_ratio=0.11). Features appear highly regime-specific with train_r=0.48 dropping to val_r=0.05, suggesting the need for shorter lookbacks, rolling z-score normalization, or regime-conditional feature scaling to improve out-of-sample stability.
+**Program Identifier:** Generation 0 - Patch Name initial_program - Correct Program: True
+
+**Program Name: Z-Score Normalized XGBoost with Shorter Lookback Windows**
+
+- **Implementation**: Uses XGBoost with extensive z-score normalization of features across 20-bar rolling windows, shorter lookback periods (5-20 bars instead of 20-60), and regime-aware features including volatility interactions and momentum adjustments. Features include normalized returns, RSI, Bollinger Bands, volume ratios, and candlestick patterns, with 98th percentile target clipping.
+
+- **Performance**: Combined score: -10.00 (failure), program crashed with KeyError: 'vol_regime'.
+
+- **Feedback**: The program contains a critical bug where it references 'vol_regime' in the funding rate interaction feature but only defines 'vol_regime_fast', causing immediate failure. The extensive z-score normalization approach and shorter lookback windows show promise for regime invariance but cannot be evaluated due to the implementation error.
+**Program Identifier:** Generation 1 - Patch Name shorter_lookback_zscore_normalization - Correct Program: False
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Indicators**
+
+- **Implementation**: Uses XGBoost (250 estimators, depth 5, LR 0.15) with 98th percentile target clipping and StandardScaler normalization. Features include multi-timeframe returns (1-48 lags), volatility regimes, RSI, Bollinger Bands, MACD, volume ratios, momentum-volatility interactions, candle patterns, and optional orderbook/funding rate features—totaling 60+ engineered features with extensive regime and mean-reversion indicators.
+
+- **Performance**: Combined score of -3.97 with severe performance degradation (val_DA=0.53, val_r=0.00 vs train_r=0.51), indicating complete prediction collapse on validation set despite reasonable test performance (test_r=0.12).
+
+- **Feedback**: Predictions collapsed toward mean with val slope only 0.3% of train slope, indicating regime-specific features that fail across temporal boundaries. The model shows second-order regime shift (generalizes train→test but breaks test→val), suggesting need for features measuring change in market character rather than current state, plus shorter lookbacks or rolling z-score normalization.
+**Program Identifier:** Generation 2 - Patch Name shorter_lookback_zscore_normalization - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Detection**
+
+- **Implementation**: Uses XGBoost with 260 estimators (depth=3, learning_rate=0.06) and builds 60+ features including returns at multiple lags, volatility regimes, RSI, Bollinger bands, MACD, volume ratios, momentum-volatility interactions, candle patterns, and optional orderbook/funding rate features. Applies 97th percentile target clipping and StandardScaler normalization with early stopping at 40 rounds.
+
+- **Performance**: Combined score of -5.64 with directional accuracy around 51-56% across splits; train Pearson 0.31 drops to test 0.15 and val -0.02, indicating severe generalization failure and prediction collapse (pred_std_ratio=0.05).
+
+- **Feedback**: Model suffers from prediction collapse toward mean due to over-regularization and regime-specific features that fail at the test→val boundary (second-order regime shift). Val slope is only -4.3% of train slope, suggesting features need shorter lookbacks, rolling z-score normalization, or features measuring changes in market character rather than current state.
+**Program Identifier:** Generation 3 - Patch Name regime_invariant_short_windows - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Indicators**
+
+- **Implementation**: Uses XGBoost (250 estimators, depth 5, lr=0.15) with 98th percentile target clipping and StandardScaler normalization. Features include multi-timeframe returns (1-48 lags), volatility regimes, RSI, Bollinger Bands, MACD, volume ratios, momentum-volatility interactions, candle patterns, and optional orderbook/funding rate features totaling 60+ engineered indicators.
+
+- **Performance**: Combined score of -3.97 with severe prediction collapse (val_r=0.0019, test_r=0.12, train_r=0.51). Directional accuracy moderate (val_DA=0.53, test_DA=0.53, train_DA=0.59) but slope ratio catastrophically low at 0.3%, indicating predictions compressed toward mean with pred_std_ratio=0.13.
+
+- **Feedback**: Model suffers from three critical failures: (1) prediction collapse due to excessive regularization or insufficient model capacity, (2) regime-specific features that don't generalize (val slope only 0.3% of train slope suggests features are overfit to training period characteristics), and (3) second-order regime shift between test and validation periods (val_r drops to 1.5% of test_r). Recommendations include removing regularization, using shorter lookbacks with rolling z-score normalization, and adding features that capture changes in market character rather than just current state.
+**Program Identifier:** Generation 4 - Patch Name shorter_lookback_zscore_normalization - Correct Program: True
+
+**Program Name: XGBoost with Z-Scored Features and Regime-Invariant Normalization**
+
+- **Implementation**: Uses XGBoost with 250 estimators (depth=4, lr=0.12) and extensive feature engineering including z-scored returns within rolling windows (10, 20 periods), volatility regime indicators, momentum-volatility interactions, and time-based features. Features are designed for regime invariance using rolling normalization, shorter lookbacks (5-20 periods), and interaction terms between volume, price position, and volatility.
+
+- **Performance**: Combined score of -3.00 with severe prediction collapse (pred_std_ratio=0.08); directional accuracy around 53% on validation/test but train DA only 57%. Pearson correlations show dramatic degradation from train (0.41) to test (0.12) to validation (0.03), with validation slope only 4.7% of train slope.
+
+- **Feedback**: Model suffers from severe prediction collapse toward mean despite regime-invariant features, indicating over-regularization or insufficient model expressivity. The second-order regime shift (test→val breakdown worse than train→test) suggests features capture current market state but fail to adapt to changes in market character itself; warnings recommend adding features that measure the *change* in regime rather than just the current regime state.
+**Program Identifier:** Generation 5 - Patch Name shorter_lookbacks_and_zscore_normalization - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Indicators**
+
+- **Implementation**: Uses 80+ engineered features including momentum (multiple lags), volatility regimes (z-scored across windows), directional efficiency, autocorrelation, RSI oscillators, VWAP deviations, orderbook imbalance, and price-volume interactions. XGBoost model with conservative regularization (max_depth=3, min_child_weight=10, reg_lambda=8.0, learning_rate=0.05) and 95th percentile target clipping.
+
+- **Performance**: Combined score of -1.74 with directional accuracy around 51-54% across splits but very low Pearson correlations (0.04-0.20) and near-zero prediction slopes (0.00-0.01), indicating severe prediction collapse toward the mean.
+
+- **Feedback**: Heavy regularization caused predictions to collapse (penalty=1.317), with validation slope only 20.7% of training slope, suggesting features are regime-specific and don't generalize. The extensive feature set failed to produce meaningful predictions despite reasonable directional accuracy, indicating need for reduced regularization, shorter lookbacks, or regime-conditional scaling rather than more features.
+**Program Identifier:** Generation 6 - Patch Name regime_normalized_microxgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Detection**
+
+- **Implementation**: Uses XGBoost with 220 estimators and extensive feature engineering including 60+ features covering returns, volatility, RSI, Bollinger Bands, MACD, volume ratios, regime detection (trend strength, volatility regime), mean reversion indicators, momentum-volatility interactions, and candlestick patterns. Applies target clipping at 97th percentile and StandardScaler normalization with early stopping at 35 rounds.
+
+- **Performance**: Combined score of -2.66 with directional accuracy around 52% across all splits, but very low Pearson correlations (val_r=0.04, test_r=0.12, train_r=0.32) and critically low slope ratio of 9%, indicating severe prediction collapse toward the mean.
+
+- **Feedback**: Model suffers from prediction collapse (pred_std_ratio=0.043) despite rich features, suggesting over-regularization or insufficient model capacity. The validation slope is only 9% of training slope and val_r drops to 33% of test_r, indicating second-order regime shift where features that work across train→test fail at test→val boundary; requires features measuring changes in market character rather than just current state.
+**Program Identifier:** Generation 7 - Patch Name shorter_lookbacks_zscore_normalization - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Indicators**
+
+- **Implementation**: Uses XGBoost with 650 estimators (depth=4, lr=0.05) trained on 80+ technical features including returns at multiple lags, volatility regimes, RSI, Bollinger bands, MACD, volume ratios, momentum-volatility interactions, candle patterns, and optional orderbook/funding rate features. Applies 97th percentile target clipping and StandardScaler normalization with early stopping at 60 rounds.
+
+- **Performance**: Combined score of -2.23 with validation DA=0.53, test DA=0.53, but severe prediction collapse (pred_std_ratio=0.09) and poor generalization (val_r=0.05 vs train_r=0.47, slope_ratio=7%).
+
+- **Feedback**: Model suffers from three critical issues: predictions collapsed toward mean due to excessive regularization (reg_lambda=2.0, min_child_weight=4), features are regime-specific causing validation slope to be only 7% of training slope, and second-order regime shift between test and validation periods indicates features capture current market state but not changes in market character.
+**Program Identifier:** Generation 8 - Patch Name short_horizon_regime_features - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Volatility Regime Normalization**
+
+- **Implementation**: Uses XGBoost with 280 estimators (depth=3, learning_rate=0.045) on 100+ features including returns at multiple lags, volatility regimes, z-scored momentum, autocorrelation proxies, RSI oscillators, Bollinger positions, MACD signals, candle structure ratios, volume z-scores, VWAP deviations, and interaction terms (momentum×volatility, efficiency×volatility). Features incorporate time-based cyclical encoding and optional orderbook imbalance with exponential decay weighting.
+
+- **Performance**: Combined score of -2.14 with directional accuracy around 53% across all splits; Pearson correlations show significant degradation from train (0.25) to test (0.08) to validation (0.03), with validation slope only 9.8% of training slope.
+
+- **Feedback**: Predictions collapsed toward the mean despite extensive features, indicating over-regularization (reg_alpha=0.25, reg_lambda=1.8, min_child_weight=6) suppresses model expressivity. The severe slope ratio degradation (9.8%) and low generalization ratio (40.4%) suggest features are regime-specific and don't transfer across time periods; recommendations include shorter lookbacks, rolling-window z-score normalization, or regime-conditional scaling to improve temporal stability.
+**Program Identifier:** Generation 9 - Patch Name regime_shift_xgb_crossover - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Detection**
+
+- **Implementation**: Uses XGBoost with 220 estimators (depth=3, learning_rate=0.08) on 80+ features including returns at multiple lags, volatility regimes, RSI, Bollinger Bands, MACD, volume ratios, momentum-volatility interactions, candle patterns, and optional orderbook/funding rate features. Applies 97th percentile target clipping and StandardScaler normalization with early stopping at 35 rounds.
+
+- **Performance**: Combined score of -5.16 with directional accuracy around 52% across all splits, but very weak correlations (val_r=-0.01, test_r=0.14, train_r=0.30) and extremely low slope ratio (-2.0%), indicating severe prediction collapse toward the mean.
+
+- **Feedback**: Model suffers from prediction collapse (penalty=1.155) and regime-specific features that fail to generalize (val slope is only -2% of train slope). The second-order regime shift between test→val boundaries suggests features capture current market state but not changes in market character; recommendations include shorter lookbacks, rolling z-score normalization, and features measuring regime transitions rather than static regime indicators.
+**Program Identifier:** Generation 10 - Patch Name rolling_regime_features - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Detection**
+
+- **Implementation**: Uses XGBoost with 240 estimators (depth=3, learning_rate=0.06) and builds 60+ features including returns at multiple lags, volatility regimes, RSI, Bollinger bands, MACD, volume ratios, momentum-volatility interactions, candle patterns, and optional orderbook/funding rate features. Applies 96th percentile target clipping and StandardScaler normalization with early stopping at 35 rounds.
+
+- **Performance**: Combined score of -3.79 with directional accuracy around 51-55% across splits; Pearson correlations show severe degradation from train (0.27) to test (0.13) to validation (0.02), with validation slope only 5.7% of training slope and prediction std ratio of 0.05.
+
+- **Feedback**: Model suffers from prediction collapse toward mean (penalty=1.236) and second-order regime shift—generalizes train→test but breaks at test→val boundary (generalization_ratio=14.1%). Warnings indicate features are regime-specific and suggest adding features that measure changes in market character rather than just current state, plus shorter lookbacks or rolling z-score normalization.
+**Program Identifier:** Generation 11 - Patch Name short_regime_normalized_features - Correct Program: True
+
+**Program Name: XGBoost with Comprehensive Short-Horizon Feature Engineering**
+
+- **Implementation**: Uses XGBoost with 260 estimators (depth=3, learning_rate=0.06) on 100+ features including short-window momentum (1-20 periods), z-scored returns, volatility regimes, RSI oscillators, Bollinger bands, ATR-normalized ranges, volume ratios, VWAP deviations, orderbook imbalance, and funding rate interactions. Features emphasize 5-20 period lookbacks with regime-invariant normalization (rolling z-scores) and interaction terms combining momentum with volatility regimes.
+
+- **Performance**: Combined score of -2.15 with moderate directional accuracy (val_DA=0.53, test_DA=0.51) but weak correlations (val_r=0.04, test_r=0.07) and severe prediction collapse (pred_std_ratio=0.05, slope_ratio=9.5%).
+
+- **Feedback**: Model suffers from prediction collapse toward mean despite extensive feature engineering, indicating over-regularization (reg_lambda=2.5, min_child_weight=8) suppresses signal. The 9.5% slope ratio reveals features are regime-specific and fail to generalize from train to validation, suggesting that even short 5-20 period lookbacks capture transient patterns rather than persistent market structure.
+**Program Identifier:** Generation 12 - Patch Name regime_shortlook_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Detection**
+
+- **Implementation**: Uses XGBoost with 300 trees (depth=4, learning_rate=0.08) on 80+ features including returns at multiple lags, volatility regimes, RSI, Bollinger bands, MACD, volume ratios, momentum-volatility interactions, candle patterns, and optional orderbook/funding rate features. Applies 97th percentile target clipping and StandardScaler normalization with early stopping after 50 rounds.
+
+- **Performance**: Combined score of -4.37 with directional accuracy around 53% on validation/test sets but only 0.4% validation Pearson correlation, indicating severe prediction collapse (pred_std_ratio=0.07).
+
+- **Feedback**: Model suffers from three critical issues: predictions collapsed toward mean due to over-regularization, validation slope is only 0.8% of training slope indicating regime-specific features, and validation correlation is only 2.9% of test correlation suggesting second-order regime shift at the test→val boundary requiring features that measure changes in market character rather than current state.
+**Program Identifier:** Generation 14 - Patch Name shorter_lookbacks_zscore_regime_change - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Detection**
+
+- **Implementation**: Uses XGBoost with 520 estimators and conservative regularization (alpha=0.15, lambda=1.2, max_depth=3) on 80+ technical features including multi-horizon returns, volatility z-scores, RSI variants, moving average crossovers, MACD signals, volume ratios, orderbook imbalance, and funding rate interactions. Features emphasize short lookbacks (5-40 periods) with rolling normalization and regime detection through volatility ranking and trend strength metrics.
+
+- **Performance**: Combined score of -2.06 with directional accuracy around 52-55% across splits but very weak correlations (val_r=0.03, test_r=0.07, train_r=0.33) and severe slope collapse (val_slope only 8.5% of train_slope at 0.0025 vs 0.0290).
+
+- **Feedback**: Predictions collapsed toward mean despite extensive feature engineering, indicating over-regularization or insufficient model capacity. The dramatic slope ratio degradation (8.5%) reveals features are highly regime-specific and fail to generalize, suggesting the rolling normalization and short lookbacks were insufficient to achieve regime invariance across train/validation splits.
+**Program Identifier:** Generation 16 - Patch Name regime_shift_xgb_crossover - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regularization**
+
+- **Implementation**: Uses XGBoost with conservative hyperparameters (max_depth=4, high L2 regularization=3.0, learning_rate=0.08) and generates 80+ features including momentum indicators, volatility regimes, trend efficiency metrics, mean reversion signals, volume interactions, RSI variants, and orderbook imbalance features. Applies target clipping at 97th percentile and StandardScaler normalization before training.
+
+- **Performance**: Combined score of -2.17 with directional accuracy around 50-54% across splits; Pearson correlations show severe degradation from train (0.27) to validation (0.05), and validation slope is only 14.4% of training slope, indicating poor generalization.
+
+- **Feedback**: Predictions collapsed toward the mean due to excessive regularization (reg_lambda=3.0) suppressing model expressivity. Features appear highly regime-specific with poor out-of-sample transfer; recommendations include shorter lookback windows, rolling z-score normalization, regime-conditional scaling, and reducing regularization to allow the model to learn more expressive patterns from the rich feature set.
+**Program Identifier:** Generation 17 - Patch Name regime_shortlook_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Indicators**
+
+- **Implementation**: Uses XGBoost with 80+ engineered features including multi-timeframe returns, volatility z-scores, efficiency metrics, RSI variants, moving average crossovers, Bollinger bands, ATR, MACD signals, volume ratios, momentum-volatility interactions, and optional orderbook/funding features. Applies target clipping at 97th percentile, StandardScaler normalization, and early stopping with 560 trees at 0.055 learning rate.
+
+- **Performance**: Combined score of -1.55 with directional accuracy around 53-54% across splits, but very low Pearson correlations (train=0.26, test/val=0.06) and critically low prediction standard deviation ratio of 0.05 indicating severe prediction collapse.
+
+- **Feedback**: Model suffers from severe prediction collapse toward the mean despite extensive feature engineering, suggesting over-regularization or insufficient model expressivity. The validation slope is only 20% of training slope, indicating features are regime-specific and not generalizing; recommendations include shorter lookbacks, rolling z-score normalization, or regime-conditional scaling to improve cross-regime stability.
+**Program Identifier:** Generation 18 - Patch Name regime_shift_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Normalization**
+
+- **Implementation**: Uses XGBoost with 420 estimators and extensive feature engineering including 80+ features covering returns, volatility regimes, efficiency metrics, RSI, moving averages, Bollinger bands, ATR, MACD variants, volume interactions, and time-based features. Applies 97th percentile target clipping, StandardScaler normalization, and early stopping after 45 rounds with learning rate 0.05.
+
+- **Performance**: Combined score of -2.51 with directional accuracy around 52% on validation/test sets but only 55% on training; Pearson correlations are very weak (val: 0.02, test: 0.05, train: 0.30) with severe prediction collapse (std ratio 0.04).
+
+- **Feedback**: Model suffers from severe prediction collapse toward the mean despite rich features, indicating over-regularization or insufficient model capacity. The validation slope is only 6.8% of training slope, suggesting features are highly regime-specific and fail to generalize; shorter lookbacks or rolling z-score normalization within windows may help address regime shifts.
+**Program Identifier:** Generation 20 - Patch Name short_regime_aware_boost - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Detection**
+
+- **Implementation**: Uses 80+ features including returns at multiple lags, volatility trends, efficiency ratios, autocorrelation, RSI oscillators, moving average deviations, Bollinger bands, ATR, MACD, volume ratios, momentum-volatility interactions, and time-based features. Employs XGBoost with 640 estimators, max_depth=3, learning_rate=0.045, and target clipping at 98th percentile with StandardScaler normalization.
+
+- **Performance**: Combined score of -2.12 with directional accuracy around 52-55% across splits, but very low Pearson correlations (train=0.34, test=0.08, val=0.03) and poor slope ratio of 7.8%, indicating severe prediction collapse toward the mean.
+
+- **Feedback**: Model suffers from prediction collapse (penalty=1.054) and regime-specific overfitting, with validation slope only 7.8% of training slope despite extensive feature engineering. The warnings suggest features are not generalizing across market regimes; recommendations include shorter lookbacks, rolling z-score normalization, or regime-conditional scaling to improve out-of-sample performance.
+**Program Identifier:** Generation 21 - Patch Name regime_shift_xgb - Correct Program: True
+
+**Program Name: XGBoost with Multi-Scale Features and Regime Normalization**
+
+- **Implementation**: Uses XGBoost with 280 estimators (depth=4, lr=0.06) on 100+ features including multi-horizon returns, rolling z-scored returns for regime normalization, volatility trends across 5-60 periods, efficiency metrics, autocorrelation, RSI, Bollinger bands, MACD, candle structure, volume regimes, VWAP deviations, and interaction terms between momentum/volatility/regime. Features include orderbook imbalance and funding rate when available, with 97th percentile target clipping and standard scaling.
+
+- **Performance**: Combined score of -2.18 with directional accuracy of 52-53% on validation/test sets but poor regression metrics (val Pearson=0.04, val slope=0.0025 vs train slope=0.0372, slope ratio=6.8%, pred_std_ratio=0.07).
+
+- **Feedback**: Predictions collapsed toward mean despite extensive feature engineering, indicating over-regularization or insufficient model expressivity. The 6.8% slope ratio reveals severe regime-specificity where features trained on one market regime fail to generalize, suggesting the multi-scale features (5-120 period lookbacks) capture regime-dependent patterns rather than stable predictive relationships.
+**Program Identifier:** Generation 22 - Patch Name regime_shift_xgb_crossover - Correct Program: True
+
+**Program Name: Short-Lookback XGBoost with Regime-Invariant Features and Volatility Trend Tracking**
+
+- **Implementation**: Uses XGBoost with 240 estimators (depth=3, learning_rate=0.10) and extensive feature engineering focused on short lookbacks (5-20 periods). Implements z-scored returns and volume within rolling windows for regime invariance, volatility trend features (rate of change), efficiency metrics, and momentum×volatility interactions. Clips training targets at 97th percentile and applies StandardScaler normalization.
+
+- **Performance**: Combined score of -2.81 with directional accuracy around 53-54% across validation/test sets. Train Pearson correlation of 0.37 drops to 0.10 (test) and 0.03 (validation), with validation slope only 5.2% of training slope and prediction std ratio of 0.08.
+
+- **Feedback**: Severe prediction collapse toward mean indicated by extremely low pred_std_ratio (0.08) and slope degradation. Model suffers from second-order regime shift at test→val boundary (generalization_ratio=26.1%), suggesting features capture current market state but fail to adapt to changes in market character. Warnings recommend increasing model expressivity, removing regularization, and adding features that measure the *change* in regime rather than just current regime state.
+**Program Identifier:** Generation 13 - Patch Name none - Correct Program: True
+
+**Program Name: XGBoost Regression with Extensive Technical Feature Engineering**
+
+- **Implementation**: Implements an XGBoost regressor with 350 trees and extensive feature engineering including 80+ technical indicators covering momentum, volatility regimes, directional efficiency, autocorrelation, price-volume interactions, mean reversion signals, RSI oscillators, VWAP deviations, and orderbook imbalance features. Uses target clipping at 97th percentile, StandardScaler normalization, and early stopping with 40 rounds.
+
+- **Performance**: Combined score: -10.00 (worst possible score indicating complete failure).
+
+- **Feedback**: The program contains a critical syntax error on line 29 (likely a malformed separator "=======" between hyperparameter blocks) that prevents execution entirely. Despite sophisticated feature engineering with regime detection, cross-feature interactions, and multi-timeframe analysis, the syntax error makes the implementation non-functional and unable to produce any predictions.
+**Program Identifier:** Generation 15 - Patch Name adaptive_expressivity_boost - Correct Program: False
+
+**Program Name: Multi-Regime XGBoost with Momentum-Volatility Interactions**
+
+- **Implementation**: Uses XGBoost with 240 estimators (depth 4) and extensive feature engineering including regime-normalized returns, volatility trends, momentum-volatility interactions, volume-price pressure indicators, and orderbook imbalance features. Features focus on shorter time horizons (5-20 periods) with z-scored normalization and rate-of-change metrics, plus target clipping at 97th percentile.
+
+- **Performance**: Combined score: -10.00 (failure score due to runtime error).
+
+- **Feedback**: Program crashes with KeyError 'vol_regime_fast' - this feature is referenced in momentum regime calculations but never defined in the feature engineering block, indicating an incomplete feature definition that prevents execution and evaluation.
+**Program Identifier:** Generation 19 - Patch Name regime_adaptive_features_with_shorter_windows - Correct Program: False
+
+**Program Name: XGBoost with Adaptive Regime Features and Volatility Interactions**
+
+- **Implementation**: Uses XGBoost with 280 estimators and extensive feature engineering including shorter-horizon returns (1-21 periods), z-scored returns within rolling windows (5-20 periods), volatility trends and regime changes, momentum-volatility interactions, autocorrelation measures, and efficiency metrics across multiple timeframes. Features emphasize adaptive regime detection through volatility regime changes, trend acceleration, and rate-of-change indicators rather than static lookbacks.
+
+- **Performance**: Combined score of -3.03 with directional accuracy around 52-55% across splits but very poor correlation metrics (val_r=0.03, test_r=0.09, train_r=0.35) and extremely low slope ratio (5.2%), indicating severe prediction collapse toward the mean.
+
+- **Feedback**: Model suffers from prediction collapse (penalty=1.315) and regime-specific features that fail to generalize (val slope only 5.2% of train slope). The validation performance breakdown despite reasonable test performance indicates a second-order regime shift; features capture current market state but not the change in market character across regime boundaries. Recommendations include increasing model expressivity, removing excessive regularization, and adding features that measure changes in market dynamics rather than just current states.
+**Program Identifier:** Generation 23 - Patch Name regime_adaptive_features_v2 - Correct Program: True
+
+**Program Name: XGBoost with Regime-Invariant Features and Volatility Interactions**
+
+- **Implementation**: Uses XGBoost with 320 estimators (depth=4, lr=0.08) and extensive feature engineering including z-scored returns/volume within rolling windows (10-20 periods), volatility regime indicators, momentum×volatility interactions, efficiency ratios, and shorter lookback periods (5-20 bars) to reduce regime dependency. Features include MACD, RSI, Bollinger bands, ATR, orderbook imbalance, and funding rate interactions, with 98th percentile target clipping.
+
+- **Performance**: Combined score of -2.65 with directional accuracy around 52-55% across splits but very poor correlation (val_r=0.04, test_r=0.11) and extremely low prediction variance (pred_std_ratio=0.03), indicating severe prediction collapse toward the mean.
+
+- **Feedback**: Model suffers from critical prediction collapse despite regime-invariant feature design; val slope is only 6.4% of train slope, indicating features remain regime-specific. Second-order regime shift detected (val_r only 37.6% of test_r), suggesting the model needs features measuring the *change* in market character rather than just current state, and likely requires reduced regularization or increased model expressivity to prevent mean reversion.
+**Program Identifier:** Generation 24 - Patch Name regime_short_horizon_boost - Correct Program: True
+
+**Program Name: XGBoost with Regime-Aware Features and Volatility Gating**
+
+- **Implementation**: Uses XGBoost with 700 estimators and extensive feature engineering including 80+ features: short-term momentum (1-20 lags), volatility z-scores, regime-conditional gating (high/low vol interactions), autocorrelation trends, RSI variants, MACD signals, volume ratios, orderbook imbalance, and funding rate features. Applies target clipping at 98th percentile and StandardScaler normalization.
+
+- **Performance**: Combined score: -10.00 (failure score indicating critical error).
+
+- **Feedback**: Program crashes due to undefined 'vol_regime_rank' variable used before definition in regime-conditional feature gating section (lines referencing vol_regime_rank at ~line 160 occur before its actual definition at line 195). This ordering bug prevents execution despite sophisticated feature engineering approach with volatility regime awareness and interaction terms designed to reduce train-validation slope collapse.
+**Program Identifier:** Generation 25 - Patch Name regime_conditional_features - Correct Program: False
+
+**Program Name: XGBoost with Extensive Feature Engineering and Volatility Regime Features**
+
+- **Implementation**: Uses 80+ engineered features including returns at multiple lags, volatility regime indicators (z-scored, ranked, trend changes), momentum-volatility interactions, autocorrelation metrics, technical indicators (RSI, Bollinger bands, MACD), orderbook imbalance, and funding rate features. XGBoost model with conservative hyperparameters (max_depth=3, learning_rate=0.05, strong regularization via alpha=0.18 and lambda=1.4) and 96th percentile target clipping.
+
+- **Performance**: Combined score of -1.85 with directional accuracy around 53% across all splits, but very low Pearson correlations (train=0.19, test=0.07, val=0.04) and minimal slope coefficients (val_slope=0.0014), indicating severe prediction collapse toward the mean.
+
+- **Feedback**: Model suffers from prediction collapse despite rich feature set, with validation slope only 16.8% of training slope suggesting features are regime-specific and don't generalize. Warnings indicate need for increased model expressivity (reduce regularization), shorter lookbacks, or regime-conditional feature scaling to prevent overfitting to training-specific market conditions.
+**Program Identifier:** Generation 26 - Patch Name regime_crossover_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Indicators**
+
+- **Implementation**: Uses XGBoost with 320 estimators (depth=4, learning_rate=0.08) on ~80 engineered features including momentum z-scores, volatility regimes, trend efficiency metrics, autocorrelation, RSI variants, VWAP deviations, orderbook imbalance, and funding rate interactions. Features emphasize regime detection through rolling z-scores, volatility normalization, and cross-feature interactions (e.g., momentum × volume regime).
+
+- **Performance**: Combined score of -4.44 with severe prediction collapse (val_r=0.0042, test_r=0.0629, train_r=0.3651); directional accuracy barely above random (val_DA=0.50, test_DA=0.53); slope ratio of 0.9% indicates complete feature breakdown out-of-sample.
+
+- **Feedback**: Model suffers from extreme overfitting with predictions collapsing toward mean on validation set despite extensive regularization (reg_lambda=2.5, reg_alpha=0.15). Second-order regime shift detected between test and validation periods suggests features capture static market states rather than dynamic transitions; warnings recommend adding features measuring *changes* in market character and using shorter lookbacks with rolling normalization windows.
+**Program Identifier:** Generation 27 - Patch Name short_regime_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Detection**
+
+- **Implementation**: Implements 80+ features including short-horizon returns, volatility regimes, efficiency ratios, RSI oscillators, moving average deviations, ATR-normalized ranges, MACD signals, volume interactions, and optional orderbook/funding features. Uses XGBoost with moderate regularization (alpha=0.08, lambda=0.9, max_depth=4) and 98th percentile target clipping with StandardScaler normalization.
+
+- **Performance**: Combined score of -2.18 with directional accuracy around 51-53% across splits but very weak correlations (val_r=0.04, test_r=0.07, train_r=0.20) and severely collapsed predictions (pred_std_ratio=0.02, slope_ratio=14%).
+
+- **Feedback**: Model suffers from severe prediction collapse toward the mean despite extensive feature engineering, indicating over-regularization or insufficient model capacity. The validation slope being only 14% of training slope suggests features are highly regime-specific and not generalizing; recommendations include shorter lookbacks, rolling z-score normalization, or regime-conditional scaling to improve cross-regime stability.
+**Program Identifier:** Generation 28 - Patch Name increase_learning_rate_with_adjusted_stopping - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Detection**
+
+- **Implementation**: Implements 100+ features including returns, volatility ratios, RSI oscillators, Bollinger bands, ATR, MACD, volume metrics, orderbook imbalance, funding rates, and regime-detection features (vol_regime, trend strength/direction). Uses XGBoost with moderate regularization (alpha=0.08, lambda=1.8), 260 trees at depth 4, 97th percentile target clipping, and standard scaling.
+
+- **Performance**: Combined score of -3.69 with directional accuracy around 52% on validation/test sets but only 57% on training. Pearson correlations show severe degradation (train=0.41, test=0.07, val=0.01) with slope ratio of only 2.2%, indicating prediction collapse toward mean.
+
+- **Feedback**: Model suffers from three critical issues: (1) predictions collapsed toward mean despite extensive features, suggesting over-regularization or insufficient model capacity; (2) validation slope is only 2.2% of training slope, indicating regime-specific features that don't generalize; (3) second-order regime shift between test and validation (val_r only 18.9% of test_r) suggests need for features measuring changes in market character rather than just current state.
+**Program Identifier:** Generation 30 - Patch Name regime_shortxgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical and Regime Features**
+
+- **Implementation**: Uses XGBoost with 420 estimators and extensive feature engineering (80+ features) including returns, volatility regimes, efficiency metrics, RSI oscillators, moving averages, ATR, MACD, volume features, and regime interactions. Features are standardized and targets are clipped at 98th percentile before training with early stopping.
+
+- **Performance**: Combined score of -1.92 with directional accuracy around 53% across all splits, but very low Pearson correlations (train=0.23, test/val≈0.04-0.05) and minimal slope ratios (15.7%), indicating severe prediction collapse toward the mean.
+
+- **Feedback**: Predictions collapsed toward mean despite rich feature set, suggesting over-regularization or insufficient model expressivity. The validation slope being only 15.7% of training slope indicates features are highly regime-specific and don't generalize well; recommendations include shorter lookbacks, rolling z-score normalization, or regime-conditional scaling to improve cross-regime stability.
+**Program Identifier:** Generation 32 - Patch Name regime_shift_crossover - Correct Program: True
+
+**Program Name: XGBoost with Regime-Conditional Features and Volatility Interactions**
+
+- **Implementation**: Uses XGBoost with 640 estimators and extensive feature engineering including 80+ features: short-horizon returns, volatility trends, efficiency metrics, RSI oscillators, moving average deviations, MACD signals, volume interactions, and regime-conditional features that activate based on volatility percentile ranks (high/mid/low vol regimes). Applies 98th percentile target clipping and StandardScaler normalization with early stopping at 55 rounds.
+
+- **Performance**: Combined score of -1.88 with moderate directional accuracy (val_DA=0.53, test_DA=0.52) but very weak correlations (val_r=0.05, test_r=0.08) and severe slope degradation (val_slope only 11.4% of train_slope), indicating poor generalization and prediction collapse toward mean.
+
+- **Feedback**: Model suffers from prediction collapse (penalty=1.048) and regime-specific overfitting, with validation slope at only 11.4% of training slope despite extensive regime-conditional features. The 80+ feature set with complex volatility interactions appears to capture training-specific patterns that don't generalize, suggesting features are too regime-specific and may benefit from shorter lookbacks or within-window z-score normalization rather than global scaling.
+**Program Identifier:** Generation 33 - Patch Name regime_conditional_features - Correct Program: True
+
+**Program Name: Regime-Invariant Short-Horizon XGBoost with Extensive Feature Engineering**
+
+- **Implementation**: Uses 80+ features including short-window returns (1-20 lags), volatility metrics, trend efficiency, autocorrelation, RSI oscillators, price deviations from SMAs, ATR/candle structure, MACD signals, volume ratios, and explicit regime interaction terms. XGBoost model with 360 estimators, max_depth=3, learning_rate=0.05, and early stopping after 35 rounds; targets clipped at 99th percentile and features standardized.
+
+- **Performance**: Combined score of -1.71 with directional accuracy around 52-55% across splits; Pearson correlations show significant train-test gap (0.32 train vs 0.08 test), and validation slope is only 15.3% of training slope, indicating poor generalization.
+
+- **Feedback**: Model suffers from prediction collapse toward mean (pred_std_ratio=0.06) and regime-specific overfitting despite extensive feature engineering. The large train-validation performance gap suggests features are not truly regime-invariant; recommendations include shorter lookbacks, rolling z-score normalization, or regime-conditional scaling to improve cross-regime generalization.
+**Program Identifier:** Generation 34 - Patch Name regime_rank_xgb - Correct Program: True
+
+**Program Name: XGBoost with Regime-Aware Features and Volatility Normalization**
+
+- **Implementation**: Uses XGBoost with 320 estimators (depth=4) and extensive feature engineering including rolling z-score normalization of returns, volatility regime indicators, trend efficiency metrics, autocorrelation features, and interaction terms between momentum and volatility regimes. Features are clipped at 97th percentile and standardized; includes orderbook imbalance and funding rate features when available.
+
+- **Performance**: Combined score of -3.69 with directional accuracy around 53-56% across splits but very poor correlation metrics (val_r=0.02, test_r=0.12, train_r=0.36) and severe slope collapse (val_slope only 3.1% of train_slope).
+
+- **Feedback**: Model suffers from prediction collapse toward mean and severe regime-specific overfitting, with validation performance breaking at the test→val boundary indicating second-order regime shift. Despite sophisticated regime-aware features, the model fails to generalize, suggesting features still capture current market state rather than transferable patterns of market character change.
+**Program Identifier:** Generation 35 - Patch Name regime_shift_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Detection**
+
+- **Implementation**: Uses 100+ features including returns, volatility ratios, RSI, Bollinger bands, ATR, efficiency metrics, MACD, volume ratios, orderbook imbalance, funding rates, and cross-feature interactions. Features are clipped at 1st/99th percentiles, z-scored within rolling windows for regime invariance, and targets are clipped at 97th percentile before training XGBoost with 340 estimators, max_depth=4, learning_rate=0.06, and early stopping.
+
+- **Performance**: Combined score of -2.56 with directional accuracy around 51-56% across splits but very poor validation Pearson correlation (0.04) and slope ratio (9.6%), indicating severe prediction collapse and regime-specific overfitting despite reasonable test performance.
+
+- **Feedback**: Model suffers from prediction collapse toward mean (pred_std_ratio=0.04) and second-order regime shift between test and validation periods (val_r only 33% of test_r). Features are too regime-specific despite z-score normalization attempts; needs features measuring changes in market character rather than just current state, and likely requires reduced regularization or increased model expressivity.
+**Program Identifier:** Generation 36 - Patch Name short_regime_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Technical Features and Regime Indicators**
+
+- **Implementation**: Uses XGBoost with 300 estimators (depth=4, learning_rate=0.07) trained on 100+ technical features including returns, volatility ratios, RSI variants, Bollinger bands, ATR, efficiency metrics, MACD, volume ratios, orderbook imbalance, and funding rates. Features include z-scores, rank transformations, regime indicators (volatility regime relative to 60-period mean), and interaction terms between momentum and volatility regimes.
+
+- **Performance**: Combined score of -4.53 with directional accuracy around 50-52% across splits but extremely low correlations (val_r=0.006, test_r=0.054, train_r=0.242) and near-zero slopes (val_slope=0.0001 vs train_slope=0.0043, ratio=1.7%), indicating severe prediction collapse toward the mean.
+
+- **Feedback**: Model suffers from three critical failures: (1) predictions collapsed toward mean despite extensive features, suggesting over-regularization (reg_lambda=0.85) or insufficient model capacity, (2) validation slope is only 1.7% of training slope indicating regime-specific features that don't transfer, and (3) second-order regime shift between test and validation (val_r only 10.8% of test_r) suggests features capture current market state but not changes in market character—needs features measuring the rate of change in volatility regimes and market dynamics.
+**Program Identifier:** Generation 37 - Patch Name regime_shift_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Indicators**
+
+- **Implementation**: Uses 80+ features including momentum (multiple horizons), volatility regimes, directional efficiency, autocorrelation, RSI family, orderbook imbalance, funding rates, and interaction terms. XGBoost model with moderate regularization (reg_lambda=3.0, reg_alpha=0.15, max_depth=4) and 97th percentile target clipping.
+
+- **Performance**: Combined score of -2.31 with directional accuracy around 51-54% across splits but very low Pearson correlations (train=0.31, val=0.03, test=0.07) and collapsed predictions (pred_std_ratio=0.06).
+
+- **Feedback**: Severe prediction collapse toward mean despite rich features, indicating over-regularization or insufficient model capacity. Val slope is only 8.5% of train slope, suggesting features are regime-specific and don't generalize; recommendations include shorter lookbacks, rolling z-score normalization, or regime-conditional scaling.
+**Program Identifier:** Generation 38 - Patch Name regime_shortlook_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Normalization**
+
+- **Implementation**: Uses XGBoost with 300 estimators (depth=4, lr=0.06) on 100+ features including returns, volatility ratios, RSI, Bollinger bands, ATR, efficiency metrics, MACD, volume ratios, orderbook imbalance, and funding rates. Features are z-scored within rolling windows and clipped at 1st/99th percentiles to reduce regime-specific outlier dominance, with target clipping at 97th percentile.
+
+- **Performance**: Combined score of -2.46 with directional accuracy around 53-54% on validation/test sets but only 0.04/0.11 Pearson correlation; validation slope (0.0027) is only 5.6% of training slope (0.0478), indicating severe prediction collapse toward mean.
+
+- **Feedback**: Model suffers from prediction collapse (pred_std_ratio=0.07) and second-order regime shift failure—generalizes from train→test (33.5% generalization ratio) but breaks at test→val boundary. Warnings suggest features remain regime-specific despite normalization attempts; needs features measuring *change* in market character rather than current state, and potentially shorter lookbacks or regime-conditional scaling.
+**Program Identifier:** Generation 39 - Patch Name regime_shift_crossover - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Detection**
+
+- **Implementation**: Uses 100+ engineered features including returns, volatility ratios, RSI oscillators, Bollinger bands, ATR, MACD, volume metrics, orderbook imbalance, funding rates, and regime-state indicators. Features incorporate z-score normalization, rolling ranks, cross-feature interactions, and time-based encodings. XGBoost model with 280 estimators, max_depth=4, learning_rate=0.07, and early stopping after 45 rounds.
+
+- **Performance**: Combined score of -2.47 with directional accuracy of 53% (val), 50% (test), 58% (train). Pearson correlations show severe degradation from train (0.47) to test (0.13) to validation (0.04), with slope ratio of only 6.9% indicating poor generalization.
+
+- **Feedback**: Model suffers from prediction collapse toward mean and severe regime-specific overfitting, with validation slope only 6.9% of training slope. Second-order regime shift detected between test and validation sets; features capture current market state but fail to adapt to changes in market character, requiring features that measure the rate of regime change rather than just current regime.
+**Program Identifier:** Generation 40 - Patch Name regime_shift_xgb_crossover - Correct Program: True
+
+**Program Name: XGBoost with Extensive Regime-Invariant Feature Engineering**
+
+- **Implementation**: Uses 80+ features including normalized returns, volatility trends, efficiency ratios, autocorrelation shifts, RSI oscillators, moving average deviations, ATR metrics, volume interactions, and regime-invariant ratios (e.g., range-to-vol, eff-to-vol). XGBoost model with 520 estimators, max_depth=4, learning_rate=0.05, and moderate regularization (alpha=0.12, lambda=1.25); targets clipped at 98th percentile with StandardScaler normalization.
+
+- **Performance**: Combined score of -2.00 with validation DA=0.52, test DA=0.52, train DA=0.57; validation Pearson=0.06, test Pearson=0.08, train Pearson=0.42; slope ratio of 9.6% indicates severe prediction collapse.
+
+- **Feedback**: Predictions collapsed toward mean despite extensive feature engineering, suggesting over-regularization or insufficient model expressivity. Validation slope is only 9.6% of train slope, indicating features are regime-specific and fail to generalize; shorter lookbacks, rolling z-score normalization, or regime-conditional scaling recommended to improve out-of-sample performance.
+**Program Identifier:** Generation 41 - Patch Name short_regime_xgb - Correct Program: True
+
+**Program Name: XGBoost with Extensive Feature Engineering and Regime Detection**
+
+- **Implementation**: Implements 100+ features including momentum (1-20 lag returns, z-scores, ranks), volatility regimes (5/10/20 period rolling std with ratios and trends), technical indicators (RSI, Bollinger bands, MACD, ATR), market microstructure (orderbook imbalance with exponential weighting, funding rates), and cross-feature interactions (momentum × volatility regime, volume × price pressure). Uses XGBoost with moderate regularization (alpha=0.06, lambda=0.95, max_depth=4), 97th percentile target clipping, and StandardScaler normalization.
+
+- **Performance**: Combined score of -2.64 with directional accuracy around 53-54% on validation/test sets but severe prediction collapse (pred_std_ratio=0.05) and poor generalization (val_r=0.038 vs train_r=0.43, slope_ratio=5.9%).
+
+- **Feedback**: Model suffers from three critical issues: (1) predictions collapsed toward mean due to over-regularization despite extensive features, (2) regime-specific features fail at train→val boundary (val_r only 33% of test_r), indicating second-order regime shift, and (3) validation slope is only 6% of training slope, suggesting features capture historical patterns but don't adapt to changing market character—needs shorter lookbacks, rolling z-score normalization, or regime-conditional scaling.
+**Program Identifier:** Generation 42 - Patch Name regime_shift_xgb - Correct Program: True
+
+# GLOBAL INSIGHTS SCRATCHPAD
+
+The following are global insights about optimization approaches and their effectiveness:
+
+# Analysis of Program Evaluation Results
+
+## Successful Algorithmic Patterns
+
+- **Moderate regularization with balanced model capacity remains optimal**: The current best program (Generation 18, score=-1.55) continues to demonstrate that XGBoost with 560 estimators, max_depth=4, reg_lambda=1.8, reg_alpha=0.25, and learning_rate=0.055 achieves superior performance. This configuration achieves 19.9% slope ratio and 96.0% generalization ratio, significantly outperforming the new batch of programs which all scored worse than -1.71. Programs in this batch with similar or heavier regularization consistently failed: Generation 26 (reg_lambda=1.4, reg_alpha=0.18, score=-1.85), Generation 28 (reg_lambda=1.8, reg_alpha=0.08, score=-2.18), Generation 30 (reg_lambda=1.8, reg_alpha=0.08, score=-3.69), and Generation 37 (reg_lambda=0.85, reg_alpha=0.0, score=-4.53).
+
+- **Comprehensive 80-feature engineering with multi-scale analysis**: The best program's 80-feature approach with rolling z-scores (10, 20, 40 windows), multi-horizon volatility (5, 10, 20, 40 periods), momentum-volatility interactions, and efficiency metrics continues to outperform all alternatives. New programs attempting similar feature sets but with different configurations all underperformed: Generation 13 (score=-2.81), Generation 23 (score=-3.03), Generation 24 (score=-2.65), Generation 27 (score=-4.44), Generation 34 (score=-1.71), Generation 38 (score=-2.31), Generation 39 (score=-2.46), Generation 40 (score=-2.47), Generation 41 (score=-2.00), and Generation 42 (score=-2.64). The best program's specific feature combination and hyperparameter balance remains unmatched.
+
+- **Rolling z-score normalization across multiple windows (10, 20, 40) for regime invariance**: The best program's implementation of `ret_z_10`, `ret_z_20`, `ret_z_40` continues to demonstrate superior regime adaptation with 96.0% generalization ratio. New programs attempting similar normalization strategies failed to match this performance: Generation 13 (generalization_ratio=26.1%, score=-2.81), Generation 24 (generalization_ratio=37.6%, score=-2.65), Generation 27 (generalization_ratio not specified but severe second-order regime shift, score=-4.44), Generation 36 (generalization_ratio=33%, score=-2.56), and Generation 39 (generalization_ratio=33.5%, score=-2.46). The best program's specific window sizes and integration with other features appears critical.
+
+- **Balanced early stopping with 55 rounds and learning_rate=0.055**: The best program's configuration continues to outperform alternatives. New programs with different early stopping configurations all scored worse: Generation 28 (adjusted stopping, score=-2.18), Generation 30 (early stopping configuration, score=-3.69), Generation 32 (early stopping, score=-1.92), and Generation 33 (55 rounds but different hyperparameters, score=-1.88). The specific combination of 55 rounds with learning_rate=0.055 in the best program appears optimal for this feature set.
+
+## Ineffective Approaches
+
+- **Excessive regularization continues to cause severe prediction collapse across all new programs**: Every program in this batch suffered from prediction collapse with pred_std_ratio below 0.10, indicating the regularization-collapse pattern is pervasive. Generation 13 (pred_std_ratio=0.08, score=-2.81), Generation 23 (pred_std_ratio not specified but slope_ratio=5.2%, score=-3.03), Generation 24 (pred_std_ratio=0.03, score=-2.65), Generation 26 (pred_std_ratio not specified but slope_ratio=16.8%, score=-1.85), Generation 27 (pred_std_ratio not specified but slope_ratio=0.9%, score=-4.44), Generation 28 (pred_std_ratio=0.02, score=-2.18), Generation 30 (pred_std_ratio not specified but slope_ratio=2.2%, score=-3.69), Generation 32 (pred_std_ratio not specified but slope_ratio=15.7%, score=-1.92), Generation 34 (pred_std_ratio=0.06, score=-1.71), Generation 36 (pred_std_ratio=0.04, score=-2.56), Generation 38 (pred_std_ratio=0.06, score=-2.31), Generation 39 (pred_std_ratio=0.07, score=-2.46), Generation 40 (pred_std_ratio not specified but slope_ratio=6.9%, score=-2.47), Generation 41 (pred_std_ratio not specified but slope_ratio=9.6%, score=-2.00), and Generation 42 (pred_std_ratio=0.05, score=-2.64). All these programs show pred_std_ratio significantly worse than the best program's 0.0467.
+
+- **Second-order regime shifts plague programs despite regime-aware features**: Multiple new programs explicitly designed for regime invariance still failed at the test→validation boundary. Generation 13 (generalization_ratio=26.1%, val_r only 51.7% of test_r, score=-2.81), Generation 23 (val_r only 33.3% of test_r, score=-3.03), Generation 24 (val_r only 37.6% of test_r, score=-2.65), Generation 27 (val_r only 6.7% of test_r, score=-4.44), Generation 30 (val_r only 18.9% of test_r, score=-3.69), Generation 35 (second-order regime shift noted, score=-3.69), Generation 36 (val_r only 33% of test_r, score=-2.56), Generation 37 (val_r only 10.8% of test_r, score=-4.53), Generation 39 (second-order regime shift noted, score=-2.46), and Generation 40 (second-order regime shift noted, score=-2.47). This contrasts sharply with the best program's 96.0% generalization ratio, suggesting its specific feature engineering approach successfully captures transferable patterns.
+
+- **Implementation bugs continue to cause complete failures**: Generation 15 (syntax error on line 29, score=-10.00), Generation 19 (KeyError 'vol_regime_fast', score=-10.00), and Generation 25 (undefined 'vol_regime_rank' used before definition, score=-10.00) all crashed due to coding errors. These failures demonstrate that even sophisticated feature engineering concepts are worthless without correct implementation, and that variable definition ordering and syntax validation are critical quality gates.
+
+- **Slope ratio degradation below 10% indicates complete feature breakdown**: Most new programs showed catastrophic slope ratio collapse: Generation 23 (5.2%), Generation 24 (6.4%), Generation 27 (0.9%), Generation 28 (14%), Generation 30 (2.2%), Generation 36 (9.6%), Generation 37 (1.7%), Generation 38 (8.5%), Generation 39 (5.6%), Generation 40 (6.9%), Generation 41 (9.6%), and Generation 42 (5.9%). All these programs scored significantly worse than the best program's 19.9% slope ratio, indicating their features captured training-specific patterns that failed to generalize despite extensive regime-aware engineering attempts.
+
+## Implementation Insights
+
+- **The best program's specific 80-feature configuration with precise window sizes is difficult to replicate**: Despite multiple attempts to implement similar feature sets, no new program matched the best program's performance. The best program uses specific combinations: rolling z-scores at exactly [10, 20, 40] windows, volatility at [5, 10, 20, 40] periods, efficiency at [10, 20] periods, autocorrelation at [5, 10] periods, RSI at [5, 10, 14] periods, and moving averages at [5, 10, 20, 40] periods. Programs attempting similar but not identical configurations all underperformed, suggesting these specific window sizes and their interactions are finely tuned to the data characteristics.
+
+- **Feature ordering and variable definition sequence is critical for execution**: Generation 25 crashed because `vol_regime_rank` was referenced at line 160 before being defined at line 195, despite having sophisticated regime-conditional gating logic. Generation 19 crashed because `vol_regime_fast` was referenced but never defined. These failures highlight that even with correct algorithmic concepts, implementation execution order matters critically. The best program successfully defines all variables before use, with features built in logical dependency order (basic returns → volatility → regime indicators → interactions).
+
+- **Momentum-volatility interaction terms require specific formulations**: The best program implements `momentum_vol_interaction = ret_3 * vol_20`, `momentum_regime = ret_3 / (vol_20 + eps)`, `momentum_regime_fast = ret_3 * (vol_10 / (vol_20 + eps))`, and `momentum_regime_slow = ret_3 * (vol_20 / (vol_40 + eps))`. New programs attempted similar interactions but with different formulations and all scored worse. Generation 13 used momentum×volatility interactions (score=-2.81), Generation 23 used similar interactions (score=-3.03), Generation 24 used momentum×volatility interactions (score=-2.65), and Generation 42 used momentum × volatility regime interactions (score=-2.64). The best program's specific ratio-based and product-based interaction formulations appear optimal.
+
+- **Target clipping at 97th percentile with StandardScaler normalization is the dominant pattern**: The best program uses 97th percentile clipping, and most new programs adopted this approach: Generation 13 (97th percentile), Generation 23 (97th percentile), Generation 24 (98th percentile), Generation 26 (96th percentile), Generation 28 (99th percentile), Generation 30 (97th percentile), Generation 36 (97th percentile), Generation 39 (97th percentile), Generation 40 (97th percentile), and Generation 42 (97th percentile). However, clipping percentile alone doesn't determine success—the best program's 97th percentile combined with its specific feature set and hyperparameters achieves superior results, while programs with identical clipping but different configurations all scored worse.
+
+## Performance Analysis
+
+- **The best program's -1.55 score remains significantly superior to all new evaluations**: The closest new program was Generation 34 at -1.71 (10.3% worse), followed by Generation 26 at -1.85 (19.4% worse), Generation 33 at -1.88 (21.3% worse), Generation 32 at -1.92 (23.9% worse), Generation 41 at -2.00 (29.0% worse), and Generation 28 at -2.18 (40.6% worse). The majority of new programs scored below -2.30, with the worst being Generation 15, 19, and 25 at -10.00 (complete failures). This performance gap demonstrates that the best program's specific combination of hyperparameters and features is substantially better than alternatives.
+
+- **Slope ratio strongly correlates with combined score across all programs**: The best program's 19.9% slope ratio corresponds to its -1.55 score. Programs with slope ratios below 10% consistently scored worse than -2.00: Generation 23 (5.2%, score=-3.03), Generation 24 (6.4%, score=-2.65), Generation 27 (0.9%, score=-4.44), Generation 30 (2.2%, score=-3.69), Generation 36 (9.6%, score=-2.56), Generation 37 (1.7%, score=-4.53), Generation 38 (8.5%, score=-2.31), Generation 39 (5.6%, score=-2.46), Generation 40 (6.9%, score=-2.47), Generation 41 (9.6%, score=-2.00), and Generation 42 (5.9%, score=-2.64). Programs with slope ratios between 10-20% scored between -1.71 and -2.18: Generation 28 (14%, score=-2.18), Generation 32 (15.7%, score=-1.92), Generation 34 (15.3%, score=-1.71), and Generation 26 (16.8%, score=-1.85). This establishes slope ratio as a primary performance indicator.
+
+- **Generalization ratio above 90% is rare and strongly predictive of success**: The best program's 96.0% generalization ratio is exceptional. Most new programs showed severe generalization degradation: Generation 13 (26.1%), Generation 24 (37.6%), Generation 27 (severe second-order regime shift), Generation 30 (18.9% implied from val_r being 18.9% of test_r), Generation 36 (33%), Generation 37 (10.8%), and Generation 39 (33.5%). Only programs with generalization ratios above 90% can achieve scores better than -2.00, and the best program's 96.0% is a key differentiator enabling its -1.55 score.
+
+- **Directional accuracy remains non-discriminative across all programs**: All new programs showed directional accuracy clustering between 50-56% across splits, similar to the best program's 53-55% range. Generation 13 (53-54%), Generation 23 (52-55%), Generation 24 (52-55%), Generation 26 (53%), Generation 27 (50-56%), Generation 28 (51-53%), Generation 30 (52-57%), Generation 32 (53%), Generation 33 (52-53%), Generation 34 (52-55%), Generation 35 (53-56%), Generation 36 (51-56%), Generation 37 (50-52%), Generation 38 (51-54%), Generation 39 (53-54%), Generation 40 (50-58%), Generation 41 (52-57%), and Generation 42 (53-54%). This confirms that directional accuracy is not the primary performance differentiator—regression metrics (Pearson correlation, slope ratio, prediction variance) drive the combined score differences.
+
+# META RECOMMENDATIONS
+
+The following are actionable recommendations for the next program generations:
+
+# Actionable Recommendations for Future Program Mutations
+
+1. **Reduce regularization to combat prediction collapse while maintaining the successful depth-4 architecture**: The best program achieves superior performance but still suffers from severe prediction collapse (pred_std_ratio=0.0467, warnings about collapsing toward mean). Reduce `reg_lambda` from 1.8 to 1.3-1.5 and `reg_alpha` from 0.25 to 0.12-0.18, while keeping all other hyperparameters identical (`max_depth=4`, `min_child_weight=4`, `n_estimators=560`, `learning_rate=0.055`). This targeted adjustment should increase prediction variance and slope ratio from 19.9% toward 25-35% while preserving the successful tree structure and feature interactions that enable the 96.0% generalization ratio.
+
+2. **Extend the multi-scale z-score normalization to include 60 and 80-bar windows for enhanced regime invariance**: The best program's rolling z-scores at [10, 20, 40] windows achieve 96.0% generalization ratio, but the 19.9% slope ratio indicates room for improvement in capturing transferable patterns. Add `ret_z_60` and `ret_z_80` features, and create explicit regime shift indicators like `regime_shift_short_long = ret_z_20 - ret_z_60` and `regime_shift_medium_long = ret_z_40 - ret_z_80` to signal when short/medium-term behavior diverges from longer-term patterns. Keep the total feature count at or below 80 by removing the least important time-of-day features (`hour_sin`, `hour_cos`, `dow_sin`, `dow_cos`) which are likely less predictive than regime indicators.
+
+3. **Implement volatility-regime-conditional feature scaling for the top momentum and efficiency features**: The best program includes `vol_regime_rank` and `vol_regime_20_40` but doesn't use them to modulate other features dynamically. Create regime-adaptive versions of the strongest features: `ret_3_scaled = ret_3 * (1 + vol_regime_rank)`, `efficiency_10_scaled = efficiency_10 * (2 - vol_regime_rank)`, `momentum_regime_adaptive = (ret_3 / (vol_20 + eps)) * vol_regime_20_40`, and `rsi_14_scaled = (rsi_14 - 50) * (1 + 0.5 * vol_regime_rank)`. This explicit regime conditioning should improve both slope ratio and generalization by making features adapt their sensitivity to current market conditions rather than assuming static relationships.
+
+4. **Add cross-sectional percentile rank features for the most predictive raw features to enhance distribution invariance**: While the best program uses `vol_rank_60`, extend this ranking approach to create truly distribution-invariant versions of key features. Implement `ret_3_rank_60 = ret_3.rolling(60).rank(pct=True)`, `efficiency_10_rank_80 = efficiency_10.rolling(80).rank(pct=True)`, `momentum_regime_rank_60 = (ret_3 / (vol_20 + eps)).rolling(60).rank(pct=True)`, and `rsi_14_rank_60 = rsi_14.rolling(60).rank(pct=True)`. These percentile-based features should be more stable across regime shifts than raw values, potentially pushing slope ratio from 19.9% toward 25-30% while maintaining the successful 80-feature limit and avoiding the feature bloat that caused failures in other programs.
+
+5. **Increase learning rate to 0.065-0.075 with proportionally reduced early stopping to maintain training budget while increasing model expressivity**: The best program's `learning_rate=0.055` with `early_stopping_rounds=55` and `n_estimators=560` produces excellent generalization but suffers from prediction collapse, suggesting the model under-expresses the signal captured by the 80 features. Increase `learning_rate` to 0.065-0.075 and reduce `early_stopping_rounds` to 42-48 to maintain similar effective training iterations but with stronger individual tree contributions. This should increase pred_std_ratio from 0.0467 toward 0.10-0.15 and slope_ratio from 19.9% toward 25-30%, while the maintained depth-4 trees and existing regularization levels prevent overfitting that plagued programs with shallower trees or extreme learning rates.

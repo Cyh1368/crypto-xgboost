@@ -1,0 +1,14 @@
+{
+  "generation": 87,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "aggressive_prune_and_regularize",
+  "patch_description": "This edit implements aggressive feature pruning combined with stronger regularization to combat prediction collapse. The strategy:\n\n1. **Reduce feature count from 60+ to ~35**: Keep only the most orthogonal, non-redundant features. Remove:\n   - Redundant momentum acceleration features (keep only ret_accel_12_6)\n   - Duplicate regime interactions (keep only core vol_regime and trend interactions)\n   - Weak binary regime signals that don't add orthogonal information\n   - Redundant RSI variants\n\n2. **Strengthen regularization**: Increase reg_alpha to 0.01 (L1 penalty) to force feature selection, and reg_lambda to 0.03 to prevent overfitting. This combination helps the model learn which features truly matter.\n\n3. **Adjust hyperparameters for smaller feature set**:\n   - Reduce max_depth from 7 to 5 (smaller trees fit smaller feature sets better)\n   - Reduce n_estimators from 1000 to 600 (fewer trees prevent overfitting with strong regularization)\n   - Increase learning_rate from 0.06 to 0.08 (compensate for fewer estimators)\n\n4. **Loosen clipping slightly**: CLIP_PERCENTILE from 98\u219297 to keep more gradient signal while still limiting extreme outliers.\n\nThe rationale: With fewer, cleaner features and stronger regularization, the model will make more confident predictions on the signals that matter, improving pred_std_ratio while maintaining validation accuracy.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:45:10.011853",
+  "llm_cost": 0.045813,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

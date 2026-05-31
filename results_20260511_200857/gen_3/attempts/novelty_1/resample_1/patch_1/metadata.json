@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse_and_alignment",
+  "patch_description": "The program suffered from prediction collapse (pred_std_ratio=0.0091 vs target 0.15+) due to:\n1. Over-regularization (reg_lambda=1.0, reg_alpha=0.1, min_child_weight=10 were too strict)\n2. Insufficient model capacity (n_estimators=300, learning_rate=0.01 too conservative)\n3. Feature alignment bug: build_features() called dropna() which removed rows, breaking alignment between X and y\n\nThe fix:\n- Remove dropna() from build_features(), instead forward-fill NaN values to preserve alignment\n- Drastically reduce regularization (reg_alpha=0, reg_lambda=0.1)\n- Reduce min_child_weight from 10 to 1\n- Increase learning_rate from 0.01 to 0.05\n- Increase n_estimators from 300 to 500\n- Fill remaining NaN with 0 instead of dropping rows",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:09:20.359895",
+  "llm_cost": 0.016748,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

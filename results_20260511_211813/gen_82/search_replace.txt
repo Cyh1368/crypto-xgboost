@@ -1,0 +1,138 @@
+Looking at the performance metrics across all prior programs, I can see a consistent pattern:
+
+**Key Observations:**
+1. **Collapse penalty is high (0.40-0.56)** — predictions are collapsing toward the mean despite loosening regularization
+2. **pred_std_ratio is very low (0.04-0.09)** — model variance is much lower than target variance
+3. **val_DA plateaus around 0.51-0.52** — barely above random (0.50)
+4. Current config has very high regularization (reg_lambda=0.8, learning_rate=0.015) which is strangling the model
+
+**Root Cause:** The model is severely over-regularized and lacks sufficient capacity to capture true market signals. The early attempts with lower regularization (reg_lambda=0.05, learning_rate=0.1) actually achieved better validation DA despite warnings.
+
+**Strategy:**
+1. **Dramatically increase learning rate and reduce regularization** to let the model express itself
+2. **Reduce feature dimensionality** to avoid curse of dimensionality while keeping signal features
+3. **Focus on high-information features** and remove noisy/redundant ones
+4. **Increase tree depth and estimators** to capture non-linear patterns
+
+Let me propose three targeted changes:
+
+<NAME>
+reduce_overregularization_and_curate_features
+</NAME>
+
+<DESCRIPTION>
+The current model is severely over-regularized (reg_lambda=0.8, lr=0.015) which causes prediction collapse. Prior experiments show that models with reg_lambda=0.05-0.15 and lr=0.05-0.10 achieve better val_DA (0.52-0.53).
+
+I will:
+1. Increase learning_rate from 0.015 to 0.08 (closest to best historical performance)
+2. Reduce reg_lambda from 0.8 to 0.12 (balanced regularization)
+3. Reduce min_child_weight from 5 to 2 (allow more flexible tree fitting)
+4. Reduce n_estimators from 1400 to 900 (avoid overfitting with lighter trees)
+5. Curate features: Remove redundant lagged features (ret_1_lag1, ret_1_lag2, obi_lag1, funding_lag1) and low-signal skew feature. Keep only essential interaction and regime features.
+6. Keep max_depth=6 (good balance) and increase subsample/colsample to 0.9 (regularize via sampling, not via penalty)
+
+This mirrors the best-performing prior config (score -0.20) which had val_DA=0.5226 and pred_std_ratio=0.0607.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1400,
+    "max_depth": 6,
+    "min_child_weight": 5,
+    "reg_alpha": 0.02,
+    "reg_lambda": 0.8,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.015,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 900,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.12,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    feat["ret_accel_3"] = r1 - r3 / 3.0
+    feat["ret_accel_6"] = r3 - r6 / 2.0
+    feat["ret_accel_12"] = r6 - r12 / 2.0
+    feat["trend_stack"] = np.sign(r1) + np.sign(r3) + np.sign(r6) + np.sign(r12)
+    feat["ret_1_lag1"] = r1.shift(1)
+    feat["ret_1_lag2"] = r1.shift(2)
+=======
+    feat["ret_accel_3"] = r1 - r3 / 3.0
+    feat["ret_accel_6"] = r3 - r6 / 2.0
+    feat["ret_accel_12"] = r6 - r12 / 2.0
+    feat["trend_stack"] = np.sign(r1) + np.sign(r3) + np.sign(r6) + np.sign(r12)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    feat["rv_8"] = rv_8
+    feat["rv_24"] = rv_24
+    feat["rv_96"] = rv_96
+    feat["vol_ratio_8_96"] = rv_8 / (rv_96 + 1e-9)
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+    feat["ret_skew_24"] = log_ret.rolling(96).skew()
+=======
+    feat["rv_8"] = rv_8
+    feat["rv_24"] = rv_24
+    feat["rv_96"] = rv_96
+    feat["vol_ratio_8_96"] = rv_8 / (rv_96 + 1e-9)
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+        feat["obi_tau1"] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat["obi_tau3"] = df.apply(lambda r: obi(r, 3), axis=1)
+        feat["obi_lag1"] = feat["obi_tau1"].shift(1)
+=======
+        feat["obi_tau1"] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat["obi_tau3"] = df.apply(lambda r: obi(r, 3), axis=1)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    if "funding_rate" in df.columns:
+        fr = df["funding_rate"].astype(float)
+        feat["funding_rate"] = fr
+        feat["funding_ma_8h"] = fr.rolling(32).mean()
+        feat["funding_chg_1"] = fr.diff(1)
+        feat["funding_chg_4"] = fr.diff(4)
+        feat["funding_z_32"] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+        feat["funding_lag1"] = fr.shift(1)
+=======
+    if "funding_rate" in df.columns:
+        fr = df["funding_rate"].astype(float)
+        feat["funding_rate"] = fr
+        feat["funding_ma_8h"] = fr.rolling(32).mean()
+        feat["funding_chg_1"] = fr.diff(1)
+        feat["funding_chg_4"] = fr.diff(4)
+        feat["funding_z_32"] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+>>>>>>> REPLACE
+</DIFF>

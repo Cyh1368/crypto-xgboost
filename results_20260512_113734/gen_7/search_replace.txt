@@ -1,0 +1,273 @@
+<NAME>
+shorter_lookbacks_zscore_normalization
+</NAME>
+
+<DESCRIPTION>
+The primary issue is that val_slope collapsed to -0.0009 (from 0.0217 on train), indicating severe regime shift between test and val periods. The current regularization (reg_alpha=0.4, reg_lambda=1.2, min_child_weight=5) is too aggressive and causing prediction collapse (pred_std_ratio=0.0528, far below target of 0.18).
+
+My strategy addresses three core problems:
+
+1. **Reduce lookback windows**: Long lookbacks (60, 200 bars) encode regime-specific patterns. I'll shift toward 5-20 bar windows that capture price action dynamics while being more regime-invariant.
+
+2. **Add z-score normalization within rolling windows**: Instead of using raw values, normalize features within their recent distribution. A 2% return in low-vol regime vs high-vol regime has different meanings - z-scoring makes this regime-invariant.
+
+3. **Add rate-of-change features**: The warning explicitly states we need features measuring "CHANGE in market character" not just current state. I'll add:
+   - vol_trend: is volatility accelerating/decelerating?
+   - autocorr_trend: is serial correlation changing?
+   - efficiency_trend: is market becoming more/less efficient?
+
+4. **Relax regularization**: The collapse penalty (1.177) and pred_std_ratio (0.0528) show over-regularization. I'll reduce reg_alpha/reg_lambda and min_child_weight to allow the model to express variance while relying on shorter lookbacks for generalization.
+
+5. **Add momentum×volatility_regime interaction**: This single multiplicative term often generalizes better than both features separately, as suggested in the prompt.
+
+The feature count will stay under 80 by being selective about which features to keep and which to remove.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 260,
+    "max_depth": 3,
+    "min_child_weight": 5,
+    "reg_alpha": 0.4,
+    "reg_lambda": 1.2,
+    "subsample": 0.75,
+    "colsample_bytree": 0.75,
+    "learning_rate": 0.06,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 220,
+    "max_depth": 4,
+    "min_child_weight": 3,
+    "reg_alpha": 0.1,
+    "reg_lambda": 0.3,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.08,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 35,
+}
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- Returns ---
+    for lag in [1, 2, 3, 6, 12, 24, 48]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 20, 60]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+=======
+    # --- Returns (shorter lookbacks) ---
+    log_ret = np.log(close / close.shift(1))
+    for lag in [1, 2, 3, 6, 12]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # Z-scored returns (regime-invariant)
+    ret_1 = close.pct_change(1)
+    feat['ret_1_z10'] = (ret_1 - ret_1.rolling(10).mean()) / (ret_1.rolling(10).std() + 1e-9)
+    feat['ret_1_z20'] = (ret_1 - ret_1.rolling(20).mean()) / (ret_1.rolling(20).std() + 1e-9)
+
+    # --- Volatility (focus on shorter windows) ---
+    for w in [5, 10, 20]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+
+    # Volatility z-score (regime-invariant volatility)
+    vol_10 = log_ret.rolling(10).std()
+    feat['vol_10_z20'] = (vol_10 - vol_10.rolling(20).mean()) / (vol_10.rolling(20).std() + 1e-9)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- RSI ---
+    for period in [6, 14]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        feat[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+
+    # --- Bollinger Bands ---
+    bb_mid = close.rolling(20).mean()
+    bb_std = close.rolling(20).std()
+    feat['bb_pct'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+=======
+    # --- RSI (single period) ---
+    delta = close.diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    rs = gain / (loss + 1e-9)
+    feat['rsi_14'] = 100 - 100 / (1 + rs)
+
+    # RSI z-scored (regime-invariant)
+    rsi_14 = feat['rsi_14']
+    feat['rsi_14_z20'] = (rsi_14 - rsi_14.rolling(20).mean()) / (rsi_14.rolling(20).std() + 1e-9)
+
+    # --- Bollinger Bands (shorter window) ---
+    bb_mid = close.rolling(15).mean()
+    bb_std = close.rolling(15).std()
+    feat['bb_pct'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- ATR ---
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+    feat['atr_14'] = tr.rolling(14).mean()
+    feat['atr_norm'] = feat['atr_14'] / close
+=======
+    # --- ATR (shorter window) ---
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+    feat['atr_10'] = tr.rolling(10).mean()
+    feat['atr_norm'] = feat['atr_10'] / close
+
+    # ATR z-scored
+    atr_10 = feat['atr_10']
+    feat['atr_z20'] = (atr_10 - atr_10.rolling(20).mean()) / (atr_10.rolling(20).std() + 1e-9)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- Volume ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+=======
+    # --- Volume ---
+    feat['volume_ratio_10'] = volume / (volume.rolling(10).mean() + 1e-9)
+    vol_ratio_10 = feat['volume_ratio_10']
+    feat['volume_ratio_z20'] = (vol_ratio_10 - vol_ratio_10.rolling(20).mean()) / (vol_ratio_10.rolling(20).std() + 1e-9)
+
+    vwap = (close * volume).rolling(15).sum() / (volume.rolling(15).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- Regime features ---
+    feat['trend_strength_20'] = (close / close.shift(20) - 1).abs() * 10000
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    trend_20 = (close / close.shift(20) - 1) * 10000
+    trend_60 = (close / close.shift(60) - 1) * 10000
+    feat['trend_dir_20'] = np.sign(trend_20)
+    feat['trend_dir_60'] = np.sign(trend_60)
+    realized_vol_20 = log_ret.rolling(20).std()
+    realized_vol_60 = log_ret.rolling(60).std()
+    feat['vol_regime'] = realized_vol_20 / (realized_vol_20.rolling(200).mean() + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_20 / (realized_vol_60 + 1e-9)
+    feat['vol_rank_200'] = realized_vol_20.rolling(200).rank(pct=True)
+=======
+    # --- Regime features (shorter lookbacks) ---
+    realized_vol_10 = log_ret.rolling(10).std()
+    realized_vol_20 = log_ret.rolling(20).std()
+
+    # Volatility regime relative to recent history (not 200-bar)
+    feat['vol_regime'] = realized_vol_10 / (realized_vol_20 + 1e-9)
+    feat['vol_rank_60'] = realized_vol_10.rolling(60).rank(pct=True)
+
+    # CHANGE in volatility (rate of change of market character)
+    feat['vol_trend'] = (realized_vol_10 - realized_vol_10.shift(5)) / (realized_vol_10.shift(5) + 1e-9)
+
+    # Trend strength on shorter horizons
+    feat['trend_strength_10'] = (close / close.shift(10) - 1).abs() * 10000
+    feat['trend_dir_10'] = np.sign((close / close.shift(10) - 1) * 10000)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- Mean reversion features ---
+    sma_10 = close.rolling(10).mean()
+    sma_50 = close.rolling(50).mean()
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma50_dev'] = (close - sma_50) / (sma_50 + 1e-9)
+    feat['sma_cross'] = (sma_10 - sma_50) / (sma_50 + 1e-9)
+=======
+    # --- Mean reversion features (shorter windows) ---
+    sma_5 = close.rolling(5).mean()
+    sma_15 = close.rolling(15).mean()
+    feat['price_sma5_dev'] = (close - sma_5) / (sma_5 + 1e-9)
+    feat['price_sma15_dev'] = (close - sma_15) / (sma_15 + 1e-9)
+
+    # Z-scored mean reversion
+    price_dev = (close - sma_15) / (sma_15 + 1e-9)
+    feat['price_dev_z20'] = (price_dev - price_dev.rolling(20).mean()) / (price_dev.rolling(20).std() + 1e-9)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- Momentum × Volatility interactions ---
+    ret_3 = close.pct_change(3)
+    vol_20 = log_ret.rolling(20).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_20
+    feat['momentum_regime'] = ret_3 / (vol_20 + 1e-9)
+    feat['momentum_regime_20'] = ret_3 * feat['vol_regime']
+    feat['momentum_regime_fast'] = ret_3 * feat['vol_regime_fast']
+=======
+    # --- Momentum × Volatility interactions (KEY: single multiplicative term) ---
+    ret_3 = close.pct_change(3)
+    vol_10 = log_ret.rolling(10).std()
+
+    # Primary interaction: momentum × volatility regime
+    feat['momentum_vol_regime'] = ret_3 * feat['vol_regime']
+
+    # Normalized momentum
+    feat['momentum_norm'] = ret_3 / (vol_10 + 1e-9)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- Volume × Price position interactions ---
+    vol_ratio = volume / (volume.rolling(20).mean() + 1e-9)
+    bb_pct = (close - close.rolling(20).mean()) / (2 * close.rolling(20).std() + 1e-9)
+    feat['volume_bb_interaction'] = vol_ratio * bb_pct
+    feat['volume_price_pressure'] = vol_ratio * feat['price_sma10_dev']
+=======
+    # --- Volume × Price position interactions (shorter lookback) ---
+    vol_ratio = volume / (volume.rolling(10).mean() + 1e-9)
+    feat['volume_price_pressure'] = vol_ratio * feat['price_sma5_dev']
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH>
+    # --- High-low range features ---
+    feat['hl_range'] = (high - low) / close
+    feat['hl_range_ma'] = feat['hl_range'].rolling(10).mean()
+    feat['candle_body_ratio'] = (close - df['open']).abs() / ((high - low) + 1e-9)
+    feat['upper_wick_ratio'] = (high - df[['open', 'close']].max(axis=1)) / ((high - low) + 1e-9)
+    feat['lower_wick_ratio'] = (df[['open', 'close']].min(axis=1) - low) / ((high - low) + 1e-9)
+=======
+    # --- High-low range features (simplified) ---
+    feat['hl_range'] = (high - low) / close
+    feat['hl_range_z10'] = (feat['hl_range'] - feat['hl_range'].rolling(10).mean()) / (feat['hl_range'].rolling(10).std() + 1e-9)
+    feat['candle_body_ratio'] = (close - df['open']).abs() / ((high

@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_short_xgb",
+  "patch_description": "The current model uses moderately deep trees, weak regularization, and many long-horizon features (20\u2013200 bar windows) that fit the training regime too tightly. That explains the sharp train\u2192val slope collapse and the low prediction variance on validation.\n\nThis rewrite changes the internal algorithm in three ways:\n\n1. Shorter, more regime-invariant features:\n   - Uses mostly 3\u201320 bar windows instead of 60+ bar windows.\n   - Adds rolling z-scores for returns, volatility, volume, and range so the model sees normalized deviations rather than raw levels.\n   - Adds \u201ctrend of regime\u201d features like volatility trend, efficiency trend, and autocorrelation trend to capture changing market character.\n\n2. Explicit feature interactions that generalize:\n   - Momentum \u00d7 volatility-regime\n   - Momentum \u00d7 efficiency\n   - Volume pressure \u00d7 volatility regime\n   These interactions are more stable than using the raw components alone.\n\n3. Better XGBoost bias/variance control:\n   - Shallower trees with more samples per leaf\n   - Stronger L1/L2 regularization\n   - Slightly lower learning rate with more estimators\n   - Early stopping on the test split remains unchanged by interface, but the model is less likely to overfit the train regime\n\nI also reduce target clipping slightly and lower the minimum acceptable prediction std ratio so the model is less aggressively flattened. The goal is to restore validation slope and prediction spread without exceeding the train\u2192val generalization gap.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:43:51.831286",
+  "llm_cost": 0.018600000000000002,
+  "llm_model": "gpt-5.4-mini"
+}

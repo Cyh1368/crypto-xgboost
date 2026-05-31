@@ -1,0 +1,14 @@
+{
+  "generation": 43,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "increase_expressivity_reduce_collapse",
+  "patch_description": "The model is still collapsing (pred_std_ratio=0.058) despite best-in-class val_DA. The primary bottleneck is insufficient model capacity to express the signal in 80+ features under conservative regularization.\n\nStrategy:\n1. **Increase max_depth to 7** \u2013 allow trees to capture deeper non-linear interactions between regime, momentum, and volatility features\n2. **Lower reg_lambda to 0.005** \u2013 reduce L2 penalty significantly so the model isn't forced to shrink all coefficients toward zero\n3. **Raise min_child_weight to 2** \u2013 prevent spurious splits on noise while still allowing genuine interaction nodes\n4. **Increase learning_rate to 0.1** \u2013 with stronger regularization philosophy (depth + child weight), higher LR accelerates learning of valid splits\n5. **Tighten CLIP_PERCENTILE to 95** \u2013 focus training gradient on typical moves (not rare 1% tail events) to improve signal-to-noise in loss\n6. **Prune weak features** \u2013 remove redundant/noisy derived features (e.g., momentum_slowing, rsi_6_extreme, vol_shock thresholds) that compete for splits without clear predictive value; keep core regime signals and interactions that prior runs showed as useful\n\nThis targets the collapse problem while respecting prior success: prior max_depth=7 runs achieved val_DA=0.52-0.54.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:27:16.975618",
+  "llm_cost": 0.038658,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

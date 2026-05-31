@@ -1,0 +1,59 @@
+<NAME>
+fix_collapse_and_add_momentum_features
+</NAME>
+
+<DESCRIPTION>
+The current model suffers from prediction collapse (pred_std_ratio = 0.009), which triggers a high penalty and lowers the score. This edit increases model expressivity by increasing `max_depth` and `learning_rate` while reducing regularization (`min_child_weight`, `reg_lambda`).
+
+Additionally, I've added several high-signal features:
+1. Z-scores for returns, volume, and price to normalize across volatility regimes.
+2. Exponential Moving Average (EMA) distances and spreads to capture trend and mean-reversion signals.
+3. Log-returns and momentum indicators.
+4. Funding rate momentum (diff).
+5. Volatility momentum.
+
+These changes aim to help the model distinguish between different market states and increase the variance of its predictions, thereby fixing the collapse and improving directional accuracy.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 300,
+    "max_depth": 4,
+    "min_child_weight": 10,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "subsample": 0.6,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.01,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 30,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 5,
+    "min_child_weight": 5,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.7,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+def build_features(df: pd.DataFrame) -> pd.DataFrame

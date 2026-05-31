@@ -1,0 +1,14 @@
+{
+  "generation": 33,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regimexgb_pastshift",
+  "patch_description": "The current program uses a fairly deep XGBoost model with strong regularization and a feature set that is mostly price/volume trend indicators. The main weakness shown by the metrics is prediction collapse: `pred_std_ratio` stays very low, so the model is too conservative and produces outputs close to the mean.\n\nMy redesign changes two things:\n\n1. **Feature engineering becomes past-shifted and more regime-aware**\n   - All raw inputs are shifted by 1 bar before any transformation to strictly avoid lookahead.\n   - I add multi-scale momentum, volatility, candle-structure, volume-pressure, and regime-interaction features.\n   - I keep the total feature count under 80.\n   - I emphasize short-horizon directional structure and regime conditioning, which should help reduce mean collapse and improve directional accuracy on shifting crypto regimes.\n\n2. **XGBoost is made more expressive but less over-constrained**\n   - Lower depth than the current overly complex setup, but more trees and a smaller learning rate for smoother generalization.\n   - Reduced regularization relative to the collapsing models, with slightly higher subsampling and column sampling to preserve signal diversity.\n   - Lower `min_child_weight` and slightly more trees should increase prediction variance without causing a large overfit gap.\n\nI also lower target clipping slightly so the model sees more of the directional tail behavior, while still being robust to outliers.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:24:25.488933",
+  "llm_cost": 0.03029325,
+  "llm_model": "gpt-5.4-mini"
+}

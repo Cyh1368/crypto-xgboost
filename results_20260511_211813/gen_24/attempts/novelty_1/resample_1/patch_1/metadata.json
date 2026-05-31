@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "increase_expressivity_and_enrich_features",
+  "patch_description": "The current model is suffering from a \"collapsed toward mean\" issue (pred_std_ratio = 0.0139), which indicates it is being too conservative in its predictions. To address this, I am:\n1. Increasing model expressivity by increasing `n_estimators` to 800 and `max_depth` to 7, while lowering `learning_rate` to 0.01 for more stable convergence.\n2. Reducing regularization (`min_child_weight` to 1, `reg_alpha` to 0.0, and `reg_lambda` to 0.05) to allow the model to fit more complex patterns.\n3. Enriching the feature set with micro-structure indicators (candle wicks, body size), price location within recent ranges (`range_pos_20`), volume z-scores, and local return autocorrelation to provide more granular signals.\n4. Adding a funding rate change feature to capture shifts in market sentiment.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:23:18.157984",
+  "llm_cost": 0.012883,
+  "llm_model": "gemini-3-flash-preview"
+}

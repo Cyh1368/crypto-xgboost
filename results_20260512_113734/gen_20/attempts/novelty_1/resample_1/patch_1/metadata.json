@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "short_regime_aware_boost",
+  "patch_description": "This edit focuses on the root failure mode: the model\u2019s slope collapses in the newest regime and predictions are too mean-reverting. I\u2019m making the feature space more regime-invariant by emphasizing short windows and rolling z-normalized transforms, while also adding explicit \u201cchange in market character\u201d features such as volatility trend, autocorrelation trend, and efficiency trend. These are more likely to survive a second regime shift than absolute levels.\n\nOn the model side, I slightly increase expressivity by reducing regularization and tree constraints a bit, while keeping the ensemble size moderate to avoid overfitting. The goal is to raise pred_std_ratio and val slope without losing the current acceptable directional accuracy. The feature count remains safely below 80.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:43:33.442144",
+  "llm_cost": 0.0253125,
+  "llm_model": "gpt-5.4-mini"
+}

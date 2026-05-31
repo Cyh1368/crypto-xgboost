@@ -1,0 +1,96 @@
+<NAME>
+increase_expressivity_microstructure
+</NAME>
+
+<DESCRIPTION>
+To address the "collapsed toward mean" prediction issue (low pred_std_ratio), I am increasing model expressivity by increasing `max_depth` to 7 and reducing regularization parameters (`min_child_weight` to 1, `reg_alpha` to 0.0, and `reg_lambda` to 0.05). 
+
+I am also adding several high-signal features to capture market efficiency and microstructure better:
+1. **Kaufman Efficiency Ratio (ER)**: To distinguish between noisy mean-reverting phases and clean trending phases.
+2. **ATR-normalized volatility and returns**: To help the model better scale its predictions relative to current market volatility.
+3. **Volatility-adjusted returns**: Improving the signal-to-noise ratio of input returns.
+4. **Range expansion & Z-distance to EMA**: To capture local exhaustion and breakout signatures.
+
+`CLIP_PERCENTILE` is lowered to 95 to reduce the impact of noisy outliers in the 15-minute crypto return distribution, which can often cause regression models to shrink towards zero.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 900,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.12,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 98
+=======
+XGB_PARAMS = {
+    "n_estimators": 1100,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 95
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+
+    # A smooth compression/expansion state
+=======
+    feat["vol_ratio_24_192"] = rv_24 / (rv_192 + 1e-9)
+    feat["vol_accel"] = rv_8 / (rv_24 + 1e-9) - 1.0
+    feat["vol_adj_ret_1"] = r1 / (rv_8 + 1e-6)
+    feat["efficiency_14"] = (close - close.shift(14)).abs() / (close.diff().abs().rolling(14).sum() + 1e-9)
+
+    # A smooth compression/expansion state
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["range_width_20"] = (hi_20 - lo_20) / (close + 1e-9)
+    feat["range_width_60"] = (hi_60 - lo_60) / (close + 1e-9)
+
+    # ── Mean reversion pressure
+=======
+    feat["range_width_20"] = (hi_20 - lo_20) / (close + 1e-9)
+    feat["range_width_60"] = (hi_60 - lo_60) / (close + 1e-9)
+    feat["range_expansion"] = bar_range / (bar_range.rolling(24).mean() + 1e-9)
+    feat["z_dist_ema_21"] = (close - ema_mid) / (close.rolling(21).std() + 1e-9)
+
+    # ── Mean reversion pressure
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Direction persistence / churn
+    sign_r1 = np.sign(r1)
+    feat["dir_persist_8"] = sign_r1.rolling(8).mean()
+    feat["dir_persist_24"] = sign_r1.rolling(24).mean()
+=======
+    # ── Direction persistence / churn
+    sign_r1 = np.sign(r1)
+    feat["dir_persist_4"] = sign_r1.rolling(4).mean()
+    feat["dir_persist_8"] = sign_r1.rolling(8).mean()
+    feat["dir_persist_24"] = sign_r1.rolling(24).mean()
+>>>>>>> REPLACE
+</DIFF>

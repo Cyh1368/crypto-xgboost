@@ -1,0 +1,80 @@
+<NAME>
+increase_expressivity_and_vol_features
+</NAME>
+
+<DESCRIPTION>
+The current model suffers from a severe prediction collapse (pred_std_ratio = 0.03), indicating it is too regularized or lacks sufficient signal to make bold directional bets. 
+
+To address this, I am:
+1.  **Increasing Model Expressivity**: Significantly increasing the `learning_rate` (0.03 -> 0.18) and removing all L1/L2 regularization (`reg_alpha`, `reg_lambda` -> 0). I'm also setting `min_child_weight` to 1 to allow the model to capture more specific market states.
+2.  **Adding Volatility and Momentum Acceleration Features**: Introducing features that capture regime shifts and "shocks," such as `vol_expansion`, `volume_shock`, and `price_accel`. These features help the model identify turning points and high-conviction moves.
+3.  **Refining Normalization**: Adding `vwap_dev_std` (VWAP deviation normalized by rolling volatility) and `range_pos_10` to provide better context for mean reversion vs. trend continuation.
+4.  **Adjusting Clipping**: Reducing `CLIP_PERCENTILE` to 98 to help the model focus on the more frequent, tradable part of the return distribution.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 2,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.6,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+=======
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.18,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Keltner Channel Position
+    kc_mid = close.ewm(span=20, adjust=False).mean()
+    kc_range = tr.ewm(span=20, adjust=False).mean()
+    feat['kc_pct'] = (close - kc_mid) / (kc_range + 1e-9)
+
+    # --- Orderbook (if real data available) ---
+=======
+    # Keltner Channel Position
+    kc_mid = close.ewm(span=20, adjust=False).mean()
+    kc_range = tr.ewm(span=20, adjust=False).mean()
+    feat['kc_pct'] = (close - kc_mid) / (kc_range + 1e-9)
+
+    # --- Additional Signal Features ---
+    feat['log_vol'] = np.log1p(volume)
+    feat['vol_expansion'] = log_ret.rolling(5).std() / (log_ret.rolling(60).std() + 1e-9)
+    feat['vwap_dev_std'] = (close - vwap) / (close.rolling(20).std() + 1e-9)
+    feat['volume_shock'] = volume / (volume.rolling(20).mean() + 1e-9)
+    feat['price_accel'] = log_ret.diff(1)
+    feat['range_pos_10'] = (close - low.rolling(10).min()) / (high.rolling(10).max() - low.rolling(10).min() + 1e-9)
+    feat['rolling_skew_30'] = log_ret.rolling(30).skew()
+    feat['rolling_kurt_30'] = log_ret.rolling(30).kurt()
+    feat['rsi_velocity'] = feat['rsi_14'].diff(3)
+
+    # --- Orderbook (if real data available) ---
+>>>>>>> REPLACE
+</DIFF>

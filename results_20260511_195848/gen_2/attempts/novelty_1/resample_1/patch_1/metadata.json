@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reduce_regularization_increase_expressivity",
+  "patch_description": "The model predictions have collapsed toward the mean, indicated by a very low pred_std_ratio (0.0091), meaning the model is not learning meaningful signal and is outputting near-constant predictions. The warning suggests increasing model expressivity or reducing regularization.\n\nThe root cause is overly strong regularization and possibly too few estimators or too low learning rate. The current parameters have min_child_weight=10, reg_alpha=0.1, reg_lambda=1.0, subsample=0.6, colsample_bytree=0.8, and learning_rate=0.01 with 300 estimators.\n\nTo fix this, I will:\n- Reduce min_child_weight from 10 to 1 (less strict leaf size)\n- Reduce reg_alpha from 0.1 to 0 (less L1 regularization)\n- Reduce reg_lambda from 1.0 to 0.5 (less L2 regularization)\n- Increase subsample to 0.8 (more data per tree)\n- Increase learning_rate to 0.05 (faster learning)\n- Increase n_estimators to 500 (more trees to learn signal)\n- Keep max_depth=4 to avoid overfitting\n- Keep early_stopping_rounds=30 to prevent overfitting\n\nThese changes should increase model expressivity and reduce regularization, allowing the model to learn meaningful patterns and avoid collapsing predictions.\n\nNo changes to feature engineering or other code are needed.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T19:59:13.445007",
+  "llm_cost": 0.0041996,
+  "llm_model": "gpt-4.1-mini"
+}

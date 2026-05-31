@@ -1,0 +1,14 @@
+{
+  "generation": 91,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "increase_expressivity_microstructure",
+  "patch_description": "To address the \"collapsed toward mean\" prediction issue (low pred_std_ratio), I am increasing model expressivity by increasing `max_depth` to 7 and reducing regularization parameters (`min_child_weight` to 1, `reg_alpha` to 0.0, and `reg_lambda` to 0.05). \n\nI am also adding several high-signal features to capture market efficiency and microstructure better:\n1. **Kaufman Efficiency Ratio (ER)**: To distinguish between noisy mean-reverting phases and clean trending phases.\n2. **ATR-normalized volatility and returns**: To help the model better scale its predictions relative to current market volatility.\n3. **Volatility-adjusted returns**: Improving the signal-to-noise ratio of input returns.\n4. **Range expansion & Z-distance to EMA**: To capture local exhaustion and breakout signatures.\n\n`CLIP_PERCENTILE` is lowered to 95 to reduce the impact of noisy outliers in the 15-minute crypto return distribution, which can often cause regression models to shrink towards zero.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:45:53.240404",
+  "llm_cost": 0.0174515,
+  "llm_model": "gemini-3-flash-preview"
+}

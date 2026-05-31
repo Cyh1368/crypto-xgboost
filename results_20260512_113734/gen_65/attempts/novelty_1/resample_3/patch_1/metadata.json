@@ -1,0 +1,14 @@
+{
+  "generation": 65,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_contrast_xgb",
+  "patch_description": "I took the prior programs\u2019 best ideas \u2014 short-horizon returns, rolling z-scores, volatility regime features, and momentum\u00d7volatility interactions \u2014 and pushed them in a more regime-contrastive direction.\n\nThe main novelty is that the feature set now emphasizes **differences between adjacent market horizons** rather than absolute state. Instead of only asking \u201cis volatility high?\u201d or \u201cis momentum strong?\u201d, it asks \u201cis the short window meaningfully different from the medium window, and is the medium window different from the longer window?\u201d. This is designed to survive the train\u2192test\u2192val regime shift described in the feedback.\n\nI also made the feature space more compact and more stationary:\n- shorter lookbacks dominate the feature set,\n- rolling z-scores are extended to additional windows,\n- explicit regime-shift contrasts are added,\n- time-of-day features are removed to save capacity for more transferable signals,\n- higher-sample robustness is encouraged via slightly shallower trees and stronger child-weight regularization.\n\nThe result is a deliberately regime-aware but compact XGBoost setup that aims to reduce slope collapse on the validation period while keeping directional accuracy above the current baseline.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:38:51.809188",
+  "llm_cost": 0.0388965,
+  "llm_model": "gpt-5.4-mini"
+}

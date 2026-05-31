@@ -1,0 +1,14 @@
+{
+  "generation": 23,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 7,
+  "patch_name": "regime_adaptive_features_v2",
+  "patch_description": "The current model shows severe regime collapse: val_slope is negative (-0.0009) while train_slope is positive (0.0217), and val_r is negative (-0.0177) while test_r is positive (0.1470). This indicates the model learned patterns that completely invert in the validation period.\n\nThe core issue is that features are computed using absolute lookback windows (20, 60, 200 bars) that capture regime-specific patterns. When market character shifts, these features become misleading.\n\nMy strategy addresses this through three coordinated changes:\n\n1. **Shorter, adaptive lookback windows**: Replace long lookbacks (60, 200) with shorter ones (10, 20, 40) that decay faster and are less regime-specific. Add rolling z-score normalization within these shorter windows to make features regime-invariant.\n\n2. **Rate-of-change features**: Instead of measuring absolute volatility or trend levels, measure how these are CHANGING. Features like `vol_trend_5_10` (how vol_5 compares to vol_10) and `efficiency_change` (how path efficiency is evolving) capture market transitions rather than static states.\n\n3. **Reduce regularization**: The current model has high regularization (reg_alpha=0.4, reg_lambda=1.2, gamma=0.1) which forces it to find only the strongest patterns - but these are regime-specific. Lowering regularization to (reg_alpha=0.15, reg_lambda=0.5, gamma=0.03) allows the model to learn more diverse, robust patterns.\n\n4. **Increase model capacity slightly**: Bump max_depth from 3 to 4 and reduce min_child_weight from 5 to 3 to allow the model to capture more nuanced interactions between the new adaptive features.\n\nThe key insight: features that measure RELATIVE changes (z-scores, ratios, trends) generalize better than absolute levels because they're invariant to the baseline regime.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:53:36.157917",
+  "llm_cost": 0.128385,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

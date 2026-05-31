@@ -1,0 +1,52 @@
+edit_hyperparams_and_features
+The current model is suffering from a "collapse toward the mean" (pred_std_ratio = 0.08), which heavily penalizes the score. To fix this, I am increasing the model's expressivity by raising the learning rate, reducing regularization (reg_lambda to 0), and increasing the target clipping percentile. I am also adding several high-signal features (volatility shocks, volume shocks, RSI velocity, VWAP z-scores, and 24h range positions) to provide the model with more distinct directional cues.
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+        feat['funding_momentum'] = fr.diff(4)
+        feat['funding_x_volregime'] = fr * feat['vol_regime']
+
+    # --- Trend Consistency and Efficiency ---
+    feat['momentum_consistency_12'] = np.sign(log_ret).rolling(12).sum()

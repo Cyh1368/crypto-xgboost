@@ -1,0 +1,83 @@
+<NAME>
+increase_expressivity_and_regime_features
+</NAME>
+
+<DESCRIPTION>
+The model currently suffers from 'prediction collapse' (pred_std_ratio = 0.056, target 0.15), meaning it is under-fitting the signal or overly regularized. 
+
+I am proposing two main changes:
+1.  **Hyperparameter Adjustment**: Increase `max_depth` to 7 and `n_estimators` to 1000 to increase model expressivity. Simultaneously, I am reducing `reg_alpha` and `reg_lambda` to allow the model to capture more variance in the features. I've also increased `CLIP_PERCENTILE` to 99.0 to preserve more signal in the tails of the return distribution.
+2.  **Feature Engineering**: Added several high-value regime and momentum features:
+    *   **Efficiency Ratio (Kaufman)**: Measures the 'trendiness' of price action vs noise.
+    *   **Trend Acceleration**: Captures changes in momentum (momentum of momentum).
+    *   **Volatility of Volatility**: A robust regime indicator for identifying shifting market conditions.
+    *   **Range Z-Score**: Normalizes the current True Range to detect volatility expansion/compression.
+    *   **Z-Close**: Measures the distance of the current price from its moving average, normalized by volatility (mean-reversion indicator).
+    *   **Trend-Volatility Interaction**: Helps the model distinguish between high-volatility trends and high-volatility mean-reversion.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98.0
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.3,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 99.0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend & Regime ---
+    ma_fast = close.rolling(12).mean().shift(1)
+    ma_slow = close.rolling(48).mean().shift(1)
+    feat['trend_rel'] = (ma_fast / (ma_slow + eps)) - 1.0
+    feat['vol_regime'] = feat['rv_10'] / (feat['rv_60'] + eps)
+
+    # --- Session / Time (No shift needed for time) ---
+=======
+    # --- Trend & Regime ---
+    ma_fast = close.rolling(12).mean().shift(1)
+    ma_slow = close.rolling(48).mean().shift(1)
+    feat['trend_rel'] = (ma_fast / (ma_slow + eps)) - 1.0
+    feat['vol_regime'] = feat['rv_10'] / (feat['rv_60'] + eps)
+
+    tr = pd.concat([(high - low), (high - close.shift(1)).abs(), (low - close.shift(1)).abs()], axis=1).max(axis=1)
+    feat['efficiency_10'] = ((close - close.shift(10)).abs() / (tr.rolling(10).sum() + eps)).shift(1)
+    feat['trend_accel'] = (close.pct_change(12) - close.pct_change(48)).shift(1)
+    feat['vol_of_vol_20'] = log_ret1.rolling(20).std().rolling(20).std().shift(1)
+    feat['range_z_20'] = ((tr - tr.rolling(20).mean()) / (tr.rolling(20).std() + eps)).shift(1)
+    feat['z_close_24'] = ((close - close.rolling(24).mean()) / (close.rolling(24).std() + eps)).shift(1)
+    feat['trend_x_vol'] = feat['trend_rel'] * feat['vol_regime']
+
+    # --- Session / Time (No shift needed for time) ---
+>>>>>>> REPLACE
+</DIFF>

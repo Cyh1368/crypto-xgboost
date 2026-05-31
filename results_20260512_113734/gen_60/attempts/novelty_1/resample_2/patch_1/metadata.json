@@ -1,0 +1,14 @@
+{
+  "generation": 60,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover version combines the stronger parts of the earlier feature sets with the current implementation\u2019s regime-shift focus, while removing the heavy regularization that caused prediction collapse.\n\nMain changes:\n- Uses shorter lookbacks more aggressively (5\u201320 bars) and adds rolling z-score normalization to make features more regime-invariant.\n- Adds explicit regime-change features: volatility trend, autocorrelation trend, efficiency trend, dispersion trend.\n- Keeps robust interaction terms, especially momentum \u00d7 volatility regime and momentum \u00d7 efficiency.\n- Simplifies the feature set to stay well under 80 columns and reduce redundant long-horizon signals.\n- Loosens XGBoost regularization versus the current program to increase predictive slope and prediction variance, while still using modest safeguards against overfit.\n\nThe goal is to recover val slope and prediction dispersion without regressing too far on directional accuracy.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:27:49.046572",
+  "llm_cost": 0.03898875,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "robust_regime_invariant_zscore",
+  "patch_description": "The primary challenge in the previous iterations was a \"slope collapse\" where the model's predictive power evaporated during regime shifts (test to validation). This implementation addresses this by:\n1. **Regime-Invariant Features**: Shifting from absolute returns and volatility to rolling Z-scores and ratios. This ensures that a \"large move\" is defined relative to the current local volatility rather than an absolute percentage, which generalizes better across high and low volatility regimes.\n2. **Robustness over Complexity**: Reducing `max_depth` to 3 and significantly increasing `min_child_weight` to 40. This forces XGBoost to find patterns that are supported by a large number of samples, preventing it from fitting noise in the training set that doesn't persist.\n3. **Efficiency and Momentum Interactions**: Using Kaufman's Efficiency Ratio to distinguish between trending and range-bound markets, and interacting momentum with volatility ratios to capture how price action changes when volatility accelerates.\n4. **Target Noise Reduction**: Tightening the `CLIP_PERCENTILE` to 95 to focus the model on the bulk of the distribution rather than being skewed by extreme outliers that are often regime-specific.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:49:49.517219",
+  "llm_cost": 0.011635,
+  "llm_model": "gemini-3-flash-preview"
+}

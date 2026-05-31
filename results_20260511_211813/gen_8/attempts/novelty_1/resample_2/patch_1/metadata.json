@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "increase_expressivity_and_add_statistical_features",
+  "patch_description": "The current model suffers from a severe 'prediction collapse' (pred_std_ratio = 0.0166), meaning it is predicting values very close to the mean and failing to capture the variance of returns. To address this, I am proposing two main changes:\n\n1.  **Increase Model Expressivity**: I am significantly loosening the XGBoost hyperparameters. By increasing `max_depth` to 8, decreasing `min_child_weight` to 1, and reducing regularization (`reg_alpha` and `reg_lambda`), the model will be more capable of fitting the complex, non-linear relationships in the data. I've also increased the `learning_rate` to 0.1 to help the model move away from the mean-prediction bias.\n2.  **Enhanced Feature Engineering**: I am adding several statistical and momentum features to provide better signals for directional movement:\n    *   **Z-scores**: Rolling Z-scores for price and volume to identify mean-reversion opportunities.\n    *   **Higher-order Moments**: Rolling skewness and kurtosis to capture the 'shape' of recent return distributions and tail risks.\n    *   **Stochastic Oscillator**: A classic momentum indicator to identify overbought/oversold conditions.\n    *   **Momentum Acceleration**: Capturing the change in momentum (ret_1 - ret_3).\n    *   **Funding Velocity**: Capturing the rate of change in funding rates, which often precedes price shifts in perp markets.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:20:58.458771",
+  "llm_cost": 0.006744,
+  "llm_model": "gemini-3-flash-preview"
+}

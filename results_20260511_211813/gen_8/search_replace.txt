@@ -1,0 +1,91 @@
+<NAME>
+increase_expressivity_and_add_statistical_features
+</NAME>
+
+<DESCRIPTION>
+The current model suffers from a severe 'prediction collapse' (pred_std_ratio = 0.0166), meaning it is predicting values very close to the mean and failing to capture the variance of returns. To address this, I am proposing two main changes:
+
+1.  **Increase Model Expressivity**: I am significantly loosening the XGBoost hyperparameters. By increasing `max_depth` to 8, decreasing `min_child_weight` to 1, and reducing regularization (`reg_alpha` and `reg_lambda`), the model will be more capable of fitting the complex, non-linear relationships in the data. I've also increased the `learning_rate` to 0.1 to help the model move away from the mean-prediction bias.
+2.  **Enhanced Feature Engineering**: I am adding several statistical and momentum features to provide better signals for directional movement:
+    *   **Z-scores**: Rolling Z-scores for price and volume to identify mean-reversion opportunities.
+    *   **Higher-order Moments**: Rolling skewness and kurtosis to capture the 'shape' of recent return distributions and tail risks.
+    *   **Stochastic Oscillator**: A classic momentum indicator to identify overbought/oversold conditions.
+    *   **Momentum Acceleration**: Capturing the change in momentum (ret_1 - ret_3).
+    *   **Funding Velocity**: Capturing the rate of change in funding rates, which often precedes price shifts in perp markets.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 8,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Close position in range ---
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+
+    # --- Orderbook (if real data available) ---
+=======
+    # --- Close position in range ---
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+
+    # --- Statistical and Momentum features ---
+    feat['zscore_20'] = (close - close.rolling(20).mean()) / (close.rolling(20).std() + 1e-9)
+    feat['vol_zscore_20'] = (volume - volume.rolling(20).mean()) / (volume.rolling(20).std() + 1e-9)
+    feat['skew_20'] = log_ret.rolling(20).skew()
+    feat['kurt_20'] = log_ret.rolling(20).kurt()
+    feat['stoch_k_14'] = (close - low.rolling(14).min()) / (high.rolling(14).max() - low.rolling(14).min() + 1e-9)
+    feat['vol_momentum'] = volume.pct_change(5)
+    feat['mom_accel'] = feat['ret_1'] - feat['ret_3']
+
+    # --- Orderbook (if real data available) ---
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+=======
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+        feat['funding_velocity'] = fr.diff(4)
+>>>>>>> REPLACE
+</DIFF>

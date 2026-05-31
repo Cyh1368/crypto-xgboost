@@ -1,0 +1,14 @@
+{
+  "generation": 57,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 7,
+  "patch_name": "regime_invariant_short_windows",
+  "patch_description": "This edit targets the main failure mode directly: the model is learning patterns that vanish in the latest regime. I am making the feature set more regime-invariant and more sensitive to market-character changes by:\n\n- Extending return z-score normalization to 40/60/80 bars, so the model can compare short-term moves against slower regime baselines.\n- Adding explicit regime-shift features such as `ret_z_20 - ret_z_60`, `ret_z_40 - ret_z_80`, and short-vs-long volatility/efficiency/trend deltas.\n- Replacing some broad, regime-specific indicators with shorter-horizon normalized versions that decay faster but should generalize better.\n- Removing time-of-day features, which are relatively weak here and help preserve the feature budget below 80.\n- Slightly reducing over-regularization in XGBoost so the model can express a stronger slope without becoming too deep or unstable.\n\nThe intent is to raise `pred_std_ratio`, recover `val_slope`, and improve `val_r` / `val_DA` without regressing train-vs-val gap too much.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:25:59.886522",
+  "llm_cost": 0.029025000000000002,
+  "llm_model": "gpt-5.4-mini"
+}

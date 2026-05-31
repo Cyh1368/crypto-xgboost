@@ -1,0 +1,14 @@
+{
+  "generation": 8,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_robust_xgb_crossover",
+  "patch_description": "This version crosses over the stronger parts of both prior implementations while targeting the main failure mode: slope collapse in validation caused by regime-specific features.\n\nKey changes:\n- Uses shorter, more regime-robust lookbacks overall (5\u201320 bars emphasized, with only a few medium windows).\n- Adds rolling z-score normalization and rolling rank features to make signals more regime-invariant.\n- Introduces explicit rate-of-change regime features such as volatility trend, autocorrelation trend, and efficiency trend.\n- Keeps a compact feature set well under the 80-feature limit while preserving useful interactions like momentum \u00d7 volatility regime.\n- Tightens model regularization relative to the overfit-prone current version, but not so much that prediction variance collapses further.\n- Uses a slightly lower learning rate and a moderate number of trees to improve generalization across the second regime shift.\n\nThe implementation preserves the same inputs, outputs, and execution flow, while improving the internal feature engineering and XGBoost configuration.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:15:18.757284",
+  "llm_cost": 0.022572000000000002,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 50,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "shorter_regime_features_and_faster_boosting",
+  "patch_description": "This edit targets the core failure mode: the model\u2019s signal survives training but decays sharply in the later regime. I\u2019m making two coordinated changes.\n\n1. Feature engineering:\n   - Replace the long, regime-specific emphasis with shorter-horizon, regime-normalized signals.\n   - Add rolling z-scores for volatility, price deviation, volume, and key interaction terms so the model sees relative state instead of raw magnitude.\n   - Add explicit \u201cmarket character change\u201d features such as volatility trend, autocorrelation trend, and efficiency trend.\n   - Add a compact momentum \u00d7 volatility regime interaction and a few short lookback regime features that should transfer better to the most recent period.\n\n2. Hyperparameters:\n   - Slightly increase expressivity by raising learning rate and reducing overly strong regularization.\n   - Keep tree count moderate and early stopping fairly tight so the model can learn stronger slopes without drifting into the overfit patterns seen in earlier attempts.\n   - This should help lift `pred_std_ratio` and `val_slope` while keeping generalization loss controlled.\n\nThe combined intent is to preserve the current good DA while reducing slope collapse across the second regime shift.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:16:23.635442",
+  "llm_cost": 0.0376605,
+  "llm_model": "gpt-5.4-mini"
+}

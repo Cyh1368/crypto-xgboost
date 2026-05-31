@@ -1,0 +1,8 @@
+{
+  "combined_score": -10.0,
+  "public": {
+    "error": "index -1 is out of bounds for axis 0 with size 0"
+  },
+  "private": {},
+  "text_feedback": "index -1 is out of bounds for axis 0 with size 0"
+}

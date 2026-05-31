@@ -1,0 +1,4 @@
+{
+  "correct": false,
+  "error": "NDFrame.fillna() got an unexpected keyword argument 'method'"
+}

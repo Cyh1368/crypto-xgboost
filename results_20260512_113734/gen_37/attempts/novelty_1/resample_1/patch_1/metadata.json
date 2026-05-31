@@ -1,0 +1,14 @@
+{
+  "generation": 37,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb",
+  "patch_description": "This crossover version keeps the strongest parts of the prior implementations while focusing on the main failure mode: regime-specific predictions that collapse on validation. I combined shorter lookbacks, rolling z-score normalization, volatility/trend change features, and a compact set of interaction terms that are more likely to generalize across the train\u2192test\u2192val regime shifts.\n\nKey changes:\n- Uses shorter, regime-invariant feature windows more aggressively.\n- Adds explicit \u201cchange in market character\u201d signals: volatility trend, efficiency trend, trend acceleration, and rank/z-score transforms.\n- Keeps feature count compact to avoid overfitting and satisfy runtime constraints.\n- Slightly increases model expressivity while preventing collapse with moderate regularization and smaller child weights than the current baseline.\n- Preserves the exact interface and output format.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:58:13.104537",
+  "llm_cost": 0.038271,
+  "llm_model": "gpt-5.4-mini"
+}

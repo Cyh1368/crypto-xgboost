@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "short_regime_shift",
+  "patch_description": "This edit targets the main failure mode directly: the model has decent train/test signal but the slope collapses on the most recent regime. I\u2019m making two coordinated changes.\n\n1. Hyperparameters: slightly reduce regularization and tree fragmentation while keeping enough constraints to avoid overfitting. The current model is too expressive in a regime-specific way, but also underpowered in the latest regime because it collapses toward the mean. A modestly lower learning rate, fewer trees than the current 400, lower min_child_weight, and a touch more subsampling should improve usable expressivity without letting the model memorize train-only structure. Reducing early stopping a bit keeps training focused on the strongest trees.\n\n2. Features: replace long-horizon, regime-fragile signals with shorter windows and explicit regime-change features. The update emphasizes 5\u201320 bar windows, rolling z-scores, and differences between short and medium horizons so the model can react to changes in market character rather than absolute levels. I also add a direct momentum \u00d7 volatility-regime interaction and keep the feature count safely under 80.\n\nThis should help raise val slope and pred_std_ratio while improving regime robustness across the test\u2192val shift.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:16:51.459829",
+  "llm_cost": 0.03919575,
+  "llm_model": "gpt-5.4-mini"
+}

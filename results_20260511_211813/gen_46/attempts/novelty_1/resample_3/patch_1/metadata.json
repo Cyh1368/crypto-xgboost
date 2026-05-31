@@ -1,0 +1,14 @@
+{
+  "generation": 46,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "increase_expressivity_and_vol_features",
+  "patch_description": "The model currently suffers from a \"collapse toward the mean\" (pred_std_ratio ~0.06), which limits its performance despite decent directional accuracy. To address this, I am increasing model expressivity by:\n1. Tuning hyperparameters: Higher `max_depth`, lower `min_child_weight`, and reduced `reg_lambda` to allow the model to capture more granular signals.\n2. Adjusting `CLIP_PERCENTILE` to 97 to slightly reduce the influence of extreme bps outliers which can dampen the gradient for typical bars.\n3. Adding \"Amihud Illiquidity\" (price change per volume) and \"Volatility of Volatility\" features to help the model distinguish between noisy churn and high-conviction moves.\n4. Adding price-distance features normalized by ATR to better capture overextended regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:30:46.262445",
+  "llm_cost": 0.017828,
+  "llm_model": "gemini-3-flash-preview"
+}

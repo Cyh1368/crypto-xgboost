@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "short_regime_features",
+  "patch_description": "This edit targets the main failure mode: the model\u2019s slope collapses in the newest regime, which usually means it is learning absolute levels that do not survive regime shifts. The proposed feature set emphasizes short-horizon, regime-invariant signals:\n\n- shorter lookbacks for returns, volatility, trend strength, and mean-reversion\n- rolling z-scored versions of return, volatility, RSI, and price deviation\n- explicit rate-of-change features for volatility and efficiency\n- short-window autocorrelation and its trend, which helps capture market character changes\n- a stronger momentum \u00d7 volatility-regime interaction using normalized momentum\n\nI also slightly relax the tree regularization so XGBoost can fit these more informative but noisier short-term signals without collapsing toward the mean. This should help raise val_slope and pred_std_ratio while keeping overfit under control.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:47:39.137396",
+  "llm_cost": 0.0233535,
+  "llm_model": "gpt-5.4-mini"
+}

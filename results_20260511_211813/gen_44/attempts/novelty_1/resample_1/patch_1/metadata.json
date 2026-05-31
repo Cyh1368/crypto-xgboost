@@ -1,0 +1,14 @@
+{
+  "generation": 44,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "reduce_regularization_and_enhance_microstructure",
+  "patch_description": "The previous model suffered from a significant 'prediction collapse' (pred_std_ratio ~0.04), indicating it was overly regularized or lacked enough expressivity to distinguish signal from noise in 15-minute crypto data. \n\nI am making the following improvements:\n1. **Model Expressivity**: Increased `max_depth` to 6, `learning_rate` to 0.05, and decreased `min_child_weight` to 1. Reduced `reg_lambda` to 0.2 to allow the model to capture more variance, directly addressing the collapse warning.\n2. **Feature Selection & Microstructure**: I pruned redundant return and momentum horizons to stay under the 80-feature limit, ensuring that high-value features (Funding Rate, Orderbook Imbalance, and Regime Interactions) aren't truncated by the `iloc[:, :80]` safety catch. \n3. **New Features**: \n   - Added **Choppiness Index**: To help the model ignore low-signal sideways periods.\n   - Added **Price-Volume Pressure**: To capture divergences between price action and participation.\n   - Added **Efficiency Ratio**: Kaufman's metric for trend quality.\n4. **Targeting Consistency**: Adjusted `CLIP_PERCENTILE` to 99.0 to preserve more extreme signals during training, which can help increase the standard deviation of predictions.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:27:46.062875",
+  "llm_cost": 0.012345499999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

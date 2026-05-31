@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "ensemble_adaptive_regime_predictor",
+  "patch_description": "The current XGBoost approach suffers from severe prediction collapse (pred_std_ratio=0.04) and regime-specific overfitting (val_slope only 21% of train_slope). Instead of trying to fix XGBoost's regularization, I'm proposing a fundamentally different algorithmic approach:\n\n**Ensemble of Regime-Adaptive Linear Models with Dynamic Weighting**\n\nKey innovations:\n1. **Regime Detection**: Use online clustering (exponentially-weighted covariance) to detect market regimes in real-time based on volatility, trend, and volume characteristics.\n\n2. **Regime-Specific Models**: Train separate ridge regression models for each detected regime. Linear models generalize better across regime boundaries than deep trees.\n\n3. **Adaptive Weighting**: Use a meta-learner (lightweight gradient boosting) to dynamically weight regime predictions based on current market state, rather than hard regime assignment.\n\n4. **Micro-Structure Features**: Focus on ultra-short lookbacks (1-10 bars) with heavy z-score normalization to capture patterns that persist across regimes.\n\n5. **Ensemble Diversity**: Combine 3 sub-strategies:\n   - Momentum-based linear model (short-term continuation)\n   - Mean-reversion linear model (price extremes)\n   - Volatility-adjusted linear model (regime-normalized returns)\n\nWhy this should work better:\n- Linear models have lower variance \u2192 better generalization\n- Regime-specific training captures local patterns without global overfitting\n- Dynamic weighting adapts to regime transitions (the val period problem)\n- Ultra-short features decay faster but are more stable across time\n- Ensemble reduces model-specific biases\n\nThis is a complete paradigm shift from tree-based learning to adaptive linear ensembles with explicit regime modeling.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T11:47:14.592160",
+  "llm_cost": 0.11079900000000001,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

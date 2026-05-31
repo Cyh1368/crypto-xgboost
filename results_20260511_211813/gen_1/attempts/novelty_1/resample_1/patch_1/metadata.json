@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "expressive_regime_features",
+  "patch_description": "The current model is under-predicting variability, which is consistent with heavy regularization and a relatively small feature set. This edit increases model expressivity in a controlled way by:\n1) relaxing XGBoost regularization slightly and allowing more trees,\n2) adding regime-aware and standardized momentum/volume features,\n3) introducing short-horizon acceleration and interaction terms that often help BTC/ETH/SOL perp direction models,\n4) keeping all features strictly past-looking via rolling/shift operations.\n\nThe feature set remains well below the 80-feature limit, while the added interaction and z-score features should help raise pred_std_ratio without materially increasing overfit risk.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:18:35.713670",
+  "llm_cost": 0.015796499999999998,
+  "llm_model": "gpt-5.4-mini"
+}

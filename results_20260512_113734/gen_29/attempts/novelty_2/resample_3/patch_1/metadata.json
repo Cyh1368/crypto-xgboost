@@ -1,0 +1,14 @@
+{
+  "generation": 29,
+  "novelty_attempt": 2,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_crossover_v1",
+  "patch_description": "This crossover combines the best elements from both programs to address the regime shift problem:\n\n**From the current program (score -2.06):**\n- Better hyperparameters (n_estimators=260, max_depth=4, learning_rate=0.06)\n- More comprehensive feature set with multiple lookback windows\n- Feature winsorization (1-99 percentile clipping)\n- Better generalization_ratio (79.3% vs 26.1%)\n\n**From the inspiration program (score -2.81):**\n- Stronger focus on z-scored features for regime invariance\n- Shorter lookback windows (5-20 bars vs 5-60 bars)\n- Volatility trend features (pct_change of volatility)\n- Efficiency change features (rate of change of efficiency)\n\n**Key improvements in this crossover:**\n1. **Hybrid lookback strategy**: Keep short windows (5-20) for core features but add selective medium windows (30-40) for ranking/context\n2. **Enhanced z-scoring**: Apply z-score normalization to more features (returns, volatility, volume) within rolling windows\n3. **Rate-of-change emphasis**: Add more \"change in regime\" features (vol_trend, efficiency_chg, regime_chg) rather than absolute levels\n4. **Balanced regularization**: Use moderate regularization (reg_alpha=0.15, reg_lambda=1.3) between the two extremes\n5. **Feature pruning**: Remove redundant long-lookback features while keeping the most predictive short-horizon ones\n6. **Interaction refinement**: Keep only the most robust interaction terms (momentum \u00d7 vol_regime)\n\nThe goal is to achieve val_slope > 0.020 and val_r > 0.080 by making features more regime-adaptive while maintaining model expressivity.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:21:13.635119",
+  "llm_cost": 0.169986,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

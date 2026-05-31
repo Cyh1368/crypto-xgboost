@@ -1,0 +1,14 @@
+{
+  "generation": 61,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "capacity_boost_and_lagged_signals",
+  "patch_description": "The previous model suffered from a significant prediction collapse (pred_std_ratio = 0.027), indicating it was underfitting the variance of the target. To counter this, I am dramatically increasing the model capacity by raising n_estimators and max_depth, while simultaneously lowering the learning rate to ensure stable convergence. I also increased CLIP_PERCENTILE to 98th percentile to retain more tail signals. \n\nOn the feature engineering side, I've added:\n1. Autoregressive features: Lagged returns (t-1, t-2) to capture short-term momentum or mean-reversion persistence.\n2. Distributional features: Rolling skewness (24h) to identify asymmetrical risk regimes.\n3. Lagged exogenous features: Lagged Order Book Imbalance (OBI) and Funding Rate to better capture lead-lag relationships which are often present in perp futures.\nThese additions stay within the 80-feature limit while providing the model with more context to avoid simply predicting the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:32:30.417873",
+  "llm_cost": 0.017213,
+  "llm_model": "gemini-3-flash-preview"
+}

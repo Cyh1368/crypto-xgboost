@@ -1,0 +1,170 @@
+<NAME>
+ranked_short_horizon_regime_shift
+</NAME>
+
+<DESCRIPTION>
+This edit targets the main failure mode: the model learns signals that vanish in the newest regime, causing slope collapse and prediction compression toward the mean.
+
+I am making two coordinated changes:
+
+1. **Feature engineering update**
+   - Add short-window percentile-rank features for returns, volatility, efficiency, and RSI.
+   - Add explicit **change-in-market-character** features such as `vol_trend_short`, `eff_trend_short`, and `autocorr_trend_short`.
+   - Add a compact interaction feature: `mom_x_vol_regime_short = ret3_rank_40 * vol_regime_short`.
+   - These features are more regime-invariant than raw levels and should help the model keep usable slope in the validation regime.
+   - The added windows are intentionally short (5–40 bars) to reduce dependence on stale structure.
+
+2. **Hyperparameter update**
+   - Slightly increase model expressivity and reduce over-regularization.
+   - The current model is too compressed (`pred_std_ratio` is only ~0.04), so I relax regularization a bit and reduce `min_child_weight`.
+   - This should help the new regime-invariant features actually be used by the trees instead of being flattened out.
+
+The changes stay within the feature limit and only use past data.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 280,
+    "max_depth": 4,
+    "min_child_weight": 4,
+    "reg_alpha": 0.2,
+    "reg_lambda": 2.0,
+    "gamma": 0.0,
+    "subsample": 0.82,
+    "colsample_bytree": 0.82,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 340,
+    "max_depth": 4,
+    "min_child_weight": 2,
+    "reg_alpha": 0.05,
+    "reg_lambda": 1.0,
+    "gamma": 0.0,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # ── Short-memory returns / momentum
+    for lag in [1, 2, 3, 5, 8, 13, 20]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    # Multi-scale z-score normalization for regime invariance
+    feat["ret_z_10"] = zscore(ret1, 10)
+    feat["ret_z_20"] = zscore(ret1, 20)
+    feat["ret_z_40"] = zscore(ret1, 40)
+    feat["ret_z_60"] = zscore(ret1, 60)
+    feat["ret_z_80"] = zscore(ret1, 80)
+
+    # Regime shift indicators: divergence between time scales
+    feat["regime_shift_short_long"] = feat["ret_z_20"] - feat["ret_z_60"]
+    feat["regime_shift_medium_long"] = feat["ret_z_40"] - feat["ret_z_80"]
+
+    # momentum decay / acceleration
+    feat["mom_5_20"] = close.pct_change(5) - close.pct_change(20)
+    feat["mom_accel_3"] = ret1.diff(3)
+    feat["mom_accel_6"] = ret1.diff(6)
+=======
+    # ── Short-memory returns / momentum
+    for lag in [1, 2, 3, 5, 8, 13, 20]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    # Short-window regime-invariant versions of core return signals
+    feat["ret_z_10"] = zscore(ret1, 10)
+    feat["ret_z_20"] = zscore(ret1, 20)
+    feat["ret_z_40"] = zscore(ret1, 40)
+    feat["ret_rank_20"] = rank_pct(ret1, 20)
+    feat["ret_rank_40"] = rank_pct(ret1, 40)
+    feat["ret_rank_80"] = rank_pct(ret1, 80)
+
+    # Regime shift indicators: change in short-horizon market character
+    feat["regime_shift_short_long"] = feat["ret_z_20"] - feat["ret_z_40"]
+    feat["regime_shift_medium_long"] = feat["ret_z_40"] - feat["ret_rank_80"]
+
+    # momentum decay / acceleration
+    feat["mom_5_20"] = close.pct_change(5) - close.pct_change(20)
+    feat["mom_accel_3"] = ret1.diff(3)
+    feat["mom_accel_6"] = ret1.diff(6)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["vol_5_z_60"] = zscore(feat["vol_5"], 60)
+    feat["vol_10_z_60"] = zscore(feat["vol_10"], 60)
+    feat["vol_20_z_120"] = zscore(feat["vol_20"], 120)
+    feat["vol_trend_20"] = feat["vol_20"].diff(5)
+    feat["vol_trend_40"] = feat["vol_20"].diff(10)
+    feat["vol_rank_120"] = rank_pct(feat["vol_20"], 120)
+=======
+    feat["vol_5_z_60"] = zscore(feat["vol_5"], 60)
+    feat["vol_10_z_60"] = zscore(feat["vol_10"], 60)
+    feat["vol_20_z_120"] = zscore(feat["vol_20"], 120)
+    feat["vol_trend_20"] = feat["vol_20"].diff(5)
+    feat["vol_trend_40"] = feat["vol_20"].diff(10)
+    feat["vol_rank_120"] = rank_pct(feat["vol_20"], 120)
+    feat["vol_rank_40"] = rank_pct(feat["vol_20"], 40)
+    feat["vol_trend_short"] = feat["vol_5"].diff(3)
+    feat["vol_regime_short"] = feat["vol_10"] / (feat["vol_20"] + eps)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["eff_trend"] = feat["eff_10"] - feat["eff_20"]
+    feat["trend_dir_10"] = np.sign(close.pct_change(10))
+    feat["trend_dir_20"] = np.sign(close.pct_change(20))
+=======
+    feat["eff_trend"] = feat["eff_10"] - feat["eff_20"]
+    feat["trend_dir_10"] = np.sign(close.pct_change(10))
+    feat["trend_dir_20"] = np.sign(close.pct_change(20))
+    feat["eff_rank_40"] = rank_pct(feat["eff_10"], 40)
+    feat["eff_trend_short"] = feat["eff_10"].diff(5)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["autocorr_5_20"] = ret1.rolling(20).corr(ret1.shift(1))
+    feat["autocorr_5_60"] = ret1.rolling(60).corr(ret1.shift(1))
+    feat["autocorr_trend"] = feat["autocorr_5_20"] - feat["autocorr_5_60"]
+=======
+    feat["autocorr_5_20"] = ret1.rolling(20).corr(ret1.shift(1))
+    feat["autocorr_5_60"] = ret1.rolling(60).corr(ret1.shift(1))
+    feat["autocorr_trend"] = feat["autocorr_5_20"] - feat["autocorr_5_60"]
+    feat["autocorr_short"] = ret1.rolling(10).corr(ret1.shift(1))
+    feat["autocorr_trend_short"] = feat["autocorr_short"] - feat["autocorr_5_20"]
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["rsi_14"] = rsi
+    feat[f"rsi_{period}_z_60"] = zscore(rsi, 60)
+=======
+    feat[f"rsi_{period}"] = rsi
+    feat[f"rsi_{period}_z_60"] = zscore(rsi, 60)
+    feat[f"rsi_{period}_rank_60"] = rank_pct(rsi, 60)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["mom_x_volreg"] = ret3 * feat["vol_z_60"]
+    feat["mom_x_atrreg"] = ret3 * feat["atr_norm_20"]
+    feat["eff_x_volreg"] = feat["eff_10"] * feat["vol_rank_120"]
+    feat["range_x_volume"] = feat["range_z_20"] * feat["vol_z_20"]
+=======
+    feat["mom_x_volreg"] = ret3 * feat["vol_z_60"]
+    feat["mom_x_atrreg"] = ret3 * feat["atr_norm_20"]
+    feat["eff_x_volreg"] = feat["eff_10"] * feat["vol_rank_120"]
+    feat["range_x_volume"] = feat["range_z_20"] * feat["vol_z_20"]
+    feat["mom_x_vol_regime_short"] = feat["ret_rank_40"] * feat["vol_regime_short"]
+    feat["eff_x_vol_rank_40"] = feat["eff_rank_40"] * feat["vol_rank_40"]
+>>>>>>> REPLACE
+</DIFF>

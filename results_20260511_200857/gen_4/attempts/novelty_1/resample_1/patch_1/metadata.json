@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse",
+  "patch_description": "The model was suffering from severe prediction collapse (pred_std_ratio=0.0091) due to excessive regularization. The XGBoost hyperparameters were too conservative, forcing predictions toward the mean. The fix reduces regularization dramatically (reg_alpha: 0.1\u21920.01, reg_lambda: 1.0\u21920.1, min_child_weight: 10\u21921), increases model capacity (max_depth: 4\u21926, n_estimators: 300\u2192500), raises learning rate (0.01\u21920.05), and adjusts subsample. This allows the model to learn actual signal from the features while maintaining reasonable generalization.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:09:18.452887",
+  "llm_cost": 0.016318,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

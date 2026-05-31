@@ -1,0 +1,121 @@
+<NAME>
+regime_rank_shortlookups
+</NAME>
+
+<DESCRIPTION>
+This edit targets the current failure mode directly: the model is still too conservative and its slope collapses in the validation regime. I am making two coordinated changes.
+
+1. Hyperparameters are loosened slightly so XGBoost can express stronger patterns without becoming overly deep or unstable:
+- a bit more tree count
+- slightly deeper trees
+- lower min_child_weight
+- less regularization
+- slightly higher learning rate
+
+This should help recover prediction amplitude, which is currently extremely compressed.
+
+2. Feature engineering is shifted further toward regime-invariant, short-memory signals:
+- add rolling percentile-rank features for momentum, RSI, efficiency, and volatility regime
+- add a short-term volatility acceleration term
+- add a regime-conditional momentum interaction using the rank-transformed volatility regime
+
+These features are designed to survive the train→val regime shift better than raw level features, while staying within the feature limit and using only past data.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 260,
+    "max_depth": 3,
+    "min_child_weight": 5,
+    "reg_alpha": 0.18,
+    "reg_lambda": 1.4,
+    "subsample": 0.82,
+    "colsample_bytree": 0.74,
+    "learning_rate": 0.05,
+    "gamma": 0.04,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 35,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 320,
+    "max_depth": 4,
+    "min_child_weight": 3,
+    "reg_alpha": 0.08,
+    "reg_lambda": 1.0,
+    "subsample": 0.85,
+    "colsample_bytree": 0.78,
+    "learning_rate": 0.06,
+    "gamma": 0.02,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["vol_regime_z"] = (feat["vol_regime"] - feat["vol_regime"].rolling(40).mean()) / (
+        feat["vol_regime"].rolling(40).std() + eps
+    )
+    feat["vol_rank_120"] = rv_20.rolling(120).rank(pct=True)
+=======
+    feat["vol_regime_z"] = (feat["vol_regime"] - feat["vol_regime"].rolling(40).mean()) / (
+        feat["vol_regime"].rolling(40).std() + eps
+    )
+    feat["vol_rank_120"] = rv_20.rolling(120).rank(pct=True)
+    feat["vol_rank_40"] = rv_20.rolling(40).rank(pct=True)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["efficiency_trend"] = feat["efficiency_5"] - feat["efficiency_20"]
+    feat["trend_accel_5"] = feat["trend_5"].diff(2)
+    feat["trend_accel_10"] = feat["trend_10"].diff(3)
+=======
+    feat["efficiency_trend"] = feat["efficiency_5"] - feat["efficiency_20"]
+    feat["trend_accel_5"] = feat["trend_5"].diff(2)
+    feat["trend_accel_10"] = feat["trend_10"].diff(3)
+    feat["vol_accel_10"] = rv_10.diff(3) / (rv_20 + eps)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- RSI / oscillators ---
+    delta = close.diff()
+    gain = delta.clip(lower=0)
+    loss = (-delta.clip(upper=0))
+    for period in [5, 9, 14]:
+        rs = gain.rolling(period).mean() / (loss.rolling(period).mean() + eps)
+        feat[f"rsi_{period}"] = 100 - 100 / (1 + rs)
+=======
+    # --- RSI / oscillators ---
+    delta = close.diff()
+    gain = delta.clip(lower=0)
+    loss = (-delta.clip(upper=0))
+    for period in [5, 9, 14]:
+        rs = gain.rolling(period).mean() / (loss.rolling(period).mean() + eps)
+        feat[f"rsi_{period}"] = 100 - 100 / (1 + rs)
+
+    # --- Rolling percentile ranks for regime invariance ---
+    feat["ret_3_rank_40"] = feat["ret_3"].rolling(40).rank(pct=True)
+    feat["efficiency_10_rank_60"] = feat["efficiency_10"].rolling(60).rank(pct=True)
+    feat["rsi_9_rank_40"] = feat["rsi_9"].rolling(40).rank(pct=True)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat["momentum_regime_ratio_1"] = feat["ret_3"] / (rv_10 + eps)
+    feat["momentum_regime_ratio_2"] = feat["ret_5"] / (rv_20 + eps)
+    feat["price_vol_pressure"] = feat["price_sma10_dev"] * feat["vol_regime"]
+    feat["volume_price_pressure"] = feat["volume_ratio_20"] * feat["price_sma10_dev"]
+=======
+    feat["momentum_regime_ratio_1"] = feat["ret_3"] / (rv_10 + eps)
+    feat["momentum_regime_ratio_2"] = feat["ret_5"] / (rv_20 + eps)
+    feat["price_vol_pressure"] = feat["price_sma10_dev"] * feat["vol_regime"]
+    feat["volume_price_pressure"] = feat["volume_ratio_20"] * feat["price_sma10_dev"]
+    feat["momentum_rank_volregime"] = feat["ret_3_rank_40"] * feat["vol_rank_40"]
+>>>>>>> REPLACE
+</DIFF>

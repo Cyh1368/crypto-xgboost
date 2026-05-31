@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_zscoring_and_robust_params",
+  "patch_description": "The primary issue is a severe slope collapse (0.074 train -> 0.006 val), indicating the model is learning regime-specific absolute patterns that fail to generalize. \n\nI am implementing three key changes:\n1. **Hyperparameter Regularization**: Reducing `max_depth` to 3 and significantly increasing `min_child_weight` (to 25) and `reg_lambda` (to 15.0). This forces the model to find patterns that are consistent across large samples, preventing it from fitting to transient market noise.\n2. **Rolling Z-Score Normalization**: Introducing a rolling z-score transformation for returns, volatility, and RSI. This makes features regime-invariant (e.g., a 2-sigma move is comparable across high and low volatility environments).\n3. **Market Character Features**: Adding Kaufman's Efficiency Ratio and Volatility Trends to help the model identify when the market regime is shifting from trending to mean-reverting.\n4. **Increased Prediction Variance**: Raising `MIN_PRED_STD_RATIO` to 0.22 to counteract the prediction collapse.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:49:00.634796",
+  "llm_cost": 0.02024,
+  "llm_model": "gemini-3-flash-preview"
+}

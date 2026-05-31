@@ -1,0 +1,189 @@
+<NAME>
+regime_momentum_boost
+</NAME>
+
+<DESCRIPTION>
+The current model is still collapsing toward the mean, which suggests the feature set is not giving XGBoost enough sharp, regime-dependent splits. I’m proposing a targeted upgrade that does two things:
+
+1. **Increase expressivity slightly in the booster**
+   - Reduce `reg_lambda` and `gamma` a bit, keep `min_child_weight` low, and add a modest increase in trees.
+   - This should help the model use the already-strong features more aggressively without blowing up overfit too much.
+
+2. **Add a compact set of higher-signal regime/momentum features**
+   - Focus on normalized momentum, short-term trend slope, volatility compression, rolling skew, and a few interactions that XGBoost can split on cleanly.
+   - These are past-only features and should help distinguish when momentum should be trusted vs faded.
+   - Keep feature count well below the 80-feature limit.
+
+3. **Reduce target clipping slightly less aggressively**
+   - The current 95th percentile clip may be suppressing useful directional signal.
+   - Moving back to a more moderate clip should improve prediction variance and reduce collapse penalty.
+
+Overall, this aims to raise `pred_std_ratio` while preserving or improving validation DA.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 7,
+    "min_child_weight": 2,
+    "reg_alpha": 0.0005,
+    "reg_lambda": 0.005,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.1,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 95          # tighter clipping focuses gradient on typical moves, not tail outliers
+MIN_PRED_STD_RATIO = 0.10     # slightly higher floor to maintain collapse penalty incentive
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0003,
+    "reg_lambda": 0.002,
+    "subsample": 0.88,
+    "colsample_bytree": 0.92,
+    "learning_rate": 0.07,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 97          # preserve more directional variance to reduce mean-collapse
+MIN_PRED_STD_RATIO = 0.08     # allow more spread while still discouraging collapse
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- High-contrast binary regime signals (create natural tree splits) ---
+    # Momentum regime: strong positive vs negative momentum
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+    feat['momentum_regime'] = np.sign(ret_6)  # simplified: just sign, let depth=7 capture interaction with strength
+
+    # Volatility regime binary (high vs low)
+    vol_20_ma = log_ret.rolling(20).std()
+    vol_20_median = vol_20_ma.rolling(60).median()
+    feat['vol_high_binary'] = (vol_20_ma > vol_20_median).astype(float)
+    feat['vol_low_binary'] = (vol_20_ma < vol_20_median).astype(float)
+
+    # Trend regime: strong uptrend vs downtrend
+    sma_20 = close.rolling(20).mean()
+    sma_60 = close.rolling(60).mean()
+    feat['trend_up'] = ((close > sma_20) & (sma_20 > sma_60)).astype(float)
+    feat['trend_down'] = ((close < sma_20) & (sma_20 < sma_60)).astype(float)
+    feat['trend_regime'] = feat['trend_up'].astype(float) - feat['trend_down'].astype(float)
+
+    # --- Mean-reversion divergence signals ---
+    # Price deviation from SMA (mean reversion signal)
+    feat['price_dev_sma20'] = (close - sma_20) / (sma_20 + 1e-9)
+    feat['price_dev_sma60'] = (close - sma_60) / (sma_60 + 1e-9)
+
+    # RSI overbought/oversold signals
+    feat['rsi_overbought'] = (feat['rsi_14'] > 70).astype(float)
+    feat['rsi_oversold'] = (feat['rsi_14'] < 30).astype(float)
+
+    # --- Momentum divergence and acceleration signals ---
+    # Momentum acceleration (2nd derivative) - core signal
+    feat['ret_accel_12_6'] = ret_12 - ret_6
+
+    # Momentum divergence from trend
+    feat['momentum_vs_trend'] = np.sign(ret_6) * feat['trend_regime']
+
+    # --- Cross-regime interaction signals ---
+    # Momentum aligned with trend (strong signal)
+    feat['momentum_trend_aligned'] = np.sign(ret_6) * feat['trend_regime']
+=======
+    # --- High-contrast regime signals (tree-friendly splits) ---
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+    ret_24 = close.pct_change(24)
+    feat['momentum_regime'] = np.sign(ret_6)
+
+    vol_20_ma = log_ret.rolling(20).std()
+    vol_20_median = vol_20_ma.rolling(60).median()
+    feat['vol_high_binary'] = (vol_20_ma > vol_20_median).astype(float)
+    feat['vol_low_binary'] = (vol_20_ma < vol_20_median).astype(float)
+
+    sma_20 = close.rolling(20).mean()
+    sma_60 = close.rolling(60).mean()
+    feat['trend_up'] = ((close > sma_20) & (sma_20 > sma_60)).astype(float)
+    feat['trend_down'] = ((close < sma_20) & (sma_20 < sma_60)).astype(float)
+    feat['trend_regime'] = feat['trend_up'].astype(float) - feat['trend_down'].astype(float)
+
+    # --- Compact signal-strength features ---
+    feat['price_dev_sma20'] = (close - sma_20) / (sma_20 + 1e-9)
+    feat['price_dev_sma60'] = (close - sma_60) / (sma_60 + 1e-9)
+    feat['rsi_overbought'] = (feat['rsi_14'] > 70).astype(float)
+    feat['rsi_oversold'] = (feat['rsi_14'] < 30).astype(float)
+    feat['ret_accel_12_6'] = ret_12 - ret_6
+    feat['momentum_vs_trend'] = np.sign(ret_6) * feat['trend_regime']
+    feat['momentum_trend_aligned'] = np.sign(ret_6) * feat['trend_regime']
+    feat['momentum_strength'] = ret_6 / (vol_20_ma + 1e-9)
+    feat['momentum_strength_24'] = ret_24 / (vol_20_ma + 1e-9)
+    feat['trend_slope_20'] = (sma_20 / sma_20.shift(10) - 1)
+    feat['trend_slope_60'] = (sma_60 / sma_60.shift(20) - 1)
+    feat['vol_compression'] = vol_20_ma / (vol_20_ma.rolling(60).mean() + 1e-9)
+    feat['range_to_vol'] = ((high - low) / (close + 1e-9)) / (vol_20_ma + 1e-9)
+    feat['rsi_centered'] = (feat['rsi_14'] - 50.0) / 50.0
+    feat['rsi_x_mom'] = feat['rsi_centered'] * feat['momentum_strength']
+    feat['trend_x_volcomp'] = feat['trend_regime'] * feat['vol_compression']
+    feat['reversion_x_vol'] = feat['price_dev_sma20'] * feat['vol_high_binary']
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Orderbook (if real data available) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row, tau=1):
+            try:
+                bids = np.array(row['bids'])
+                asks = np.array(row['asks'])
+                bid_vol = np.sum(bids[:, 1] * np.exp(-tau * np.arange(len(bids))))
+                ask_vol = np.sum(asks[:, 1] * np.exp(-tau * np.arange(len(asks))))
+                return (bid_vol - ask_vol) / (bid_vol + ask_vol + 1e-9)
+            except Exception:
+                return 0.0
+        feat['obi_tau1'] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat['obi_tau3'] = df.apply(lambda r: obi(r, 3), axis=1)
+
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+        feat['funding_z_32'] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+=======
+    # --- Orderbook (if real data available) ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def obi(row, tau=1):
+            try:
+                bids = np.array(row['bids'])
+                asks = np.array(row['asks'])
+                bid_vol = np.sum(bids[:, 1] * np.exp(-tau * np.arange(len(bids))))
+                ask_vol = np.sum(asks[:, 1] * np.exp(-tau * np.arange(len(asks))))
+                return (bid_vol - ask_vol) / (bid_vol + ask_vol + 1e-9)
+            except Exception:
+                return 0.0
+        feat['obi_tau1'] = df.apply(lambda r: obi(r, 1), axis=1)
+        feat['obi_tau3'] = df.apply(lambda r: obi(r, 3), axis=1)
+        feat['obi_momentum'] = feat['obi_tau1'] * feat['momentum_strength']
+        feat['obi_trend'] = feat['obi_tau3'] * feat['trend_regime']
+
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+        feat['funding_z_32'] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+        feat['funding_change_8'] = fr.diff(8)
+        feat['funding_x_trend'] = feat['funding_rate'] * feat['trend_regime']
+>>>>>>> REPLACE
+</DIFF>

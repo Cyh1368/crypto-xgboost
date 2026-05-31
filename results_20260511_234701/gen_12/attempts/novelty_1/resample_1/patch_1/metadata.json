@@ -1,0 +1,14 @@
+{
+  "generation": 12,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "increase_expressivity_add_volavol",
+  "patch_description": "The model needs more expressivity to avoid predictions collapsing toward the mean. Increasing max_depth from 3 to 4, reducing regularization (reg_alpha, reg_lambda), and lowering min_child_weight will allow the model to learn richer patterns while still preventing severe overfitting.\n\nAdditionally, add volatility-of-volatility (vol_of_vol) features to capture second-order regime changes. When vol_of_vol is high, the market regime is shifting rapidly\u2014exactly when the model fails at the val boundary. These features measure CHANGE in market character, not just current state.\n\nAlso add adaptive feature scaling that normalizes by realized volatility rather than fixed rolling windows, making features regime-invariant across train/test/val.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:49:28.140120",
+  "llm_cost": 0.028815,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "short_regime_robust_features",
+  "patch_description": "This edit targets the core failure mode: the model\u2019s slope collapses out-of-sample because many current features are too level-dependent and too slow-moving. I\u2019m replacing the long-horizon, regime-specific feature set with a more compact, shorter-memory set that is normalized within rolling windows, so the same pattern means roughly the same thing across volatility regimes.\n\nKey changes:\n- Use shorter lookbacks for returns, volatility, RSI, ATR, MACD, and volume ratios.\n- Add rolling z-score normalization for price, returns, volatility, ATR, and volume so the model sees standardized deviations rather than raw levels.\n- Add regime-change features such as volatility trend and efficiency trend, which are more transferable across shifts than absolute regime levels.\n- Keep the useful momentum \u00d7 volatility interaction, but make it based on short-horizon normalized signals.\n- Remove some long-window, redundant features that likely overfit the training regime.\n\nI also tighten XGBoost to reduce memorization: fewer trees, slightly shallower depth, stronger regularization, and higher min_child_weight. This should reduce train/val slope collapse while keeping enough expressivity to improve val_DA and val_slope.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:45:27.977328",
+  "llm_cost": 0.02449125,
+  "llm_model": "gpt-5.4-mini"
+}

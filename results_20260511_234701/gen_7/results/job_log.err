@@ -1,0 +1,10 @@
+/home/chengyou1368/crypto-xgboost/results_20260511_234701/gen_7/main.py:226: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  feat["funding_rate"] = fr
+/home/chengyou1368/crypto-xgboost/results_20260511_234701/gen_7/main.py:227: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  feat["funding_8h_ma"] = fr.rolling(32).mean()
+/home/chengyou1368/crypto-xgboost/results_20260511_234701/gen_7/main.py:228: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  feat["funding_momentum"] = fr.diff(4)
+/home/chengyou1368/crypto-xgboost/results_20260511_234701/gen_7/main.py:229: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  feat["funding_z40"] = rz(fr, 40)
+/home/chengyou1368/crypto-xgboost/results_20260511_234701/gen_7/main.py:230: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  feat["funding_x_volregime"] = fr * feat["vol_regime"]

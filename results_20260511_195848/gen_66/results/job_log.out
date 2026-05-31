@@ -1,0 +1,15 @@
+RUN ERROR: This method is only implemented for DatetimeIndex, PeriodIndex and TimedeltaIndex; Got type Index
+Traceback (most recent call last):
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 153, in main
+    result = run_fn(df)
+             ^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 129, in run_fn
+    X_all = mod.build_features(df)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/results_20260511_195848/gen_66/main.py", line 95, in build_features
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24).shift(1)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/pandas/core/indexes/base.py", line 6046, in shift
+    raise NotImplementedError(
+NotImplementedError: This method is only implemented for DatetimeIndex, PeriodIndex and TimedeltaIndex; Got type Index
+

@@ -1,0 +1,61 @@
+<NAME>
+dynamic_regime_zscore_boost
+</NAME>
+
+<DESCRIPTION>
+This algorithm addresses the "prediction collapse" issue by significantly increasing model expressivity and introducing regime-invariant features. Key innovations include:
+1. **Z-Score Normalization**: Momentum and volatility features are normalized by their rolling distributions, allowing the model to identify relative signal strength regardless of the current market volatility regime.
+2. **Microstructure Price Action**: Features like upper/lower wick ratios and body-to-ATR ratios capture candle-level exhaustion and momentum signals often missed by simple returns.
+3. **Donchian-Style Positioning**: Distance from 24-hour highs and lows provides context for mean reversion vs. breakout regimes.
+4. **Expressive XGB Configuration**: By reducing regularization (reg_alpha/lambda) and increasing the learning rate and depth, the model is forced to "commit" to directional predictions, increasing the prediction standard deviation ratio and reducing the collapse penalty.
+5. **Momentum Persistence**: A rolling autocorrelation proxy identifies whether the current market is in a trending or mean-reverting state.
+</DESCRIPTION>
+
+<CODE>
+```python
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.6,
+    "learning_rate": 0.1,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98.0        # Preserve tail signal to combat prediction collapse
+MIN_PRED_STD_RATIO = 0.15     # Target higher prediction variance
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix with regime-invariant Z-scores and microstructure signals.
+    """
+    feat = pd.DataFrame(index=df.index)
+
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    open_ = df['open']
+
+    # --- Returns & Momentum ---
+    log_ret = np.log(close / close.shift(1

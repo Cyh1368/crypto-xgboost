@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_invariant_z_boost",
+  "patch_description": "The structural redesign focuses on transforming raw market indicators into \"Regime-Invariant\" features using rolling Z-score normalization. This addresses the slope collapse problem by ensuring that a feature value (e.g., a 1% return or a volume spike) is interpreted relative to the recent market context rather than absolute levels, which change across regimes. \n\nKey changes:\n1.  **Rolling Z-Score Normalization:** Most features (returns, volume, volatility, RSI) are transformed into rolling Z-scores (window 20-60). This forces the model to learn patterns based on relative extremes.\n2.  **Robustness Regularization:** Increased `min_child_weight` and reduced `max_depth` to prevent the model from fitting to regime-specific noise.\n3.  **Efficiency and Acceleration:** Added Kaufman Efficiency Ratio and momentum acceleration features to capture the \"quality\" of price moves.\n4.  **Interaction Terms:** Explicitly calculated momentum-volatility interactions to help the model distinguish between high-volatility breakouts and low-volatility drift.\n5.  **Lookback Compression:** Shifted focus to shorter lookback windows (5-30 bars) to ensure features adapt quickly to the regime shifts observed between the test and validation sets.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:56:50.705625",
+  "llm_cost": 0.009558500000000001,
+  "llm_model": "gemini-3-flash-preview"
+}

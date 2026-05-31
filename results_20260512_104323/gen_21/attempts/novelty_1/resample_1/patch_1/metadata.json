@@ -1,0 +1,14 @@
+{
+  "generation": 21,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "increase_expressivity_and_regime_features",
+  "patch_description": "The model currently suffers from prediction collapse (low pred_std_ratio) and a near-zero predictive slope on the validation set, indicating it's too conservative and failing to generalize across regime shifts. \n\nI am proposing three main changes:\n1. **Increase Model Expressivity**: Raising `max_depth` to 5, increasing `n_estimators` to 450, and reducing `min_child_weight` and `reg_lambda`. This directly addresses the \"collapsed toward mean\" warning by allowing the model to capture more complex, high-variance patterns.\n2. **Regime-Invariant Character Features**: Adding higher-order moments (skewness, kurtosis) and \"volatility of volatility\" (VVoV) to help the model identify market regimes (e.g., trending vs. mean-reverting, stable vs. unstable) that are invariant to absolute price levels.\n3. **Risk-Adjusted Momentum**: Adding a Sharpe-like feature (momentum divided by volatility) and range expansion metrics to better normalize the \"signal\" across different volatility environments.\n4. **Target & Variance Adjustments**: Reducing `CLIP_PERCENTILE` to 97 to focus on the core distribution and increasing `MIN_PRED_STD_RATIO` to 0.22 to force the model to produce more distinct predictions.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:48:43.611149",
+  "llm_cost": 0.016025499999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

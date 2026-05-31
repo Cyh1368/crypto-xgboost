@@ -1,0 +1,53 @@
+<NAME>
+less_regularization_more_slope
+</NAME>
+
+<DESCRIPTION>
+The current model is still over-regularized: train slope is present, but predictions collapse sharply toward the mean on val, and pred_std_ratio remains far below target. The safest next step is to keep the successful depth-4 structure while reducing shrinkage from both L1/L2 and the split penalty, and slightly relaxing node constraints so the model can express more persistent signal across the train→test→val regime shifts.
+
+This edit:
+- lowers `reg_alpha` and `reg_lambda` to reduce prediction collapse,
+- lowers `min_child_weight` and `gamma` slightly to allow more useful splits,
+- keeps the architecture conservative (`max_depth=4`) to avoid regressing into unstable overfit,
+- trims `early_stopping_rounds` a bit so the larger model does not over-train.
+
+No feature changes are needed here because the current feature set already improved generalization ratio substantially; the bottleneck is now underfitting / collapsed outputs.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 560,
+    "max_depth": 4,
+    "min_child_weight": 4,
+    "reg_alpha": 0.25,
+    "reg_lambda": 1.8,
+    "subsample": 0.88,
+    "colsample_bytree": 0.72,
+    "learning_rate": 0.055,
+    "gamma": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 55,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 560,
+    "max_depth": 4,
+    "min_child_weight": 3,
+    "reg_alpha": 0.16,
+    "reg_lambda": 1.35,
+    "subsample": 0.9,
+    "colsample_bytree": 0.74,
+    "learning_rate": 0.055,
+    "gamma": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 48,
+}
+>>>>>>> REPLACE
+</DIFF>

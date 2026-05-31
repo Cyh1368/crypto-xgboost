@@ -1,0 +1,48 @@
+<NAME>
+add_cross_sectional_rank_features
+</NAME>
+
+<DESCRIPTION>
+The current program achieves a slope_ratio of 19.9%, which is the best so far, but still far from the target of 25%+. The primary issue is that features are regime-specific - they work well in training but degrade in validation.
+
+The recommendation suggests adding cross-sectional rank features within rolling windows to enhance regime invariance. While the current program already has `vol_rank_60`, we should extend this ranking approach to other key features. Ranking transforms absolute values into percentile positions within a rolling window, making them distribution-invariant across regime shifts.
+
+I will add three new rank-based features:
+1. `ret_3_rank_40` - ranks 3-period returns within a 40-bar window
+2. `efficiency_10_rank_60` - ranks 10-period efficiency within a 60-bar window  
+3. `rsi_14_rank_40` - ranks RSI(14) within a 40-bar window
+
+These features should be more stable across regime shifts than their raw counterparts because they measure relative position rather than absolute level. A 1% return might be extreme in low-vol regimes but normal in high-vol regimes - the rank captures this context automatically.
+
+The window sizes (40-60 bars) are chosen to be:
+- Long enough to capture meaningful distribution shifts
+- Short enough to stay responsive to recent market character
+- Aligned with the successful `vol_rank_60` already in use
+
+This maintains the 80-feature limit while adding genuinely regime-invariant signals that should improve the slope_ratio without sacrificing the excellent generalization_ratio (96.0%).
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Momentum × volatility interactions
+    ret_3 = close.pct_change(3)
+    feat["momentum_vol_interaction"] = ret_3 * vol_20
+    feat["momentum_regime"] = ret_3 / (vol_20 + eps)
+    feat["momentum_regime_fast"] = ret_3 * (vol_10 / (vol_20 + eps))
+    feat["momentum_regime_slow"] = ret_3 * (vol_20 / (vol_40 + eps))
+    feat["trend_vol_interaction"] = feat["sma_5_20_cross"] * feat["vol_trend_10_20"]
+=======
+    # Momentum × volatility interactions
+    ret_3 = close.pct_change(3)
+    feat["momentum_vol_interaction"] = ret_3 * vol_20
+    feat["momentum_regime"] = ret_3 / (vol_20 + eps)
+    feat["momentum_regime_fast"] = ret_3 * (vol_10 / (vol_20 + eps))
+    feat["momentum_regime_slow"] = ret_3 * (vol_20 / (vol_40 + eps))
+    feat["trend_vol_interaction"] = feat["sma_5_20_cross"] * feat["vol_trend_10_20"]
+    
+    # Cross-sectional rank features for regime invariance
+    feat["ret_3_rank_40"] = ret_3.rolling(40).rank(pct=True)
+    feat["efficiency_10_rank_60"] = feat["efficiency_10"].rolling(60).rank(pct=True)
+    feat["rsi_14_rank_40"] = feat["rsi_14"].rolling(40).rank(pct=True)
+>>>>>>> REPLACE
+</DIFF>

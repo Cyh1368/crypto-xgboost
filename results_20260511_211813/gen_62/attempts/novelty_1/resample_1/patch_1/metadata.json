@@ -1,0 +1,14 @@
+{
+  "generation": 62,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 8,
+  "patch_name": "regime_boost_and_shorter_lookbacks",
+  "patch_description": "The current model still shows low prediction spread, which is consistent with under-expressive trees and features that are too smooth for 15-minute crypto perp directionality. This edit makes the booster a bit more expressive while keeping regularization moderate, and replaces some slower, redundant long-memory inputs with stronger short-horizon regime-aware signals.\n\nKey ideas:\n- slightly deeper trees, more estimators, lower learning rate for richer fits without overfitting too hard\n- reduce clipping a bit to preserve tail signal\n- add short-horizon momentum acceleration, rolling return dispersion, price location within rolling range, and a simple trend-vs-volatility interaction\n- keep strict past-only usage by shifting all rolling statistics\n- stay well below the 80-feature limit\n\nThis should help move pred_std_ratio upward without blowing out the overfit gap, and improve directional sensitivity on unseen validation bars.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:32:06.328221",
+  "llm_cost": 0.02638425,
+  "llm_model": "gpt-5.4-mini"
+}

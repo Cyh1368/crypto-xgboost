@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "collapse_fix_loosened_regularization",
+  "patch_description": "The validation failure shows a critical issue: **pred_std_ratio=0.0091**, which is far below the MIN_PRED_STD_RATIO threshold of 0.15. This indicates severe **prediction collapse** \u2014 the model is predicting values very close to the mean instead of capturing signal variance.\n\nRoot cause analysis:\n- The collapse penalty of 0.705 is the dominant penalty, indicating the model's output variance is only ~0.91% of the actual variance\n- The model is over-regularized: high min_child_weight (10), high reg_alpha (0.1), high reg_lambda (1.0), and low learning_rate (0.01) with only 300 estimators\n- These hyperparameters are too restrictive for a forecasting task that needs to capture real directional signal\n- Features are being built but the model cannot express them due to excessive regularization\n\nThe fix:\n1. **Dramatically reduce regularization**: Lower reg_alpha and reg_lambda to allow the model to learn feature signals\n2. **Increase model capacity**: Raise n_estimators to 500 and increase max_depth to 5-6 to capture non-linear patterns\n3. **Reduce min_child_weight**: Lower from 10 to 3 to allow splits on smaller samples\n4. **Increase learning_rate**: Raise from 0.01 to 0.05 so the model can adjust more aggressively\n5. **Increase subsample and colsample**: Both were conservative; raise to improve exploration\n\nThese changes will allow the model to express the feature signals without overfitting (the overfit_gap is only 0.013, indicating no overfitting issue currently).",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:09:17.672113",
+  "llm_cost": 0.015648000000000002,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

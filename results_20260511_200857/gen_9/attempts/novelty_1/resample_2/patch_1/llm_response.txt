@@ -1,0 +1,55 @@
+<NAME>
+increase_expressivity_and_features
+</NAME>
+
+<DESCRIPTION>
+The model was suffering from "prediction collapse," where it predicted values too close to the mean, resulting in a very low `pred_std_ratio` (0.0193 vs target 0.15). This was caused by excessive regularization and insufficient model expressivity. 
+
+The fix involves:
+1. Increasing `learning_rate` (0.04 -> 0.12) and `max_depth` (6 -> 7) to allow the model to capture more complex patterns.
+2. Significantly reducing regularization (`reg_lambda` 1.5 -> 0.05, `reg_alpha` 0.05 -> 0.0) and `min_child_weight` (1) to encourage the model to make more confident predictions.
+3. Expanding the feature set to include more granular lags, momentum indicators, and volatility-adjusted returns (Sharpe-like features) to provide stronger signals.
+4. Adding interaction features (e.g., return * volatility) to help the model identify regime-dependent signals.
+5. Ensuring the feature count stays under the 80-feature limit while maximizing predictive power.
+</DESCRIPTION>
+
+<CODE>
+```python
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "colsample_bylevel": 0.8,
+    "learning_rate": 0.12,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV + orderbook + funding data.
+    All features must use only past data

@@ -1,0 +1,14 @@
+{
+  "generation": 5,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_features_v1",
+  "patch_description": "The primary problem is that val_slope collapses to 0.006 (8.2% of train_slope), indicating features are regime-specific and don't generalize. The model learns patterns from training data that evaporate in validation.\n\nMy strategy combines three high-impact changes:\n\n1. **Shorter lookback windows (5-20 bars)**: Replace long 60+ bar windows with 5-20 bar windows. Shorter windows decay faster but capture more universal microstructure patterns that persist across regimes.\n\n2. **Rolling z-score normalization**: Transform features into z-scores within rolling windows. This makes features regime-invariant - a \"high momentum\" reading is always +1\u03c3 regardless of whether we're in a trending or ranging market.\n\n3. **Reduce model complexity**: Cut n_estimators from 400\u2192250 and increase min_child_weight from 1\u21923. This forces the model to learn only high-sample, robust patterns that generalize rather than overfitting to training regime quirks.\n\n4. **Multiplicative feature interactions**: Replace additive momentum\u00d7vol features with cleaner multiplicative terms that often generalize better.\n\nThis approach directly addresses the regime-shift problem by making features intrinsically comparable across different market conditions.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:15:02.802276",
+  "llm_cost": 0.10222800000000001,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

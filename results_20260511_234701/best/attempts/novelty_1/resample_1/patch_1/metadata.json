@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_z_scoring",
+  "patch_description": "The primary problem identified is a predictive slope collapse (0.074 train \u2192 0.006 val), which indicates the model is learning regime-specific absolute values that do not generalize. \n\nI am implementing the following changes:\n1.  **Z-Score Normalization:** Transforming returns, volatility, and volume indicators into rolling Z-scores (using a 100-bar window). This makes features regime-invariant; for example, a \"high\" volatility period is defined relative to the recent past rather than an absolute threshold.\n2.  **Robust MACD:** Normalizing the MACD signal by the rolling standard deviation of price to ensure its scale is consistent across different price levels and volatility regimes.\n3.  **Hyperparameter Regularization:** \n    *   Increasing `min_child_weight` from 1 to 20 to prevent the model from fitting to small, noisy clusters of data.\n    *   Increasing `reg_lambda` to 10.0 to penalize large weights and improve the predictive slope.\n    *   Lowering the `learning_rate` to 0.05 and `max_depth` to 4 for more conservative, generalized learning.\n4.  **Feature Streamlining:** Focusing on shorter lookbacks (5-20 bars) for momentum and volatility, as these adapt faster to crypto market regime shifts.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:48:00.056618",
+  "llm_cost": 0.0159035,
+  "llm_model": "gemini-3-flash-preview"
+}

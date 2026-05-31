@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_adaptive_features_zscore_normalization",
+  "patch_description": "This edit addresses the core problem: features are regime-specific and collapse in validation.\n\nKey changes:\n1. Replace long lookback windows (60+) with shorter, faster-decaying windows (5-20 bars)\n2. Add Z-score normalization within rolling windows for volatility, momentum, and price position features\n3. Add explicit \"trend\" features that measure rate-of-change of market character (vol_trend, efficiency_trend)\n4. Remove some redundant long-lookback features (trend_strength_60, vol_rank_200)\n5. Increase model capacity slightly (n_estimators 400\u2192500, min_child_weight 1\u21922) to learn more robust patterns\n\nThe Z-score normalization makes features regime-invariant: a 1% move in high-vol markets is contextualized differently than in low-vol markets. Rate-of-change features capture market regime shifts explicitly.\n\nExpected improvements:\n- val_slope should increase from 0.006 to ~0.015-0.020 (regime-adaptive features generalize better)\n- val_DA should improve slightly (0.511\u21920.520+) due to better feature stability\n- pred_std_ratio should increase from 0.112 to ~0.15-0.18 (model learns more diverse patterns)",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:54:43.781716",
+  "llm_cost": 0.037136,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

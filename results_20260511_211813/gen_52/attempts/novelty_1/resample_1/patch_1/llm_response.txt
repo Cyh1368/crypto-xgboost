@@ -1,0 +1,46 @@
+<NAME>
+aggressive_expressivity_and_microstructure
+</NAME>
+
+<DESCRIPTION>
+The model is currently suffering from prediction collapse (pred_std_ratio < 0.15), meaning it is too conservative and predicts values close to the mean. To address this, I am proposing several changes:
+1. **Increase Model Expressivity**: Increased `max_depth` to 8 and `learning_rate` to 0.07, while removing `reg_lambda` entirely. This forces the model to fit the variance in the data more aggressively.
+2. **Loosen Target Clipping**: Increased `CLIP_PERCENTILE` to 99.5. This allows the model to see more of the tail moves, which often contain the strongest directional signals.
+3. **Microstructure Features**: Added several new features to capture price action dynamics:
+    - `bb_width` and `vol_sqz`: To identify volatility cycles and breakouts.
+    - `vpt` (Volume-Price Trend): To capture the strength of price moves confirmed by volume.
+    - `tail_ratio`: To identify candle-level exhaustion or rejection.
+    - `directional_intensity`: To measure the 'cleanliness' of a move over 5 bars.
+    - `vwap_dev_atr`: To normalize price deviations from VWAP by recent volatility.
+    - `vol_of_vol`: To capture regime shifts in volatility itself.
+4. **Regularization Tuning**: Added a small `gamma` (0.01) to ensure that while the model is more expressive, it only splits when there is a tangible gain, helping to manage the increased depth.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+=======
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 8,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "gamma": 0.0

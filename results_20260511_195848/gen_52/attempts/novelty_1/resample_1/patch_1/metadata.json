@@ -1,0 +1,14 @@
+{
+  "generation": 52,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse_increase_expressivity",
+  "patch_description": "The primary issue is the model predictions collapsing toward the mean, evidenced by the very low pred_std_ratio (~0.006). This means the model is effectively outputting nearly constant predictions with little variance, failing to leverage the input data's signal. The error suggests increasing model expressivity or removing regularization. \n\nThe current fix from the previous iteration loosened min_child_weight and removed L1 regularization but increased learning rate only moderately and kept a low max_depth, which still restricts model complexity. This leads to underfitting.\n\nTo fix this, I restore a more permissive max_depth and reduce regularization further, and increase learning rate more to allow better fitting. Also, adding early stopping on validation will prevent overfitting. Additionally, changing the early stopping to watch the validation set ('val') not just 'test' might help, but as per instructions, I leave run_experiment unchanged except for param adjustments.\n\nNo feature code changes, just hyperparameters to increase model expressivity:\n\n- max_depth: increase from 4 to 6 (more complex trees)\n- min_child_weight: keep at 1 (looser than original 10)\n- reg_alpha: 0.0 (no L1)\n- reg_lambda: reduced to 0.5 to reduce L2 regularization\n- learning_rate: increased to 0.1 for faster learning\n- n_estimators: keep 300\n- keep other params unchanged\n\nThis should help the model produce predictions with higher variance and escape the mean collapse.\n\nI keep features and everything else the same. \n\nThe code changes are only in the XGB_PARAMS block.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:06:35.248239",
+  "llm_cost": 0.005079200000000001,
+  "llm_model": "gpt-4.1-mini"
+}

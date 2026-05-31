@@ -1,0 +1,8 @@
+{
+  "combined_score": -10.0,
+  "public": {
+    "error": "module 'candidate' has no attribute 'build_features'"
+  },
+  "private": {},
+  "text_feedback": "module 'candidate' has no attribute 'build_features'"
+}

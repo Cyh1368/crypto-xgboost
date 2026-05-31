@@ -1,0 +1,14 @@
+{
+  "generation": 3,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_collapse_and_add_momentum_features",
+  "patch_description": "The current model suffers from prediction collapse (pred_std_ratio = 0.009), which triggers a high penalty and lowers the score. This edit increases model expressivity by increasing `max_depth` and `learning_rate` while reducing regularization (`min_child_weight`, `reg_lambda`). \n\nAdditionally, I've added several high-signal features:\n1. Z-scores for returns, volume, and price to normalize across volatility regimes.\n2. Exponential Moving Average (EMA) distances and spreads to capture trend and mean-reversion signals.\n3. Log-returns and momentum indicators.\n4. Funding rate momentum (diff).\n5. Volatility momentum.\n\nThese changes aim to help the model distinguish between different market states and increase the variance of its predictions, thereby fixing the collapse and improving directional accuracy.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:19:28.265652",
+  "llm_cost": 0.003529,
+  "llm_model": "gemini-3-flash-preview"
+}

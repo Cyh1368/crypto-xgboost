@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "shorter_lookbacks_zscore_regime_change",
+  "patch_description": "The core issue is the val_slope collapsing to 0.0039 (7% of train slope), indicating severe regime-specific overfitting. The feedback specifically mentions that features work train\u2192test but break at test\u2192val boundary, suggesting a second regime shift.\n\nMy strategy addresses this through three coordinated changes:\n\n1. **Shorter lookback windows (5-20 bars instead of 60+)**: Market microstructure at 15-minute resolution changes rapidly. Features based on 60+ bars are learning patterns that won't persist. I'll reduce the maximum lookback from 60 to 20 for volatility and regime features.\n\n2. **Z-score normalization within rolling windows**: Instead of absolute values, I'll express features as z-scores within recent windows. A 1% move means different things in high vs low volatility regimes. This makes features regime-invariant.\n\n3. **Rate-of-change features for market character**: Rather than just measuring current volatility or trend strength, I'll add features that capture HOW these are changing - volatility trend, autocorrelation trend, efficiency ratio trend. These measure regime transitions rather than regime states.\n\n4. **Reduce model complexity**: The current model has high regularization (reg_alpha=0.5, reg_lambda=2.0, gamma=0.1) AND 650 estimators, which is causing prediction collapse (pred_std_ratio=0.086). I'll reduce n_estimators to 300, remove gamma, and lower regularization to allow the model to be more expressive while still learning robust patterns through shorter lookbacks.\n\n5. **Feature interaction: momentum \u00d7 volatility_regime**: Adding a single multiplicative term often generalizes better than both features separately, as it captures the joint state space.\n\nThese changes work together: shorter lookbacks decay faster but generalize better, z-scores make them regime-invariant, rate-of-change features capture transitions, reduced regularization allows expression, and the interaction term captures joint behavior.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:43:07.779999",
+  "llm_cost": 0.084846,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

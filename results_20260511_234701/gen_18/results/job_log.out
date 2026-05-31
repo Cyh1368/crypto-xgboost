@@ -1,0 +1,9 @@
+val_DA=0.5389  test_DA=0.5359  train_DA=0.5261
+val_r=0.0488  test_r=0.0098  train_r=0.0835
+val_slope=0.0003  train_slope=0.0006  slope_ratio=50.7%
+pred_std_ratio=0.0067  generalization_ratio=499.8%  overfit_gap=-0.0128
+penalties → collapse=1.547  slope=0.000  gen=0.000  overfit=0.000  invert=0.000
+SCORE=-1.1668
+WARNING: predictions collapsed toward mean — increase model expressivity or remove regularization.
+
+Final score: -1.1668

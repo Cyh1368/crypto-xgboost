@@ -1,0 +1,14 @@
+{
+  "generation": 56,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "aggressive_regularization_reduction",
+  "patch_description": "The model is severely collapsed (pred_std_ratio=0.06 vs target 0.15+). This is a regularization problem, not a feature problem. The features are well-designed but the model can't use them.\n\nKey changes:\n1. **Slash regularization**: `reg_lambda: 0.35 \u2192 0.05` (7x reduction), `reg_alpha: 0.02 \u2192 0.001` (20x reduction) to allow trees to learn signal\n2. **Reduce min_child_weight**: `3 \u2192 1` to allow splits on weaker but real signals in 15-min data\n3. **Increase learning rate**: `0.03 \u2192 0.08` to compensate for fewer estimators and help escape local minima\n4. **Reduce estimators slightly**: `850 \u2192 600` (with higher LR, fewer trees needed; faster training)\n5. **Increase subsample/colsample**: `0.82 \u2192 0.85` to reduce variance without heavy regularization\n6. **Increase early_stopping_rounds**: `70 \u2192 100` to let the model train longer and find signal\n\nThis targets the collapse penalty directly. The goal is to get pred_std_ratio > 0.12 (from 0.06), which would cut the collapse penalty in half and likely improve val_DA as well.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:31:02.453360",
+  "llm_cost": 0.028691,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

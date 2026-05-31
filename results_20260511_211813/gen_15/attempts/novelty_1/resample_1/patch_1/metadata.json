@@ -1,0 +1,14 @@
+{
+  "generation": 15,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_add_signals",
+  "patch_description": "The previous model suffered from 'mean prediction collapse' as indicated by the very low pred_std_ratio (0.0091 vs goal of 0.15) and text feedback. This suggests the model was too heavily regularized and lacking in expressivity to capture subtle signals in noisy 15-minute crypto futures data.\n\nI am proposing the following changes:\n1. **Hyperparameters**: Significantly increase the learning rate (0.01 -> 0.05), increase tree depth (4 -> 7), and reduce the minimum child weight (10 -> 2). This allows the trees to find more specific, smaller-scale patterns. I also reduced reg_alpha and reg_lambda to loosen the regularization penalty.\n2. **Feature Engineering**: Re-introduced and expanded the signal set to include:\n   - **Momentum Acceleration**: Captures the second derivative of price movement.\n   - **Mean Reversion/Relative Position**: Price distance from 30-bar High/Low and 10/50 SMA ratios.\n   - **Candle Shadows**: Capture intra-bar volatility and potential rejection candles.\n   - **Volatility Expansion**: Short-term vs long-term volatility ratios to identify breakouts.\n   - **Volume Z-Score**: Identifies unusual participation compared to a trailing window.\n\nThese changes are designed to push the model's predictions away from the mean and closer to the actual return standard deviation while maintaining directional accuracy.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:22:01.954207",
+  "llm_cost": 0.0077325,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 45,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover keeps the strongest robust ideas from both families of programs while targeting the main failure mode: validation slope collapse under regime shift.\n\nKey changes:\n- Uses shorter lookbacks more aggressively (5\u201320 bars) to favor faster-decaying signals that are more likely to survive the train\u2192test\u2192val shift.\n- Adds rolling z-score normalization for several core signals so the model sees regime-invariant versions of momentum, volatility, and volume.\n- Emphasizes \u201cchange in market character\u201d features: volatility trend, efficiency trend, autocorrelation trend, dispersion trend, and short/long regime deltas.\n- Adds a compact interaction block centered on momentum \u00d7 volatility regime and price-position \u00d7 regime, which often generalizes better than separate raw terms.\n- Slightly relaxes the overly strong regularization from the current program to reduce prediction collapse, while still controlling overfit with a smaller depth and moderate child weight.\n\nThe feature count stays safely under 80, uses only past data, and preserves the original input/output interface and evaluation flow.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:07:40.319505",
+  "llm_cost": 0.03965475,
+  "llm_model": "gpt-5.4-mini"
+}

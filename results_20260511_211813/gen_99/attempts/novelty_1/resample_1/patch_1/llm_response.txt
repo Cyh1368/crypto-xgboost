@@ -1,0 +1,55 @@
+<NAME>
+regime_aware_regularization_and_signal_boost
+</NAME>
+
+<DESCRIPTION>
+The current model is overfitting (Train DA 0.59 vs Val DA 0.51) and its predictions are collapsing toward the mean (pred_std_ratio 0.08). To address this, I am proposing a shallower model (max_depth 5) with a slower learning rate (0.02) and increased regularization (reg_alpha 0.05, reg_lambda 0.5). This should improve generalization. 
+
+Additionally, I am adding several high-signal features to help the model distinguish between different market regimes and identify mean-reversion opportunities:
+1. ADX (Average Directional Index): To measure trend strength.
+2. Choppiness Index: To distinguish between trending and ranging markets.
+3. VWAP Deviation normalized by ATR: A more robust mean-reversion signal.
+4. Price-Volume Correlation: To detect accumulation/distribution phases.
+5. Distance from 20-period High/Low: To identify potential trend exhaustion.
+6. 20-period Volume Z-Score: To capture short-term volume spikes.
+
+These changes aim to increase the model's confidence on unseen data, thereby improving both directional accuracy and the prediction standard deviation ratio.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 98          # clip targets at this percentile (both tails)
+=======
+XGB_PARAMS = {
+    "n_estimators": 1500,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.6,
+    "learning_rate": 0.02,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+
+CLIP_PERCENTILE = 9

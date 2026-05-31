@@ -1,0 +1,13 @@
+RUN ERROR: NDFrame.fillna() got an unexpected keyword argument 'method'
+Traceback (most recent call last):
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 217, in main
+    result = run_fn(df)
+             ^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 193, in run_fn
+    X_all = mod.build_features(df)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/results_20260511_234701/gen_5/main.py", line 138, in build_features
+    feat = feat.fillna(method='ffill').fillna(0)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: NDFrame.fillna() got an unexpected keyword argument 'method'
+

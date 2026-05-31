@@ -1,0 +1,14 @@
+{
+  "generation": 43,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover version combines the strongest parts of the current and inspiration programs while pushing harder toward regime invariance and shorter-memory signals.\n\nMain changes:\n- Keeps the compact, high-signal short lookback feature family from the inspiration program.\n- Adds rolling z-normalization, volatility/efficiency/autocorrelation trend features, and regime-conditional interactions that are more likely to survive the train\u2192val regime shift.\n- Removes some redundant long-memory emphasis and uses a slightly more expressive but still regularized XGBoost setup to reduce prediction collapse.\n- Preserves the exact same interface, inputs, outputs, and feature-count constraint, while staying fast enough for evaluation.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:00:13.784687",
+  "llm_cost": 0.04192875,
+  "llm_model": "gpt-5.4-mini"
+}

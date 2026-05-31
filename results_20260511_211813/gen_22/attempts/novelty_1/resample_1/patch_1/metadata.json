@@ -1,0 +1,14 @@
+{
+  "generation": 22,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "structural_regime_tuning",
+  "patch_description": "The current model shows a significant improvement in `pred_std_ratio` (0.0322 vs 0.0063 in previous iterations) but suffers from low validation directional accuracy (`val_DA=0.5025`). This suggests that while the added features (candle structure, z-scores) are providing more expressivity, the model is overfitting to noise or failing to capture broader market regimes.\n\nI am proposing the following changes:\n1. **Hyperparameter Tuning**: Increase `max_depth` to 6 and `learning_rate` to 0.05 to maintain expressivity, while significantly increasing `min_child_weight` (7) and `reg_lambda` (1.5) to improve generalization and validation performance.\n2. **Target Clipping**: Reduce `CLIP_PERCENTILE` to 95. This helps the model focus on the core distribution of returns rather than being skewed by extreme outliers, which often improves directional accuracy.\n3. **Structural Features**: Add features that capture the price's relationship to long-term averages and trend efficiency:\n    - `ema_20_dist` & `ema_100_dist`: Distance from short and medium-term EMAs to capture mean-reversion potential.\n    - `efficiency_ratio_14`: Kaufman's Efficiency Ratio to distinguish between trending and range-bound markets.\n    - `adx_14`: A simplified Average Directional Index to quantify trend strength.\n    - `price_speed_3`: ATR-normalized price velocity.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:23:01.689086",
+  "llm_cost": 0.0095275,
+  "llm_model": "gemini-3-flash-preview"
+}

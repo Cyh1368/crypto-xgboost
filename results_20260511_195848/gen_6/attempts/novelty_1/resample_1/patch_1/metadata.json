@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "reduce_regularization_increase_expressivity",
+  "patch_description": "The model predictions are collapsing toward the mean with a very low prediction standard deviation ratio (0.0091, well below threshold 0.15), indicating underfitting and over-regularization with insufficient model expressivity. The current hyperparameters use very strong regularization: min_child_weight=10, reg_alpha=0.1, learning_rate=0.01, n_estimators=300. \n\nTo fix this, I reduced regularization by lowering min_child_weight to 1, setting reg_alpha to 0 (no L1), increased learning rate to 0.05 for faster learning, and decreased n_estimators to 100 to prevent prolonged weak training. These changes should help the model find stronger signals and output a more diverse prediction distribution, raising pred_std_ratio above threshold and improving validation directional accuracy.\n\nNo changes were needed in feature engineering (which is rich and time-correct), or clipping constants. The rest of the code remains unchanged to keep the interface stable.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T19:59:42.741063",
+  "llm_cost": 0.004116400000000001,
+  "llm_model": "gpt-4.1-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_short_windows",
+  "patch_description": "This edit targets the core failure mode: slope collapse on the validation regime. It removes several long-horizon, regime-specific features and replaces them with shorter-window, rolling z-scored features that are more invariant to volatility regime shifts. It also adds rate-of-change regime features and a stronger momentum \u00d7 volatility interaction, which should help the model retain predictive slope in the most recent period without inflating feature count.\n\nOn the model side, I reduce depth and increase child-weight / regularization slightly while using more estimators with a lower learning rate. This typically improves out-of-sample stability for XGBoost on noisy crypto perp data and discourages the model from memorizing regime-specific splits. The target is to increase val slope and prediction dispersion while keeping DA near or above the current floor.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:48:25.922720",
+  "llm_cost": 0.02357325,
+  "llm_model": "gpt-5.4-mini"
+}

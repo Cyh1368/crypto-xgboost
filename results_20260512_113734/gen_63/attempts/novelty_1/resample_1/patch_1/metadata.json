@@ -1,0 +1,14 @@
+{
+  "generation": 63,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortblend_xgb",
+  "patch_description": "This crossover version combines the stronger short-horizon, regime-invariant ideas from the inspiration programs with the more complete market-structure feature set from the current program.\n\nMain changes:\n- Shorter lookbacks dominate the feature set to reduce regime overfitting.\n- More rolling z-scores and rank-based features make signals more regime-invariant.\n- Added explicit regime-shift features: volatility trend, efficiency trend, autocorrelation trend.\n- Kept useful interactions, especially momentum \u00d7 volatility regime and volume \u00d7 price-location.\n- Reduced model aggressiveness a bit to improve generalization and avoid collapsed predictions.\n- Feature count is kept below the 80-feature limit.\n\nThe interface, inputs, outputs, and run_experiment logic remain unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:30:35.435859",
+  "llm_cost": 0.0387735,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 31,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_adaptive_crossover_v1",
+  "patch_description": "This crossover combines the best elements from both programs:\n\n1. **From the current program (score -2.15)**: \n   - Superior hyperparameters (n_estimators=260, max_depth=3, min_child_weight=8) that balance complexity\n   - More comprehensive feature engineering with candle structure details (upper/lower wicks)\n   - Multiple MACD variants (5-13, 13-21) for different timeframes\n   - Better volume normalization with z-scores at multiple windows\n   - Funding rate interactions with trend direction\n\n2. **From the crossover inspiration (score -2.65)**:\n   - More aggressive volatility trend features with multiple pct_change windows\n   - Z-scored volatility (vol_z_20) for regime invariance\n   - Additional momentum-volatility interactions (momentum_vol_z)\n   - Efficiency change tracking (efficiency_chg_10)\n\n**Key improvements**:\n- Keeps shorter lookback windows (5-20 bars) that generalize better\n- Maintains comprehensive z-score normalization for regime invariance\n- Adds rate-of-change features for market character (vol_trend, efficiency_chg)\n- Combines multiple regime indicators (vol_regime, vol_regime_fast, vol_regime_chg)\n- Preserves robust hyperparameters from current best (higher min_child_weight=8, more regularization)\n- Reduces feature count slightly by removing redundant longer-window features\n\nThe goal is to improve val_slope from 0.0022 to >0.020 while maintaining val_DA >0.525 by making features more adaptive to regime changes.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:10:27.889624",
+  "llm_cost": 0.145455,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

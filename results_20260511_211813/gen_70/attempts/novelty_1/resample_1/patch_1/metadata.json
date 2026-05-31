@@ -1,0 +1,14 @@
+{
+  "generation": 70,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "boost_expressivity_and_signal",
+  "patch_description": "The current model suffers from a significant 'collapse toward mean' (pred_std_ratio = 0.056), indicating it is over-regularized or lacks sufficient signal to distinguish directional moves. \n\nI am proposing the following changes:\n1.  **Increase Model Expressivity**: \n    - Reduced `reg_alpha` (0.05 -> 0.01) and `reg_lambda` (0.5 -> 0.1) to allow the model to fit more complex patterns.\n    - Increased `max_depth` (6 -> 7) and `learning_rate` (0.05 -> 0.06) to boost the model's ability to capture non-linearities.\n    - Added `colsample_bynode` (0.8) and increased `n_estimators` (800 -> 1000) to improve ensemble diversity and capacity.\n    - Increased `CLIP_PERCENTILE` (98.0 -> 99.0) to expose the model to more of the target distribution's tails.\n2.  **Enhance Feature Signal**:\n    - Added interaction features (`trend_x_vol`, `breakout_pressure`) to capture regime-dependent behaviors.\n    - Added acceleration and momentum-slope features (`ret_accel_6_24`, `mom_slope_24`) to identify trend exhaustion or strengthening.\n    - Added distance-from-mean features (`z_close_24`) and efficiency metrics (`efficiency_10`) to capture mean-reversion and trend quality.\n    - Added `vol_of_vol_20` and `range_z_20` to better define volatility regimes.\n    - Added `obi_diff` and `funding_change` to capture shifts in market microstructure and sentiment.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:34:24.829523",
+  "llm_cost": 0.017224,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,7 @@
+{
+  "combined_score": -10.0,
+  "public": {
+    "error": "Invalid frequency: 15T. Failed to parse with error message: ValueError(\"Invalid frequency: T. Failed to parse with error message: KeyError('T'). Did you mean min?\")"
+  },
+  "private": {}
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "none",
+  "patch_description": "This crossover combines the best elements from both programs to address the regime shift problem:\n\n1. **From the inspiration program (-3.00 score)**: Adopts the shorter lookback windows (5-20 bars instead of 60+) and z-score normalization approach that proved more regime-invariant. The inspiration program achieved val_DA=0.528 vs current's 0.521.\n\n2. **From the current program's hyperparameters**: Keeps the more conservative regularization (max_depth=3, min_child_weight=6) which prevents overfitting, but increases learning_rate slightly to 0.10 (between current's 0.08 and inspiration's 0.12) for better expressivity.\n\n3. **Key innovations**:\n   - Removes long lookback features (48, 60 periods) that are regime-specific\n   - Adds more z-scored features (returns, volume) for regime invariance\n   - Focuses on RATE OF CHANGE features (vol_trend, efficiency changes) rather than absolute levels\n   - Reduces feature count from ~60 to ~55 by removing redundant long-window features\n   - Keeps robust interaction terms but simplifies them\n   - Uses shorter windows for all regime indicators (10-20 vs 60-200)\n\n4. **Addressing the val slope collapse**: The primary issue is that features work in train/test but fail in val. This suggests the val period has different market character. By using shorter windows and z-scoring, features become less dependent on the specific volatility/trend regime and more on relative market structure.\n\nThe strategy is to sacrifice some train performance (accept lower train_DA) in exchange for better generalization to the val period where the model currently fails.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:52:49.483857",
+  "llm_cost": 0.117675,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

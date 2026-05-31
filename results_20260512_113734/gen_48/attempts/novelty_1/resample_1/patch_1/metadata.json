@@ -1,0 +1,14 @@
+{
+  "generation": 48,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 10,
+  "patch_name": "regime_adaptive_short_horizon",
+  "patch_description": "This edit focuses on the main failure mode: the model still learns brittle, regime-specific relationships that vanish in validation. I\u2019m tightening the tree ensemble to reduce train-overfit while adding explicitly regime-conditioned versions of the strongest short-horizon signals.\n\nThe feature changes do three things:\n1. Add short lookback, rolling-z normalized variants of return and price-location features, which are more stable across volatility regimes.\n2. Add regime-adaptive interactions that modulate momentum and efficiency by current volatility regime, making the same signal mean different things in high- vs low-vol markets.\n3. Add rate-of-change features for regime character itself, so the model can react to shifts rather than absolute levels.\n\nThe hyperparameter changes reduce depth and model size a bit, and increase child weight / regularization, which should help preserve slope on validation by discouraging overly specific splits. I also slightly relax target clipping to keep more usable signal amplitude, since the current model is already collapsing toward the mean.\n\nAll changes stay within the feature-count limit and use only past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:15:25.725314",
+  "llm_cost": 0.038803500000000005,
+  "llm_model": "gpt-5.4-mini"
+}

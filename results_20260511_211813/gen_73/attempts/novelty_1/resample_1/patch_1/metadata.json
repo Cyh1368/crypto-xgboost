@@ -1,0 +1,14 @@
+{
+  "generation": 73,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "increase_expressivity_and_microstructure",
+  "patch_description": "The model currently suffers from a \"prediction collapse\" penalty, meaning the predicted standard deviation is too low compared to the actual targets (ratio ~0.06 vs target 0.15). To fix this, I am proposing two sets of changes:\n\n1. **Hyperparameters:** I am increasing `max_depth` to 7 and reducing `reg_lambda` and `reg_alpha` to reduce the pressure on predictions to stay near zero. I am also increasing `CLIP_PERCENTILE` to 98% and `learning_rate` to 0.1 to provide stronger gradients and more expressive learning.\n2. **Features:** Adding candle microstructure features (`upper_wick`, `lower_wick`, `candle_body`) and `volume_surprise` to provide the model with \"state\" indicators that often precede directional moves in crypto markets (e.g., upper wick rejection). I'm also consolidating momentum calculations to ensure clean, past-shifted signal usage.\n\nGoal: Increase `pred_std_ratio` while maintaining `val_DA > 0.53`.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:34:51.193901",
+  "llm_cost": 0.018429,
+  "llm_model": "gemini-3-flash-preview"
+}

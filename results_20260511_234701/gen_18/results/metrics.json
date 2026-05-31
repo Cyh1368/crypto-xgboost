@@ -1,0 +1,28 @@
+{
+  "combined_score": -1.166809655793664,
+  "public": {
+    "combined_score": -1.1668,
+    "val_da": 0.5389,
+    "test_da": 0.5359,
+    "train_da": 0.5261,
+    "train_pearson": 0.0835,
+    "test_pearson": 0.0098,
+    "val_pearson": 0.0488,
+    "train_slope": 0.0006,
+    "test_slope": 0.0001,
+    "val_slope": 0.0003,
+    "slope_ratio": 0.5073,
+    "generalization_ratio": 4.9976,
+    "pred_std_ratio": 0.0067,
+    "overfit_gap": -0.0128
+  },
+  "private": {
+    "collapse_penalty": 1.5466,
+    "slope_penalty": 0.0,
+    "gen_penalty": 0.0,
+    "overfit_penalty": 0.0,
+    "invert_penalty": 0.0,
+    "signal_score": 0.3798
+  },
+  "text_feedback": "val_DA=0.5389  test_DA=0.5359  train_DA=0.5261\nval_r=0.0488  test_r=0.0098  train_r=0.0835\nval_slope=0.0003  train_slope=0.0006  slope_ratio=50.7%\npred_std_ratio=0.0067  generalization_ratio=499.8%  overfit_gap=-0.0128\npenalties \u2192 collapse=1.547  slope=0.000  gen=0.000  overfit=0.000  invert=0.000\nSCORE=-1.1668\nWARNING: predictions collapsed toward mean \u2014 increase model expressivity or remove regularization."
+}

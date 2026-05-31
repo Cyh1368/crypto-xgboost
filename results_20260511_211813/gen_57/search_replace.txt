@@ -1,0 +1,141 @@
+Looking at the performance history, I can see a clear pattern:
+
+**Key observations:**
+1. All attempts suffer from `pred_std_ratio` ≈ 0.04-0.11 (target: ≥0.15), indicating predictions collapse toward the mean
+2. Collapse penalty is the dominant negative force (0.335-0.665)
+3. The current model achieves val_DA=0.53 but with severe prediction collapse
+4. More regularization → worse collapse; less regularization → still collapsed but slightly better DA
+5. The issue is NOT overfitting (overfit_gap is near 0), it's **under-expressivity**
+
+**Root cause:** Even with zero regularization and high learning rate (0.18), the model struggles to make confident predictions. This suggests either:
+- Features lack predictive signal
+- Model capacity is still too constrained
+- Need more diverse signal sources through interaction/transformation features
+
+**Strategy:**
+1. **Increase model depth and estimators** to capture non-linear patterns while maintaining regularization control
+2. **Add targeted higher-order feature interactions** and ratio-based features that combine momentum+regime signals
+3. **Create micro-regime features** (very short-term volatility/trend acceleration) that may capture 15-min market microstructure
+4. **Moderate learning rate adjustment** to allow deeper trees
+
+This avoids curse of dimensionality while increasing expressivity through better feature engineering and slightly deeper trees.
+
+<NAME>
+increase_expressivity_via_depth_and_interactions
+</NAME>
+
+<DESCRIPTION>
+The current model has pred_std_ratio=0.04, indicating severe prediction collapse. Previous attempts show that both high and low regularization result in collapse, suggesting the issue is under-expressivity rather than regularization.
+
+This edit increases model capacity through:
+1. Deeper trees (max_depth 6→8) to capture non-linear patterns
+2. More estimators (1200→1500) for ensemble diversity
+3. Slightly reduced learning rate (0.18→0.12) to allow better convergence with deeper trees
+4. New higher-order interaction features that combine regime signals with momentum/volatility
+5. Micro-regime features capturing 15-min market structure (very short-term vol acceleration, momentum consistency)
+6. Ratio and difference features that may reveal directional bias
+
+These targeted features focus on combining existing signals in new ways rather than adding many independent features, keeping feature count manageable while increasing model signal clarity.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.18,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 100,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 1500,
+    "max_depth": 8,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.12,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 120,
+}
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Advanced Context & Interactions ---
+    feat['rsi_diff'] = feat['rsi_6'] - feat['rsi_14']
+    feat['vol_rsi_interaction'] = feat['volume_ratio_20'] * (feat['rsi_14'] - 50)
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / ((high - low).rolling(10).sum() + 1e-9)
+
+    # Keltner Channel Position
+    kc_mid = close.ewm(span=20, adjust=False).mean()
+    kc_range = tr.ewm(span=20, adjust=False).mean()
+    feat['kc_pct'] = (close - kc_mid) / (kc_range + 1e-9)
+
+    # --- Additional Signal Features ---
+    feat['log_vol'] = np.log1p(volume)
+    feat['vol_expansion'] = log_ret.rolling(5).std() / (log_ret.rolling(60).std() + 1e-9)
+    feat['vwap_dev_std'] = (close - vwap) / (close.rolling(20).std() + 1e-9)
+    feat['volume_shock'] = volume / (volume.rolling(20).mean() + 1e-9)
+    feat['price_accel'] = log_ret.diff(1)
+    feat['range_pos_10'] = (close - low.rolling(10).min()) / (high.rolling(10).max() - low.rolling(10).min() + 1e-9)
+    feat['rolling_skew_30'] = log_ret.rolling(30).skew()
+    feat['rolling_kurt_30'] = log_ret.rolling(30).kurt()
+    feat['rsi_velocity'] = feat['rsi_14'].diff(3)
+=======
+    # --- Advanced Context & Interactions ---
+    feat['rsi_diff'] = feat['rsi_6'] - feat['rsi_14']
+    feat['vol_rsi_interaction'] = feat['volume_ratio_20'] * (feat['rsi_14'] - 50)
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / ((high - low).rolling(10).sum() + 1e-9)
+
+    # Keltner Channel Position
+    kc_mid = close.ewm(span=20, adjust=False).mean()
+    kc_range = tr.ewm(span=20, adjust=False).mean()
+    feat['kc_pct'] = (close - kc_mid) / (kc_range + 1e-9)
+
+    # --- Additional Signal Features ---
+    feat['log_vol'] = np.log1p(volume)
+    feat['vol_expansion'] = log_ret.rolling(5).std() / (log_ret.rolling(60).std() + 1e-9)
+    feat['vwap_dev_std'] = (close - vwap) / (close.rolling(20).std() + 1e-9)
+    feat['volume_shock'] = volume / (volume.rolling(20).mean() + 1e-9)
+    feat['price_accel'] = log_ret.diff(1)
+    feat['range_pos_10'] = (close - low.rolling(10).min()) / (high.rolling(10).max() - low.rolling(10).min() + 1e-9)
+    feat['rolling_skew_30'] = log_ret.rolling(30).skew()
+    feat['rolling_kurt_30'] = log_ret.rolling(30).kurt()
+    feat['rsi_velocity'] = feat['rsi_14'].diff(3)
+
+    # --- Higher-order Interactions for Signal Amplification ---
+    # Combine regime signals with micro momentum to capture directional bias
+    micro_momentum = close.pct_change(1)
+    vol_5 = log_ret.rolling(5).std()
+    vol_20 = log_ret.rolling(20).std()
+
+    feat['momentum_vol_accel'] = micro_momentum * (vol_5 - vol_20) / (vol_20 + 1e-9)
+    feat['momentum_consistency_5'] = np.sign(log_ret).rolling(5).sum() / 5.0
+    feat['vol_acceleration_5'] = vol_5.diff(1) / (vol_20 + 1e-9)
+    feat['trend_vol_synergy'] = (close.pct_change(3) * vol_regime) * (feat['bb_pct'].clip(-2, 2))
+
+    # Micro-regime detection: very short volatility mean-reversion signature
+    feat['micro_vol_mean_reversion'] = (vol_5 / (vol_5.rolling(20).mean() + 1e-9)) - 1.0
+    feat['micro_momentum_accel'] = micro_momentum.diff(1)
+
+    # Price action relative to regime: captures edge in extremes
+    feat['price_z_vol_regime'] = feat['bb_pct'] * (feat['vol_regime'] - 1.0)
+    feat['volume_trend_alignment'] = np.sign(volume.pct_change(1)) * np.sign(log_ret)
+=======
+>>>>>>> REPLACE
+</DIFF>

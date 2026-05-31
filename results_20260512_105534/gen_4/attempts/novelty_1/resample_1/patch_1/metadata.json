@@ -1,0 +1,14 @@
+{
+  "generation": 4,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "shorter_regime_invariant_features",
+  "patch_description": "This edit targets the main failure mode: the model\u2019s slope collapses out of sample because many current features are too slow and regime-specific. I\u2019m making the feature set more regime-invariant by shifting from long-horizon absolute levels to shorter lookbacks, rolling z-scores, and rate-of-change style regime measures. I\u2019m also tightening the XGBoost model to reduce overfitting to the train regime while keeping enough expressivity to preserve predictive slope.\n\nKey changes:\n- Replace long lookbacks with shorter, more adaptive windows.\n- Add rolling z-score normalization for returns, volatility, volume, and price position.\n- Add short-horizon regime-trend features such as volatility trend, efficiency trend, and autocorrelation trend.\n- Add a simple momentum \u00d7 volatility-regime interaction.\n- Slightly regularize the booster and reduce tree count to favor robust patterns.\n\nThis should help raise validation slope and correlation while reducing train\u2192val collapse, without increasing feature count beyond the limit.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:56:01.747289",
+  "llm_cost": 0.02289375,
+  "llm_model": "gpt-5.4-mini"
+}

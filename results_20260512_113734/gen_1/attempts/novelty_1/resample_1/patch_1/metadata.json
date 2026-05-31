@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 8,
+  "patch_name": "shorter_lookback_zscore_normalization",
+  "patch_description": "The primary issue is that val_slope (0.006) is only 8.2% of train_slope (0.074), indicating severe regime-specific overfitting. The model learns patterns from the training period that don't generalize to the validation period.\n\nMy strategy addresses this through three coordinated changes:\n\n1. **Shorter lookback windows**: Replace long lookbacks (60, 200 bars) with shorter ones (5-20 bars). Shorter windows decay faster but are more regime-invariant because they capture recent dynamics rather than historical regimes.\n\n2. **Z-score normalization within rolling windows**: Instead of raw returns or volatility levels, compute z-scores relative to recent history. This makes features regime-invariant - a \"high\" momentum means the same thing in low-vol and high-vol regimes.\n\n3. **Regularization to prevent overfitting**: Increase min_child_weight from 1 to 5 and reduce n_estimators from 400 to 250. This forces the model to learn only robust, high-sample patterns rather than regime-specific noise.\n\n4. **Rate-of-change features**: Add features that measure how market character is CHANGING (vol_trend, autocorr_trend) rather than absolute levels. These tend to be more stable across regimes.\n\nThe key insight is that absolute feature values (e.g., \"volatility = 0.02\") are regime-specific, but normalized deviations (e.g., \"volatility is 1.5 std above its 20-bar mean\") generalize better.\n\nExpected improvements:\n- val_slope should increase from 0.006 to >0.020 as features become more regime-invariant\n- val_r should increase from 0.054 to >0.080\n- pred_std_ratio should increase from 0.112 to >0.18 as the model makes bolder predictions\n- overfit_gap should decrease as regularization prevents regime-specific fitting",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:38:28.297053",
+  "llm_cost": 0.076143,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

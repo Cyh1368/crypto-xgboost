@@ -1,0 +1,112 @@
+<NAME>
+robust_regime_invariant_features
+</NAME>
+
+<DESCRIPTION>
+The primary issue is a massive slope collapse (0.07 -> 0.006) and a Directional Accuracy drop (0.57 -> 0.51) between training and validation. This indicates the model is learning regime-specific magnitudes and patterns that disappear in the validation period.
+
+To fix this, I am:
+1.  **Transforming features to be regime-invariant:** Applying rolling Z-scores to returns, volatility, and volume. This ensures the model sees a "high vol" or "high return" signal relative to the current local market context rather than absolute values.
+2.  **Improving Generalization via XGBoost Hyperparams:**
+    - Reducing `max_depth` to 4 to prevent complex overfitting.
+    - Increasing `min_child_weight` to 20 to ensure patterns are supported by a larger sample size.
+    - Adding L2 regularization (`reg_lambda=10.0`) to promote weight stability across regimes.
+    - Lowering the `learning_rate` to 0.07 for more conservative updates.
+3.  **Refining interactions:** Using volatility-normalized momentum (Sharpe-style) which is more robust than simple multiplication.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 600,
+    "max_depth": 4,
+    "min_child_weight": 20,
+    "reg_alpha": 0.5,
+    "reg_lambda": 10.0,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.07,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Returns ---
+    for lag in [1, 2, 3, 6, 12, 24, 48]:
+        feat[f'ret_{lag}'] = close.pct_change(lag)
+
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 20, 60]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+
+    # --- RSI ---
+    for period in [6, 14]:
+=======
+    # Helper for rolling z-score
+    def zscore(s, w):
+        return (s - s.rolling(w).mean()) / (s.rolling(w).std() + 1e-9)
+
+    # --- Returns ---
+    for lag in [1, 3, 6, 12, 24]:
+        r = close.pct_change(lag)
+        feat[f'ret_{lag}'] = r
+        feat[f'ret_z_{lag}'] = zscore(r, 100)
+
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [10, 30, 60]:
+        v = log_ret.rolling(w).std()
+        feat[f'vol_{w}'] = v
+        feat[f'vol_z_{w}'] = zscore(v, 200)
+
+    # --- RSI ---
+    for period in [14, 28]:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Volume ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+=======
+    # --- Volume ---
+    log_vol = np.log(volume + 1e-9)
+    feat['volume_z_20'] = zscore(log_vol, 20)
+    feat['volume_z_100'] = zscore(log_vol, 100)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    # --- Momentum × Volatility interactions ---
+    ret_3 = close.pct_change(3)
+    vol_20 = log_ret.rolling(20).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_20
+    feat['momentum_regime'] = ret_3 / (vol_20 + 1e-9)
+    feat['momentum_regime_20'] = ret_3 * feat['vol_regime']
+    feat['momentum_regime_fast'] = ret_3 * feat['vol_regime_fast']
+=======
+    # --- Momentum × Volatility interactions ---
+    ret_3 = close.pct_change(3)
+    ret_12 = close.pct_change(12)
+    vol_20 = log_ret.rolling(20).std()
+    feat['momentum_regime_3'] = ret_3 / (vol_20 + 1e-9)
+    feat['momentum_regime_12'] = ret_12 / (vol_20 + 1e-9)
+    feat['vol_acceleration'] = vol_20.diff(5) / (vol_20.rolling(60).std() + 1e-9)
+>>>>>>> REPLACE
+</DIFF>

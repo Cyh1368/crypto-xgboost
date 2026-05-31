@@ -1,0 +1,139 @@
+<NAME>
+regime_momentum_boost
+</NAME>
+
+<DESCRIPTION>
+The current model is still collapsing toward the mean, which usually means the tree ensemble is too smooth relative to the signal. I’m making two coordinated changes:
+
+1. Hyperparameters: slightly increase tree count, reduce shrinkage, and relax split constraints enough to let XGBoost fit more local structure without exploding overfit. I also lower clipping a bit more to preserve target variance. This should raise `pred_std_ratio` while keeping train/val gap controlled.
+2. Features: add a compact set of past-only regime-aware features that are highly relevant for 15m crypto perps:
+   - lagged sign and normalized momentum
+   - short-term trend slope vs long-term trend slope
+   - rolling breakout z-score
+   - volatility burst / compression
+   - volume surprise and volume-pressure interaction
+   - time-of-day interaction with momentum
+
+These features are designed to help the model separate trend, mean-reversion, and high-volatility regimes, which should improve directional accuracy more than the current mostly raw momentum stack.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.1,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # keep more target variance to encourage prediction dispersion
+MIN_PRED_STD_RATIO = 0.12     # target a healthier prediction standard deviation
+=======
+XGB_PARAMS = {
+    "n_estimators": 1400,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.05,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.04,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 97          # preserve more target variance for stronger gradients
+MIN_PRED_STD_RATIO = 0.10     # allow dispersion to improve without over-penalizing
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    vol_regime = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+    feat['vol_regime'] = vol_regime
+    feat['trend_x_regime'] = feat['trend_strength_60'] / (vol_regime + 1e-9)
+    feat['ret1_x_regime'] = ret1 * vol_regime
+
+    # Regime-conditional momentum interactions (capture signal suppressed by regularization)
+    feat['ret6_x_vol_regime'] = close.pct_change(6) * vol_regime
+    feat['ret12_x_vol_regime'] = close.pct_change(12) * vol_regime
+    feat['ret3_x_trend_strength'] = close.pct_change(3) * (feat['trend_strength_60'] / 10000.0)
+
+    # Adaptive momentum scaled by recent volatility
+    recent_vol = log_ret.rolling(10).std()
+    feat['adaptive_ret6'] = close.pct_change(6) / (recent_vol + 1e-9)
+    feat['adaptive_ret12'] = close.pct_change(12) / (recent_vol + 1e-9)
+
+    # Volatility-adjusted RSI (regime-conditional oscillator)
+    rsi_14 = feat['rsi_14']
+    feat['rsi_14_vol_adjusted'] = rsi_14 / (vol_regime + 1e-9)
+
+    # --- Additional Microstructure & Session Features ---
+    feat['dist_ema_200'] = (close - close.ewm(span=200, adjust=False).mean()) / (close + 1e-9)
+    feat['vpt_20'] = (ret1 * volume).rolling(20).sum()
+    feat['vol_skew_30'] = log_ret.rolling(30).skew()
+    feat['vol_shock_5_20'] = feat['vol_5'] / (feat['vol_20'] + 1e-9)
+    feat['volume_z_60'] = (volume - volume.rolling(60).mean()) / (volume.rolling(60).std() + 1e-9)
+    feat['ny_session'] = df.index.hour.isin([12, 13, 14, 15, 16, 17, 18, 19, 20, 21]).astype(float)
+=======
+    # --- Regime features ---
+    trend_60 = close / close.shift(60) - 1
+    trend_20 = close / close.shift(20) - 1
+    feat['trend_strength_60'] = trend_60.abs() * 10000
+    realized_vol = log_ret.rolling(20).std()
+    vol_regime = realized_vol / (realized_vol.rolling(200).mean() + 1e-9)
+    feat['vol_regime'] = vol_regime
+    feat['trend_x_regime'] = feat['trend_strength_60'] / (vol_regime + 1e-9)
+    feat['ret1_x_regime'] = ret1 * vol_regime
+
+    # Regime-conditional momentum interactions (capture signal suppressed by regularization)
+    feat['ret6_x_vol_regime'] = close.pct_change(6) * vol_regime
+    feat['ret12_x_vol_regime'] = close.pct_change(12) * vol_regime
+    feat['ret3_x_trend_strength'] = close.pct_change(3) * (feat['trend_strength_60'] / 10000.0)
+
+    # Adaptive momentum scaled by recent volatility
+    recent_vol = log_ret.rolling(10).std()
+    feat['adaptive_ret6'] = close.pct_change(6) / (recent_vol + 1e-9)
+    feat['adaptive_ret12'] = close.pct_change(12) / (recent_vol + 1e-9)
+
+    # Volatility-adjusted RSI (regime-conditional oscillator)
+    rsi_14 = feat['rsi_14']
+    feat['rsi_14_vol_adjusted'] = rsi_14 / (vol_regime + 1e-9)
+
+    # --- Additional Microstructure & Session Features ---
+    feat['dist_ema_200'] = (close - close.ewm(span=200, adjust=False).mean()) / (close + 1e-9)
+    feat['vpt_20'] = (ret1 * volume).rolling(20).sum()
+    feat['vol_skew_30'] = log_ret.rolling(30).skew()
+    feat['vol_shock_5_20'] = feat['vol_5'] / (feat['vol_20'] + 1e-9)
+    feat['volume_z_60'] = (volume - volume.rolling(60).mean()) / (volume.rolling(60).std() + 1e-9)
+    feat['ny_session'] = df.index.hour.isin([12, 13, 14, 15, 16, 17, 18, 19, 20, 21]).astype(float)
+
+    # --- Compact regime / breakout features (past-only) ---
+    feat['ret1_sign'] = np.sign(ret1)
+    feat['ret1_z_20'] = (ret1 - ret1.rolling(20).mean()) / (ret1.rolling(20).std() + 1e-9)
+    feat['ret6_z_60'] = (close.pct_change(6) - close.pct_change(6).rolling(60).mean()) / (close.pct_change(6).rolling(60).std() + 1e-9)
+    feat['trend_slope_10'] = close.shift(1).pct_change(10)
+    feat['trend_slope_40'] = close.shift(1).pct_change(40)
+    feat['breakout_z_20'] = (close.shift(1) - close.shift(1).rolling(20).mean()) / (close.shift(1).rolling(20).std() + 1e-9)
+    feat['vol_burst_5_20'] = feat['vol_5'] / (feat['vol_20'] + 1e-9)
+    feat['vol_compress_20_60'] = feat['vol_20'] / (feat['vol_60'] + 1e-9)
+    feat['volume_surprise_20'] = volume.shift(1) / (volume.shift(1).rolling(20).mean() + 1e-9)
+    feat['vol_mom_interaction'] = feat['volume_surprise_20'] * feat['ret1_z_20']
+    feat['hour_mom_interaction'] = feat['hour_sin'] * feat['ret1_z_20']
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,299 @@
+  @@@@@@@@@@@@@@@@@@@@@      ░██████╗██╗░░██╗██╗███╗░░██╗██╗░░██╗░█████╗░
+  @                   @      ██╔════╝██║░░██║██║████╗░██║██║░██╔╝██╔══██╗
+  @          @        @      ╚█████╗░███████║██║██╔██╗██║█████═╝░███████║
+  @    @@   @@  @@    @      ░╚═══██╗██╔══██║██║██║╚████║██╔═██╗░██╔══██║
+  @   @     @    @@   @      ██████╔╝██║░░██║██║██║░╚███║██║░╚██╗██║░░██║
+  @    @@  @    @     @      ╚═════╝░╚═╝░░╚═╝╚═╝╚═╝░░╚══╝╚═╝░░╚═╝╚═╝░░╚═╝
+  @        @          @      @@@@@@@@@@@@@@@
+  @                   @   @@                 @@@@@
+  @@@@@@@@@@@@@@@@@@@@ @@                       @  @@                 █▀▀
+                      @                          @@  @                ██▄
+                    @      @@                      @  @@
+                   @       @         @              @   @             █░█
+                   @                 @               @  @             ▀▄▀
+                     @@@@@          @     @           @  @
+                      @            @          @       @ @@            █▀█
+                   @@    @@     @@       @@   @        @              █▄█
+                  @@        @@         @     @         @
+                 @@       @@   @@       @@@@@          @        @@    █░░
+              @ @@                @                    @              █▄▄
+             @ @@@@@             @@ @@                 @      @@
+            @                  @       @@              @    @@        █░█
+       @@@@@@@@@@@@@@@@@@@@@@             @@@          @@@@@@@  @@    ▀▄▀
+       @     @         @                      @@         @@@  @@
+        @@               @                      @      @   @  @@      █▀▀
+          @@@@@@@@@@@@@@@@@@                   @    @   @   @@        ██▄
+                                               @  @  @   @
+                                               @  @  @@@@
+                                               @  @@
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - 🖥️  System resources detected:
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO -    • CPU cores: 16
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO -    • Memory: 7.6 GB
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - 🔧 Concurrency settings:
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO -    • Evaluation jobs: 4
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO -    • Proposal jobs: 6
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO -    • DB workers: 2
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO -    • Total threads: 12
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - Configured local numeric thread cap per eval process: 4
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - ASYNC EVOLUTION RUN STARTED
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - Max evaluation jobs: 4
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - Max proposal jobs: 6
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - Target generations: 150
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - Language: python
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - Results directory: results_20260512_105534
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - Log file: results_20260512_105534/evolution_run.log
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - ================================================================================
+2026-05-12 10:55:34 - shinka.database.async_dbase - INFO - 🔧 AsyncDB initialized with 2 workers, 2 concurrent DB ops (WAL mode)
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - Copying initial program from results_20260511_211813/best/main.py
+2026-05-12 10:55:34 - shinka.core.async_runner - INFO - Starting initial program evaluation: results_20260512_105534/gen_0/main.py
+2026-05-12 10:55:34 - shinka.launch.local - INFO - Submitted local process with PID: 2720
+2026-05-12 10:55:34 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260512_105534/gen_0/main.py --results_dir results_20260512_105534/gen_0/results
+2026-05-12 10:55:37 - shinka.core.async_runner - INFO - Initial program evaluation completed in 3.50s
+2026-05-12 10:55:38 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Initial program embedding computed (cost: $0.0001)
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Initial program evaluated - correct: True, combined_score: -1.8549768556040096
+2026-05-12 10:55:39 - shinka.database.dbase - INFO - Program 9a31f9d6-80ea-468f-b870-bbb5a6ebd45b added to DB - score: -1.8549768556040096.
+2026-05-12 10:55:39 - shinka.database.dbase - INFO - New best program: 9a31f9d6-80ea-468f-b870-bbb5a6ebd45b (gen: 0, score: -1.8550, initialized island: 0).
+                                 Program Evaluation Summary - Gen 0 | Total Cost: $0.00                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 0   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│    Best:    │   I-0   │   ✓ Correct   │  -1.855 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+│   -1.855    │         │               │         │                                 │        │        │         │      │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+2026-05-12 10:55:39 - shinka.database.dbase - INFO - Creating copies of initial program 9a31f9d6-80ea-468f-b870-bbb5a6ebd45b for all islands
+2026-05-12 10:55:39 - shinka.database.islands - INFO - Created copy bd946569... of program 9a31f9d6... for island 1
+2026-05-12 10:55:39 - shinka.database.islands - INFO - Created copy a1ed90bb... of program 9a31f9d6... for island 2
+2026-05-12 10:55:39 - shinka.database.islands - INFO - Created copy 7b5582ae... of program 9a31f9d6... for island 3
+2026-05-12 10:55:39 - shinka.database.islands - INFO - Created 3 copies of program 9a31f9d6... for islands 1-3
+2026-05-12 10:55:39 - shinka.core.summarizer - INFO - Added program 9a31f9d6-80ea-468f-b870-bbb5a6ebd45b to meta memory tracking (correct=True, total: 1)
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Setup initial program: 9a31f9d6-80ea-468f-b870-bbb5a6ebd45b
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Generation 0 completed during setup
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Verifying database is ready for sampling...
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Database ready - 4 program(s) available for sampling
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Database verification completed - ready for proposal generation
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - 🔄 Job monitor task started
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=0.00s, evaluation_ewma=0.00s, timing_samples=0, active_proposals=0, running_jobs=0)
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Starting 4 new proposals. Pipeline: 0/4 (running_jobs=0, active_proposals=0/6), Remaining completed work: 149 (completed=1/150, next_generation=1)
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Started proposal task for generation 1 (cost: $0.0001)
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Started proposal task for generation 2 (cost: $0.0001)
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Started proposal task for generation 3 (cost: $0.0001)
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Started proposal task for generation 4 (cost: $0.0001)
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - 🔄 Meta summarizer task started
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - 🔍 Meta task check: completed_gens=1, target=150, pending_work=149, running_eval_jobs=0, running_proposal_jobs=4, api_costs=$0.0001, should_stop=False, is_stuck=False, stuck_count=0, time_since_progress=0.0s
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Generating proposal for generation 1
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Generating proposal for generation 2
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Generating proposal for generation 3
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Generating proposal for generation 4
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Getting meta recs for gen 1, sample_single_meta_rec=True
+2026-05-12 10:55:39 - shinka.core.summarizer - INFO - get_sampled_recommendation called, meta_recommendations exists: False
+2026-05-12 10:55:39 - shinka.core.summarizer - INFO - No meta recommendations available to sample from
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - meta_recs result: False
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Getting meta recs for gen 2, sample_single_meta_rec=True
+2026-05-12 10:55:39 - shinka.core.summarizer - INFO - get_sampled_recommendation called, meta_recommendations exists: False
+2026-05-12 10:55:39 - shinka.core.summarizer - INFO - No meta recommendations available to sample from
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - meta_recs result: False
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Getting meta recs for gen 3, sample_single_meta_rec=True
+2026-05-12 10:55:39 - shinka.core.summarizer - INFO - get_sampled_recommendation called, meta_recommendations exists: False
+2026-05-12 10:55:39 - shinka.core.summarizer - INFO - No meta recommendations available to sample from
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - meta_recs result: False
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Getting meta recs for gen 4, sample_single_meta_rec=True
+2026-05-12 10:55:39 - shinka.core.summarizer - INFO - get_sampled_recommendation called, meta_recommendations exists: False
+2026-05-12 10:55:39 - shinka.core.summarizer - INFO - No meta recommendations available to sample from
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - meta_recs result: False
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Island 1 => Archived program scores: [-1.8549768556040096]
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Power law probs: [1.0]
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Island 1 => Archived program scores: [-1.8549768556040096]
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Power law probs: [1.0]
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Power law: Sampled from archive: bd946569-d266-4383-b245-0af1f9c7a607 (Gen: 0, Score: -1.8550, Island: 1)
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Power law: Sampled from archive: bd946569-d266-4383-b245-0af1f9c7a607 (Gen: 0, Score: -1.8550, Island: 1)
+              Parent & Context Sampling Summary - Gen 2 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ PARENT      │  0   │   I-1   │   ✓   │   -1.855 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Generated patch type: diff
+2026-05-12 10:55:39 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-sonnet-4-5-20250929       0.0000
+  gpt-5.4-mini                     1.0000
+2026-05-12 10:55:39 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-5.4-mini', '1.0', '16384', "{'effort': 'low', 'summary': 'auto'}"]
+              Parent & Context Sampling Summary - Gen 1 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ PARENT      │  0   │   I-1   │   ✓   │   -1.855 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Generated patch type: diff
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Island 3 => Archived program scores: [-1.8549768556040096]
+2026-05-12 10:55:39 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-sonnet-4-5-20250929       0.0000
+  gpt-5.4-mini                     1.0000
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Power law probs: [1.0]
+2026-05-12 10:55:39 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-5.4-mini', '1.0', '16384', "{'effort': 'low', 'summary': 'auto'}"]
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Power law: Sampled from archive: 7b5582ae-6b21-439f-a6dc-36cf48aaa1ca (Gen: 0, Score: -1.8550, Island: 3)
+              Parent & Context Sampling Summary - Gen 3 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ PARENT      │  0   │   I-3   │   ✓   │   -1.855 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Generated patch type: full
+2026-05-12 10:55:39 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-sonnet-4-5-20250929       1.0000
+  gpt-5.4-mini                     0.0000
+2026-05-12 10:55:39 - shinka.llm.llm - INFO - ==> QUERYING: ['claude-sonnet-4-5-20250929', '1.0', '16384']
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Island 1 => Archived program scores: [-1.8549768556040096]
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Power law probs: [1.0]
+2026-05-12 10:55:39 - shinka.database.parents - INFO - Power law: Sampled from archive: bd946569-d266-4383-b245-0af1f9c7a607 (Gen: 0, Score: -1.8550, Island: 1)
+              Parent & Context Sampling Summary - Gen 4 | Total Cost: $0.00 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ PARENT      │  0   │   I-1   │   ✓   │   -1.855 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-12 10:55:39 - shinka.core.async_runner - INFO - Generated patch type: diff
+2026-05-12 10:55:39 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-sonnet-4-5-20250929       0.0000
+  gpt-5.4-mini                     1.0000
+2026-05-12 10:55:39 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-5.4-mini', '1.0', '16384', "{'effort': 'low', 'summary': 'auto'}"]
+2026-05-12 10:56:01 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-05-12 10:56:01 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0229
+2026-05-12 10:56:01 - shinka.core.async_runner - INFO - Applying patch with language: python
+2026-05-12 10:56:01 - shinka.core.async_runner - INFO - Patch type for application: diff
+                         Patch Metadata - Gen 4/150 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ diff                                                                                      │
+│ patch_name               │ shorter_regime_invariant_features                                                         │
+│ patch_description        │ This edit targets the main failure mode: the model’s slope collapses out of sample        │
+│                          │ because many current features are too slow and regime-specific. I’m making the feature    │
+│                          │ set more regime-invariant by shifting from long-horizon absolute levels to shorter        │
+│                          │ lookbacks, rolling z-scores, and rate-of-change style regime measures. I’m also           │
+│                          │ tightening the XGBoost model to reduce overfitting to the train regime while keeping      │
+│                          │ enough expressivity to preserve predictive slope.                                         │
+│                          │                                                                                           │
+│                          │ Key changes:                                                                              │
+│                          │ - Replace long lookbacks with shorter, more adaptive windows.                             │
+│                          │ - Add rolling z-score normalization for returns, volatility, volume, and price position.  │
+│                          │ - Add short-horizon regime-trend features such as volatility trend, efficiency trend, and │
+│                          │ autocorrelation trend.                                                                    │
+│                          │ - Add a simple momentum × volatility-regime interaction.                                  │
+│                          │ - Slightly regularize the booster and reduce tree count to favor robust patterns.         │
+│                          │                                                                                           │
+│                          │ This should help raise validation slope and correlation while reducing train→val          │
+│                          │ collapse, without increasing feature count beyond the limit.                              │
+│ num_applied              │ 2                                                                                         │
+│ api_costs                │ $0.0229                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ system_prompt_id         │ None                                                                                      │
+│ model_name               │ gpt-5.4-mini                                                                              │
+│ temperature              │ 1.0                                                                                       │
+│ max_output_tokens        │ 16384                                                                                     │
+│ reasoning                │ {'effort': 'low', 'summary': 'auto'}                                                      │
+│ diff_summary             │ added: 0; deleted: 22; modified: 70;                                                      │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-12 10:56:01 - shinka.core.async_runner - INFO - Getting code embedding for generation 4...
+2026-05-12 10:56:04 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-12 10:56:04 - shinka.core.async_runner - INFO - Code embedding completed for generation 4 (cost: $0.0000)
+2026-05-12 10:56:04 - shinka.launch.local - INFO - Submitted local process with PID: 2750
+2026-05-12 10:56:04 - shinka.launch.local - INFO - Launched local command: ./crypto-venv/bin/python evolve/evaluate.py --program_path results_20260512_105534/gen_4/main.py --results_dir results_20260512_105534/gen_4/results
+2026-05-12 10:56:04 - shinka.core.async_runner - INFO - Proposal → Eval: gen 4 submitted for eval (cost: $0.0229, total: $0.0230). Running jobs: 1/4, Proposals: 4/6
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - ✅ Job ProcessWithLogging(PID: 2750) completed (gen 4) after 27.8s
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - 🔄 Processing 1 completed jobs: gens [4] (cost: $0.0230)
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - 🔄 SAFE PROCESSING: Starting job ProcessWithLogging(PID: 2750) (gen 4)
+2026-05-12 10:56:07 - shinka.launch.local - INFO - Monitoring local process with PID: 2750...
+2026-05-12 10:56:07 - shinka.launch.local - INFO - Process 2750 completed with return code: 0
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - 📂 RESULTS: Got results for ProcessWithLogging(PID: 2750): True
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - ✅ VALID RESULTS: ProcessWithLogging(PID: 2750) has valid results - correct=True, score=-1.5987009193326371
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - 💾 DB ADD: Adding program to database for ProcessWithLogging(PID: 2750) (gen 4)...
+2026-05-12 10:56:07 - shinka.database.dbase - INFO - Program 83da22c0-08ef-4831-94b7-4d403b077fec added to DB - score: -1.5987009193326371.
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - ✅ DB SUCCESS: Program 83da22c0-08ef-4831-94b7-4d403b077fec successfully added to database for ProcessWithLogging(PID: 2750) (gen 4)
+2026-05-12 10:56:07 - shinka.database.dbase - INFO - New best program: 83da22c0-08ef-4831-94b7-4d403b077fec (gen: 0 → 4, score: -1.8550 → -1.5987, island: 0 → 1)
+                                 Program Evaluation Summary - Gen 4 | Total Cost: $0.02                                 
+╭─────────────┬─────────┬───────────────┬─────────┬─────────────────────────────────┬────────┬────────┬─────────┬──────╮
+│  GenID: 4   │ Island  │    Status     │   Score │ Patch Name                      │ Type   │ Compl… │    Cost │ Time │
+├─────────────┼─────────┼───────────────┼─────────┼─────────────────────────────────┼────────┼────────┼─────────┼──────┤
+│    Best:    │   I-1   │   ✓ Correct   │  -1.599 │ shorter_regime_invariant_featu  │ diff   │    1.0 │  $0.023 │ 3.2s │
+│   -1.599    │         │               │         │                                 │        │        │         │      │
+╰─────────────┴─────────┴───────────────┴─────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────╯
+2026-05-12 10:56:07 - shinka.core.summarizer - INFO - Added program 83da22c0-08ef-4831-94b7-4d403b077fec to meta memory tracking (correct=True, total: 2)
+    AsymmetricUCB (c=1.000, eps=0.200, adaptive=True, asym=True, exp_base=1.000, shift_base=True, shift_parent=True,    
+                         log_sum=True, cost_k=0.500, cost_c=0.100, cost_pow=1.00, cost_pct=50)                          
+╭─────────────────────────┬─────┬────────┬─────────┬─────────┬─────────┬─────────┬──────────┬───────┬──────────┬───────╮
+│ arm                     │   n │ n_cost │ tot_co… │ mean_c… │ exploit │ explore │ score_r… │ scor… │    score │  post │
+├─────────────────────────┼─────┼────────┼─────────┼─────────┼─────────┼─────────┼──────────┼───────┼──────────┼───────┤
+│ claude-sonn...-5-20250… │   1 │      0 │  0.0000 │       - │  0.0000 │  1.6651 │   1.6651 │ 1.00… │   1.3326 │ 0.80… │
+│ gpt-5.4-mini            │   3 │      1 │  0.0229 │  0.0229 │  1.0000 │  0.9614 │   1.9614 │ 0.04… │   1.0025 │ 0.20… │
+╰─────────────────────────┴─────┴────────┴─────────┴─────────┴─────────┴─────────┴──────────┴───────┴──────────┴───────╯
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - New best program found: gen 4, id 83da22... Copied to results_20260512_105534/best
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - ✅ JOB COMPLETE: Finished processing ProcessWithLogging(PID: 2750) - program 83da22c0-08ef-4831-94b7-4d403b077fec added (gen 4)
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - ✅ Successfully processed 1/1 jobs
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - ✅ Completed generations updated: 1 -> 2 (cost: $0.0230)
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - Proposal target=4 (sampling_ewma=24.58s, evaluation_ewma=3.18s, timing_samples=1, active_proposals=3, running_jobs=0)
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - Starting 1 new proposals. Pipeline: 3/4 (running_jobs=0, active_proposals=3/6), Remaining completed work: 145 (completed=2/150, next_generation=5)
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - Started proposal task for generation 5 (cost: $0.0230)
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - Generating proposal for generation 5
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - Getting meta recs for gen 5, sample_single_meta_rec=True
+2026-05-12 10:56:07 - shinka.core.summarizer - INFO - get_sampled_recommendation called, meta_recommendations exists: False
+2026-05-12 10:56:07 - shinka.core.summarizer - INFO - No meta recommendations available to sample from
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - meta_recs result: False
+2026-05-12 10:56:07 - shinka.database.parents - INFO - Island 3 => Archived program scores: [-1.8549768556040096]
+2026-05-12 10:56:07 - shinka.database.parents - INFO - Power law probs: [1.0]
+2026-05-12 10:56:07 - shinka.database.parents - INFO - Power law: Sampled from archive: 7b5582ae-6b21-439f-a6dc-36cf48aaa1ca (Gen: 0, Score: -1.8550, Island: 3)
+              Parent & Context Sampling Summary - Gen 5 | Total Cost: $0.02 (Novelty: 1/3, Resample: 1/3)               
+┏━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━┓
+┃ Role        ┃ Gen  ┃ Island  ┃  ✓/✗  ┃    Score ┃ Patch Name                      ┃ Type   ┃ Compl… ┃    Cost ┃ Time ┃
+┡━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━┩
+│ PARENT      │  0   │   I-3   │   ✓   │   -1.855 │ initial_program                 │ init   │    1.0 │  $0.000 │ 3.5s │
+└─────────────┴──────┴─────────┴───────┴──────────┴─────────────────────────────────┴────────┴────────┴─────────┴──────┘
+2026-05-12 10:56:07 - shinka.core.async_runner - INFO - Generated patch type: diff
+2026-05-12 10:56:07 - shinka.llm.llm - INFO - ==> SAMPLING:
+  claude-sonnet-4-5-20250929       0.0000
+  gpt-5.4-mini                     1.0000
+2026-05-12 10:56:07 - shinka.llm.llm - INFO - ==> QUERYING: ['gpt-5.4-mini', '1.0', '16384', "{'effort': 'low', 'summary': 'auto'}"]
+2026-05-12 10:56:08 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-05-12 10:56:08 - shinka.llm.llm - INFO - ==> QUERY: API cost: $0.0257
+2026-05-12 10:56:08 - shinka.core.async_runner - INFO - Applying patch with language: python
+2026-05-12 10:56:08 - shinka.core.async_runner - INFO - Patch type for application: diff
+                         Patch Metadata - Gen 1/150 - Novelty: 1/3 - Resample: 1/3 - Patch: 1/1                         
+╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Field                    │ Value                                                                                     │
+├──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ patch_type               │ diff                                                                                      │
+│ patch_name               │ regime_invariant_shortlookback                                                            │
+│ patch_description        │ This edit attacks the main failure mode: the model’s slope collapses out-of-sample        │
+│                          │ because the current feature set is dominated by longer-horizon, regime-specific levels.   │
+│                          │ I’m shifting the feature space toward shorter, more adaptive windows and adding rolling   │
+│                          │ z-score normalization so signals are expressed relative to their recent local regime      │
+│                          │ rather than absolute price/volatility levels.                                             │
+│                          │                                                                                           │
+│                          │ Concretely:                                                                               │
+│                          │ - Reduce reliance on 20/60-bar horizons and add 5/10/15/20-bar momentum, volatility, and  │
+│                          │ efficiency features.                                                                      │
+│                          │ - Add rolling normalized versions of key momentum, volatility, ATR, RSI, MACD, and volume │
+│                          │ features.                                                                                 │
+│                          │ - Add rate-of-change regime features such as volatility trend and efficiency trend.       │
+│                          │ - Keep the feature count under 80 while increasing regime robustness.                     │
+│                          │ - Make the model slightly more conservative with stronger regularization and fewer trees  │
+│                          │ to reduce memorization of the training regime.                                            │
+│                          │                                                                                           │
+│                          │ This should improve val slope and pred_std_ratio by making the learned relationships more │
+│                          │ stationary across the train/test/val regime shifts.                                       │
+│ num_applied              │ 2                                                                                         │
+│ api_costs                │ $0.0257                                                                                   │
+│ error_attempt            │ None                                                                                      │
+│ system_prompt_id         │ None                                                                                      │
+│ model_name               │ gpt-5.4-mini                                                                              │
+│ temperature              │ 1.0                                                                                       │
+│ max_output_tokens        │ 16384                                                                                     │
+│ reasoning                │ {'effort': 'low', 'summary': 'auto'}                                                      │
+│ diff_summary             │ added: 25; deleted: 0; modified: 97;                                                      │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+2026-05-12 10:56:08 - shinka.core.async_runner - INFO - Getting code embedding for generation 1...
+2026-05-12 10:56:09 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-12 10:56:09 - shinka.database.async_dbase - INFO - 🔧 Closing async database with monitoring...
+2026-05-12 10:56:09 - shinka.database.async_dbase - INFO - Async database closed

@@ -1,0 +1,124 @@
+<NAME>
+less_collapse_more_signal
+</NAME>
+
+<DESCRIPTION>
+The current model is still too conservative: `pred_std_ratio` is low, which means the ensemble is collapsing toward the mean. To counter that, I’m making two coordinated changes:
+
+1. **Increase model expressivity slightly** while keeping regularization in check.
+   - A somewhat higher learning rate with fewer trees encourages stronger splits and less underfitting.
+   - Slightly deeper trees and lower `min_child_weight` let XGBoost capture sharper local regime effects.
+   - Mildly reduced subsampling/column sampling keeps diversity without making the model too smooth.
+
+2. **Add a small set of short-horizon regime-sensitive features** that are past-only and cheap to compute:
+   - short-term return acceleration
+   - realized skewness of returns
+   - rolling close position percentile
+   - volatility-of-volatility
+   - volume impulse / volume acceleration
+   - interaction of momentum with volatility regime
+
+These features are designed to help the model distinguish trend continuation from mean reversion across different volatility and participation regimes, which should increase prediction dispersion without materially increasing overfit risk. The feature count stays well below the 80-feature cap.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 900,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.6,
+    "gamma": 0.0,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 98.5
+MIN_PRED_STD_RATIO = 0.15
+=======
+XGB_PARAMS = {
+    "n_estimators": 650,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.25,
+    "gamma": 0.02,
+    "subsample": 0.75,
+    "colsample_bytree": 0.75,
+    "colsample_bynode": 0.85,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 45,
+}
+
+CLIP_PERCENTILE = 98.0
+MIN_PRED_STD_RATIO = 0.15
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Robust past-only normalized return features ---
+    for w in [16, 32, 64]:
+        mu = log_ret1.rolling(w).mean().shift(1)
+        sd = log_ret1.rolling(w).std().shift(1)
+        feat[f"ret_z_{w}"] = (log_ret1 - mu) / (sd + eps)
+
+    # --- Regime interactions (novel part) ---
+    feat["trend_x_vol"] = feat["ema_trend"] * feat["vol_regime"]
+    feat["trend_x_volume"] = feat["ema_trend"] * feat["vol_z_24"]
+    feat["meanrev_x_vol"] = feat["z_close_24"] * feat["vol_compress"]
+    feat["momentum_x_range"] = feat["mom_16"] * feat["range_pct"]
+    feat["momentum_x_wick"] = feat["mom_16"] * (feat["upper_wick_pct"] - feat["lower_wick_pct"])
+    feat["breakout_pressure"] = feat["close_pos_range"] * feat["vol_surge"] * (feat["range_pct"] / (feat["atr_norm_20"] + eps))
+=======
+    # --- Robust past-only normalized return features ---
+    for w in [16, 32, 64]:
+        mu = log_ret1.rolling(w).mean().shift(1)
+        sd = log_ret1.rolling(w).std().shift(1)
+        feat[f"ret_z_{w}"] = (log_ret1 - mu) / (sd + eps)
+
+    # --- Short-horizon regime / acceleration features ---
+    feat["ret_accel_3_12"] = close.pct_change(3) - close.pct_change(12)
+    feat["ret_accel_6_24"] = close.pct_change(6) - close.pct_change(24)
+
+    ret_mu_20 = log_ret1.rolling(20).mean().shift(1)
+    ret_sd_20 = log_ret1.rolling(20).std().shift(1)
+    feat["ret_skew_20"] = (
+        ((log_ret1 - ret_mu_20) / (ret_sd_20 + eps)) ** 3
+    ).rolling(20).mean().shift(1)
+
+    feat["range_z_20"] = (
+        tr - tr.rolling(20).mean().shift(1)
+    ) / (tr.rolling(20).std().shift(1) + eps)
+
+    feat["close_rank_48"] = close.rolling(48).apply(
+        lambda x: pd.Series(x).rank(pct=True).iloc[-1], raw=False
+    ).shift(1)
+
+    feat["volatility_of_vol_20"] = feat["rv_20"].rolling(20).std().shift(1)
+    feat["volume_impulse_12"] = (
+        volume / (volume.rolling(12).mean().shift(1) + eps)
+    ) - 1.0
+    feat["volume_accel_24"] = feat["vol_ratio_24"] - feat["vol_ratio_48"]
+
+    # --- Regime interactions (novel part) ---
+    feat["trend_x_vol"] = feat["ema_trend"] * feat["vol_regime"]
+    feat["trend_x_volume"] = feat["ema_trend"] * feat["vol_z_24"]
+    feat["meanrev_x_vol"] = feat["z_close_24"] * feat["vol_compress"]
+    feat["momentum_x_range"] = feat["mom_16"] * feat["range_pct"]
+    feat["momentum_x_wick"] = feat["mom_16"] * (feat["upper_wick_pct"] - feat["lower_wick_pct"])
+    feat["breakout_pressure"] = feat["close_pos_range"] * feat["vol_surge"] * (feat["range_pct"] / (feat["atr_norm_20"] + eps))
+>>>>>>> REPLACE
+</DIFF>

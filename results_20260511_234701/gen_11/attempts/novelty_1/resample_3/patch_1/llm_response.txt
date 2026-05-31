@@ -1,0 +1,195 @@
+I'll analyze the problem and propose targeted improvements to address the val_slope collapse and regime-specific feature degradation.
+
+## Analysis
+
+The key issues are:
+1. **val_slope = 0.006** (only 8.2% of train_slope = 0.074) — model learns train-regime patterns that evaporate in validation
+2. **pred_std_ratio = 0.112** — predictions are too conservative, not spread enough
+3. **Generalization ratio = 49.7%** — sharp degradation from train to val suggests features are regime-dependent
+4. **Lookback windows (60, 50, 200) are too long** for 15-min candles; they capture stale regime info
+
+## Strategy
+
+1. **Shorter lookback windows** (5-15 bars instead of 50-60) — decay faster, adapt to regime shifts
+2. **Intra-window z-score normalization** — make features regime-invariant; a 2% move in high-vol regime is different from low-vol
+3. **Remove slow vol_regime features** (rolling 200) that don't adapt quickly
+4. **Increase model expressivity** — reduce min_child_weight, increase learning_rate slightly to capture regime-conditional patterns
+5. **Add volatility-adaptive features** — scale momentum/returns by recent vol to make them robust across regimes
+
+<NAME>
+shorter_lookbacks_zscore_norm_vol_adaptive
+</NAME>
+
+<DESCRIPTION>
+This edit addresses the core regime-shift problem by:
+
+1. **Reducing lookback windows**: Replace 50/60/200 windows with 10/15/20 equivalents. 15-min candles move fast; long windows are stale.
+
+2. **Z-score normalization within rolling windows**: For returns and deviations, compute (value - rolling_mean) / rolling_std to make features regime-invariant. A 1% return means different things in vol=0.5% vs vol=2% regimes.
+
+3. **Volatility-adaptive scaling**: Multiply momentum features by vol_trend (fast/slow vol ratio) to capture regime-conditional behavior. In low-vol regimes, momentum is weaker; in high-vol, it's stronger.
+
+4. **Remove slow regime features**: Drop 200-bar rolling windows and instead use faster 20-bar rolling ranks. This reduces stale information.
+
+5. **Increase model expressivity**: Reduce min_child_weight from 1 to 0.5, increase learning_rate from 0.15 to 0.18, increase n_estimators to 500. This allows trees to pick up regime-conditional splits better.
+
+6. **Simpler SMA cross**: Use SMA-10/20 instead of 10/50 for faster mean reversion detection.
+
+The result should be:
+- Higher val_slope (more of train pattern generalizes)
+- Higher pred_std_ratio (model is less conservative)
+- Better generalization ratio
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 500,
+    "max_depth": 5,
+    "min_child_weight": 0.5,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.18,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 20, 60]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+=======
+    # --- Volatility (shorter lookbacks) ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 15, 20]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_20'] = (close / close.shift(20) - 1).abs() * 10000
+    feat['trend_strength_60'] = (close / close.shift(60) - 1).abs() * 10000
+    trend_20 = (close / close.shift(20) - 1) * 10000
+    trend_60 = (close / close.shift(60) - 1) * 10000
+    feat['trend_dir_20'] = np.sign(trend_20)
+    feat['trend_dir_60'] = np.sign(trend_60)
+    realized_vol_20 = log_ret.rolling(20).std()
+    realized_vol_60 = log_ret.rolling(60).std()
+    feat['vol_regime'] = realized_vol_20 / (realized_vol_20.rolling(200).mean() + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_20 / (realized_vol_60 + 1e-9)
+    feat['vol_rank_200'] = realized_vol_20.rolling(200).rank(pct=True)
+=======
+    # --- Regime features (shorter lookbacks, faster adaptation) ---
+    feat['trend_strength_15'] = (close / close.shift(15) - 1).abs() * 10000
+    trend_15 = (close / close.shift(15) - 1) * 10000
+    feat['trend_dir_15'] = np.sign(trend_15)
+    realized_vol_15 = log_ret.rolling(15).std()
+    realized_vol_20 = log_ret.rolling(20).std()
+    realized_vol_5 = log_ret.rolling(5).std()
+    # Vol regime: compare recent vol to slightly older vol (fast adaptation)
+    feat['vol_regime'] = realized_vol_15 / (realized_vol_20 + 1e-9)
+    feat['vol_regime_fast'] = realized_vol_5 / (realized_vol_15 + 1e-9)
+    feat['vol_rank_50'] = realized_vol_15.rolling(50).rank(pct=True)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Mean reversion features ---
+    sma_10 = close.rolling(10).mean()
+    sma_50 = close.rolling(50).mean()
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma50_dev'] = (close - sma_50) / (sma_50 + 1e-9)
+    feat['sma_cross'] = (sma_10 - sma_50) / (sma_50 + 1e-9)
+=======
+    # --- Mean reversion features (shorter windows for regime adaptation) ---
+    sma_10 = close.rolling(10).mean()
+    sma_20 = close.rolling(20).mean()
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma20_dev'] = (close - sma_20) / (sma_20 + 1e-9)
+    feat['sma_cross'] = (sma_10 - sma_20) / (sma_20 + 1e-9)
+    
+    # --- Z-score normalized features (regime-invariant) ---
+    ret_1 = close.pct_change(1)
+    ret_1_mean = ret_1.rolling(15).mean()
+    ret_1_std = ret_1.rolling(15).std()
+    feat['ret_zscore_15'] = (ret_1 - ret_1_mean) / (ret_1_std + 1e-9)
+    
+    price_dev_20 = (close - sma_20) / (sma_20 + 1e-9)
+    price_dev_mean = price_dev_20.rolling(15).mean()
+    price_dev_std = price_dev_20.rolling(15).std()
+    feat['price_dev_zscore_20'] = (price_dev_20 - price_dev_mean) / (price_dev_std + 1e-9)
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Momentum × Volatility interactions ---
+    ret_3 = close.pct_change(3)
+    vol_20 = log_ret.rolling(20).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_20
+    feat['momentum_regime'] = ret_3 / (vol_20 + 1e-9)
+    feat['momentum_regime_20'] = ret_3 * feat['vol_regime']
+    feat['momentum_regime_fast'] = ret_3 * feat['vol_regime_fast']
+=======
+    # --- Momentum × Volatility interactions (vol-adaptive, regime-conditional) ---
+    ret_3 = close.pct_change(3)
+    vol_15 = log_ret.rolling(15).std()
+    vol_20 = log_ret.rolling(20).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_15
+    feat['momentum_regime'] = ret_3 / (vol_15 + 1e-9)
+    # Scale momentum by vol trend: captures regime-conditional behavior
+    feat['momentum_regime_trend'] = ret_3 * feat['vol_regime']
+    feat['momentum_regime_fast'] = ret_3 * feat['vol_regime_fast']
+    # Volatility trend: how fast vol is changing (captures regime shifts)
+    vol_trend = realized_vol_5 / (realized_vol_15 + 1e-9)
+    feat['momentum_vol_trend'] = ret_3 * vol_trend
+>>>>>>> REPLACE
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Close position in range ---
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+    feat['ret_z_20'] = (close.pct_change(1) - close.pct_change(1).rolling(20).mean()) / (close.pct_change(1).rolling(20).std() + 1e-9)
+    feat['ret_z_60'] = (close.pct_change(1) - close.pct_change(1).rolling(60).mean()) / (close.pct_change(1).rolling(60).std() + 1e-9)
+    feat['ret_accel_6'] = close.pct_change(1).diff(6)
+    feat['vol_ret_corr_20'] = log_ret.rolling(20).corr(volume.pct_change(1))
+=======
+    # --- Close position in range (shorter windows) ---
+    low_15 = low.rolling(15).min()
+    high_15 = high.rolling(15).max()
+    feat['close_position_15'] = (close - low_15) / (high_15 - low_15 + 1e-9)
+    feat['ret_accel_6'] = close.pct_change(1).diff(6)
+    feat['vol_ret_corr_15'] = log_ret.rolling(15).corr(volume.pct_change(1))
+>>>>>>> REPLACE
+</DIFF>

@@ -1,0 +1,14 @@
+{
+  "generation": 63,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "expressive_regime_features",
+  "patch_description": "The current model is still showing mean-collapsed predictions (`pred_std_ratio` ~ 0.04) despite decent DA, which suggests it is under-utilizing the available signal. The safest next step is to increase tree expressivity a bit and add a small set of regime-sensitive features that are still strictly past-only.\n\nI am proposing:\n1. Looser XGBoost regularization and slightly deeper trees to let the model separate regimes more effectively.\n2. Additional short-horizon, volatility-normalized, and quantile-style features that often help BTC/ETH/SOL perp directionality at 15m:\n   - short-horizon acceleration and slope\n   - rolling rank / breakout context\n   - realized volatility change\n   - volume shock and trend/vol interactions\n   - orderbook and funding regime interactions\n3. Keep total feature count under 80 by explicitly selecting a compact subset of the strongest features rather than blindly truncating.\n\nThis should improve prediction dispersion without materially increasing overfit, and it targets the main failure mode seen in the metrics.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:32:21.230262",
+  "llm_cost": 0.03909225,
+  "llm_model": "gpt-5.4-mini"
+}

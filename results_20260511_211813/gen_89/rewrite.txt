@@ -1,0 +1,307 @@
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.88,
+    "colsample_bytree": 0.88,
+    "learning_rate": 0.07,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 90,
+}
+
+CLIP_PERCENTILE = 96
+MIN_PRED_STD_RATIO = 0.15
+N_REGIMES = 3  # Number of market regimes
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV + orderbook + funding data.
+    All features must use only past data (no lookahead).
+    """
+    feat = pd.DataFrame(index=df.index)
+    close = df['close'].astype(float)
+    volume = df['volume'].astype(float)
+    high = df['high'].astype(float)
+    low = df['low'].astype(float)
+    open_ = df['open'].astype(float)
+
+    # --- Core Returns ---
+    r1 = close.pct_change(1)
+    r3 = close.pct_change(3)
+    r6 = close.pct_change(6)
+    r12 = close.pct_change(12)
+    r24 = close.pct_change(24)
+    
+    feat['ret_1'] = r1
+    feat['ret_3'] = r3
+    feat['ret_6'] = r6
+    feat['ret_12'] = r12
+    feat['ret_24'] = r24
+    
+    # Return acceleration (momentum change)
+    feat['ret_accel_3'] = r1 - r3 / 3.0
+    feat['ret_accel_6'] = r3 - r6 / 2.0
+    feat['ret_accel_12'] = r6 - r12 / 2.0
+    
+    # Trend stack: directional consensus
+    feat['trend_stack'] = np.sign(r1) + np.sign(r3) + np.sign(r6) + np.sign(r12)
+    feat['trend_stack_norm'] = feat['trend_stack'] / 4.0
+
+    # --- Volatility Regime (Core Signal) ---
+    log_ret = np.log(close / close.shift(1))
+    vol_2 = log_ret.rolling(2).std()
+    vol_5 = log_ret.rolling(5).std()
+    vol_20 = log_ret.rolling(20).std()
+    vol_60 = log_ret.rolling(60).std()
+    vol_96 = log_ret.rolling(96).std()
+    vol_192 = log_ret.rolling(192).std()
+    
+    feat['vol_2'] = vol_2
+    feat['vol_5'] = vol_5
+    feat['vol_20'] = vol_20
+    feat['vol_60'] = vol_60
+    feat['vol_96'] = vol_96
+    
+    # Multi-scale volatility ratios
+    feat['vol_ratio_2_5'] = vol_2 / (vol_5 + 1e-9)
+    feat['vol_ratio_5_20'] = vol_5 / (vol_20 + 1e-9)
+    feat['vol_ratio_20_60'] = vol_20 / (vol_60 + 1e-9)
+    feat['vol_ratio_5_96'] = vol_5 / (vol_96 + 1e-9)
+    feat['vol_ratio_20_192'] = vol_20 / (vol_192 + 1e-9)
+    
+    # Volatility regime indicator (normalized)
+    vol_long_ma = vol_96.rolling(50).mean()
+    feat['vol_regime'] = vol_20 / (vol_long_ma + 1e-9)
+    feat['vol_regime_z'] = (feat['vol_regime'] - feat['vol_regime'].rolling(100).mean()) / (feat['vol_regime'].rolling(100).std() + 1e-9)
+    
+    # Volatility state (compression/expansion)
+    feat['vol_state'] = np.tanh((vol_5 / (vol_60 + 1e-9)) - 1.0)
+    feat['vol_accel'] = vol_5 / (vol_20 + 1e-9) - 1.0
+    feat['vol_expansion'] = (vol_20 - vol_60) / (vol_60 + 1e-9)
+
+    # --- Oscillators (RSI) ---
+    for period in [6, 14, 28]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        rsi_val = 100 - 100 / (1 + rs)
+        feat[f'rsi_{period}'] = rsi_val
+        feat[f'rsi_{period}_norm'] = (rsi_val - 50) / 50.0  # Normalize to [-1, 1]
+    
+    feat['rsi_6_slope'] = feat['rsi_6'].diff()
+    feat['rsi_14_slope'] = feat['rsi_14'].diff()
+    feat['rsi_z_30'] = (feat['rsi_14'] - feat['rsi_14'].rolling(30).mean()) / (feat['rsi_14'].rolling(30).std() + 1e-9)
+
+    # --- Trend (EMA-based) ---
+    ema_8 = close.ewm(span=8, adjust=False).mean()
+    ema_21 = close.ewm(span=21, adjust=False).mean()
+    ema_55 = close.ewm(span=55, adjust=False).mean()
+    
+    feat['ema_gap_fast'] = (ema_8 - ema_21) / (close + 1e-9)
+    feat['ema_gap_slow'] = (ema_21 - ema_55) / (close + 1e-9)
+    feat['ema_slope_fast'] = ema_8.pct_change(3)
+    feat['ema_slope_slow'] = ema_55.pct_change(8)
+    feat['trend_ratio'] = (ema_8 - ema_55) / (close.rolling(20).std() + 1e-9)
+    
+    # Mean reversion
+    vwap = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dev'] = (close - vwap) / (close + 1e-9)
+    feat['vwap_dev_z'] = (close - vwap) / (close.rolling(20).std() + 1e-9)
+
+    # --- Volume Dynamics ---
+    feat['volume_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+    feat['volume_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+    feat['volume_ratio_60'] = volume / (volume.rolling(60).mean() + 1e-9)
+    feat['volume_z_20'] = (volume - volume.rolling(20).mean()) / (volume.rolling(20).std() + 1e-9)
+    feat['volume_chg_1'] = volume.pct_change(1)
+    feat['volume_chg_4'] = volume.pct_change(4)
+    feat['volume_chg_8'] = volume.pct_change(8)
+
+    # --- Candle Microstructure ---
+    bar_range = (high - low).replace(0, np.nan)
+    feat['candle_body'] = (close - open_) / (bar_range + 1e-9)
+    feat['upper_wick'] = (high - np.maximum(close, open_)) / (bar_range + 1e-9)
+    feat['lower_wick'] = (np.minimum(close, open_) - low) / (bar_range + 1e-9)
+    feat['close_loc'] = (close - low) / (bar_range + 1e-9)
+    feat['wick_imbalance'] = feat['lower_wick'] - feat['upper_wick']
+    feat['range_norm'] = bar_range / (close + 1e-9)
+
+    # --- Range and Breakout ---
+    hi_20, lo_20 = high.rolling(20).max(), low.rolling(20).min()
+    hi_60, lo_60 = high.rolling(60).max(), low.rolling(60).min()
+    feat['range_pos_20'] = (close - lo_20) / ((hi_20 - lo_20) + 1e-9)
+    feat['range_pos_60'] = (close - lo_60) / ((hi_60 - lo_60) + 1e-9)
+    feat['range_width_20'] = (hi_20 - lo_20) / (close + 1e-9)
+    feat['range_width_60'] = (hi_60 - lo_60) / (close + 1e-9)
+    feat['breakout_pressure'] = feat['range_pos_20'] * (feat['volume_ratio_5'] - 1.0)
+
+    # --- Rolling Quantiles ---
+    feat['ret_qpos_60'] = r1.rolling(60).rank(pct=True)
+    feat['vol_qpos_60'] = volume.rolling(60).rank(pct=True)
+    feat['close_qpos_60'] = close.rolling(60).rank(pct=True)
+
+    # --- Direction Persistence ---
+    sign_r1 = np.sign(r1)
+    feat['dir_persist_8'] = sign_r1.rolling(8).mean()
+    feat['dir_persist_24'] = sign_r1.rolling(24).mean()
+    feat['sign_flip_8'] = (sign_r1 != sign_r1.shift(1)).astype(float).rolling(8).mean()
+
+    # --- Momentum Composites ---
+    feat['momentum_decay_6'] = (r1 * 0.5 + r3 * 0.3 + r6 * 0.2)
+    feat['momentum_decay_12'] = (r3 * 0.4 + r6 * 0.35 + r12 * 0.25)
+    feat['momentum_fast'] = (r1 * 0.7 + r3 * 0.3)
+    feat['momentum_slow'] = (r6 * 0.6 + r12 * 0.4)
+
+    # --- Regime-Conditional Interactions ---
+    feat['vol_regime_x_mom'] = feat['vol_regime'] * feat['momentum_decay_6']
+    feat['vol_state_x_mom'] = feat['vol_state'] * feat['momentum_decay_6']
+    feat['vol_mom_surge'] = feat['vol_state'] * feat['volume_ratio_5']
+    feat['trend_x_vol'] = feat['trend_ratio'] * feat['vol_state']
+    feat['range_x_volume'] = feat['range_pos_20'] * (feat['volume_ratio_5'] - 1.0)
+    feat['rsi_x_trend'] = (feat['rsi_14'] / 100.0) * feat['trend_ratio']
+
+    # --- Time Features ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+    feat['dow_cos'] = np.cos(2 * np.pi * df.index.dayofweek / 7)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # --- Orderbook / Funding ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def get_obi(b, a, tau=1):
+            try:
+                w = np.exp(-tau * np.arange(10))
+                bv = np.sum(np.array(b)[:10, 1] * w[:len(b)])
+                av = np.sum(np.array(a)[:10, 1] * w[:len(a)])
+                return (bv - av) / (bv + av + 1e-9)
+            except: return 0.0
+        feat['obi_tau1'] = [get_obi(b, a, 1) for b, a in zip(df['bids'], df['asks'])]
+        feat['obi_tau3'] = [get_obi(b, a, 3) for b, a in zip(df['bids'], df['asks'])]
+        feat['obi_lag1'] = pd.Series(feat['obi_tau1']).shift(1).values
+
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate'].astype(float)
+        feat['funding_rate'] = fr
+        feat['funding_ma_8h'] = fr.rolling(32).mean()
+        feat['funding_chg_1'] = fr.diff(1)
+        feat['funding_chg_4'] = fr.diff(4)
+        feat['funding_z_32'] = (fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + 1e-9)
+
+    return feat.replace([np.inf, -np.inf], np.nan).dropna()
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# DO NOT MODIFY BELOW THIS LINE
+# run_experiment is the fixed interface called by evaluate.py
+
+def run_experiment(
+    X_train, y_train,
+    X_test,  y_test,
+    X_val,   y_val,
+):
+    """
+    Train regime-conditional ensemble XGBoost models.
+    Uses volatility regime decomposition to improve signal expressivity.
+    """
+    # Identify volatility regimes using vol_regime feature
+    vol_regime_idx = X_train.columns.get_loc('vol_regime') if 'vol_regime' in X_train.columns else None
+    
+    if vol_regime_idx is not None:
+        vol_regime_vals = X_train.iloc[:, vol_regime_idx].values.reshape(-1, 1)
+        kmeans = KMeans(n_clusters=N_REGIMES, random_state=42, n_init=10)
+        regime_labels_train = kmeans.fit_predict(vol_regime_vals)
+        
+        # Assign regimes to test/val based on closest centroid
+        vol_regime_test = X_test.iloc[:, vol_regime_idx].values.reshape(-1, 1)
+        vol_regime_val = X_val.iloc[:, vol_regime_idx].values.reshape(-1, 1)
+        regime_labels_test = kmeans.predict(vol_regime_test)
+        regime_labels_val = kmeans.predict(vol_regime_val)
+    else:
+        # Fallback: use vol_5 if vol_regime not available
+        vol_idx = X_train.columns.get_loc('vol_5') if 'vol_5' in X_train.columns else 0
+        vol_vals = X_train.iloc[:, vol_idx].values.reshape(-1, 1)
+        kmeans = KMeans(n_clusters=N_REGIMES, random_state=42, n_init=10)
+        regime_labels_train = kmeans.fit_predict(vol_vals)
+        regime_labels_test = kmeans.predict(X_test.iloc[:, vol_idx].values.reshape(-1, 1))
+        regime_labels_val = kmeans.predict(X_val.iloc[:, vol_idx].values.reshape(-1, 1))
+
+    # Regime-specific target clipping
+    pred_train = np.zeros(len(y_train))
+    pred_test = np.zeros(len(y_test))
+    pred_val = np.zeros(len(y_val))
+    
+    for regime in range(N_REGIMES):
+        mask_train = regime_labels_train == regime
+        mask_test = regime_labels_test == regime
+        mask_val = regime_labels_val == regime
+        
+        if mask_train.sum() < 10:  # Skip if too few samples
+            continue
+        
+        # Regime-specific clipping
+        y_train_regime = y_train[mask_train]
+        clip_val = np.percentile(np.abs(y_train_regime), CLIP_PERCENTILE)
+        y_train_c = y_train_regime.clip(-clip_val, clip_val)
+        
+        # Scale features
+        scaler = StandardScaler()
+        X_tr = scaler.fit_transform(X_train[mask_train])
+        X_te = scaler.transform(X_test[mask_test]) if mask_test.sum() > 0 else np.array([])
+        X_va = scaler.transform(X_val[mask_val]) if mask_val.sum() > 0 else np.array([])
+        
+        # Train regime-specific model
+        params = {k: v for k, v in XGB_PARAMS.items()
+                  if k != 'early_stopping_rounds'}
+        early = XGB_PARAMS.get('early_stopping_rounds', 30)
+        
+        model = xgb.XGBRegressor(**params, early_stopping_rounds=early)
+        
+        # Use test set for early stopping if available
+        if mask_test.sum() > 0:
+            model.fit(
+                X_tr, y_train_c,
+                eval_set=[(X_te, y_test[mask_test])],
+                verbose=False,
+            )
+        else:
+            model.fit(X_tr, y_train_c, verbose=False)
+        
+        # Predict for this regime
+        if mask_test.sum() > 0:
+            pred_test[mask_test] = model.predict(X_te)
+        if mask_val.sum() > 0:
+            pred_val[mask_val] = model.predict(X_va)
+        
+        # Train predictions (use full training data for consistency)
+        X_tr_full = scaler.fit_transform(X_train[mask_train])
+        pred_train[mask_train] = model.predict(X_tr_full)
+
+    return {
+        'train': {'pred': pred_train, 'actual': y_train.values},
+        'test':  {'pred': pred_test, 'actual': y_test.values},
+        'val':   {'pred': pred_val, 'actual': y_val.values},
+        'model': None,  # Ensemble of models, not a single model
+    }

@@ -1,0 +1,14 @@
+{
+  "generation": 20,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_crossover_xgb",
+  "patch_description": "This version crosses the strongest ideas from the prior programs: short lookback features, rolling and EWM z-scoring for regime invariance, and explicit change-of-character signals such as volatility trend, momentum acceleration, and efficiency trend. It keeps the feature count compact and favors robust, low-depth XGBoost settings to reduce regime-specific overfit while improving prediction spread. I also keep the momentum \u00d7 volatility interaction, but use multiple normalized variants to help the model preserve slope into the validation regime without relying on long-memory features.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:16:59.828089",
+  "llm_cost": 0.03500925,
+  "llm_model": "gpt-5.4-mini"
+}

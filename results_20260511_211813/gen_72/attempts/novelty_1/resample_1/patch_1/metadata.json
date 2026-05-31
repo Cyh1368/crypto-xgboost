@@ -1,0 +1,14 @@
+{
+  "generation": 72,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "increase_expressivity_and_regime_features",
+  "patch_description": "The model currently suffers from 'prediction collapse' (pred_std_ratio = 0.056, target 0.15), meaning it is under-fitting the signal or overly regularized. \n\nI am proposing two main changes:\n1.  **Hyperparameter Adjustment**: Increase `max_depth` to 7 and `n_estimators` to 1000 to increase model expressivity. Simultaneously, I am reducing `reg_alpha` and `reg_lambda` to allow the model to capture more variance in the features. I've also increased `CLIP_PERCENTILE` to 99.0 to preserve more signal in the tails of the return distribution.\n2.  **Feature Engineering**: Added several high-value regime and momentum features:\n    *   **Efficiency Ratio (Kaufman)**: Measures the 'trendiness' of price action vs noise.\n    *   **Trend Acceleration**: Captures changes in momentum (momentum of momentum).\n    *   **Volatility of Volatility**: A robust regime indicator for identifying shifting market conditions.\n    *   **Range Z-Score**: Normalizes the current True Range to detect volatility expansion/compression.\n    *   **Z-Close**: Measures the distance of the current price from its moving average, normalized by volatility (mean-reversion indicator).\n    *   **Trend-Volatility Interaction**: Helps the model distinguish between high-volatility trends and high-volatility mean-reversion.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:34:35.250449",
+  "llm_cost": 0.015543999999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

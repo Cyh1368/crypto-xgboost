@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "rolling_z_regime_invariant",
+  "patch_description": "This approach addresses the slope collapse and regime-shift problem by transforming all raw market data into rolling Z-scores and relative ratios. Instead of the model seeing absolute price changes or indicators (which vary wildly in scale between bull/bear/sideways regimes), it sees how current behavior deviates from the recent 20-60 bar statistical norm.\n\nKey algorithmic changes:\n1.  **Statistical Stationarity**: Every feature (returns, volume, volatility, RSI) is normalized using a rolling Z-score or a rolling ratio. This forces the XGBoost model to learn \"patterns of behavior\" (e.g., \"volume is 2 standard deviations above normal while price is overextended\") rather than absolute levels.\n2.  **Efficiency and Fractal Dimension**: Added Kaufman's Efficiency Ratio and rolling skewness to capture the 'character' of the trend\u2014distinguishing between a clean trending move and a noisy mean-reverting one.\n3.  **Volatility-Adjusted Momentum**: Momentum features are scaled by rolling volatility to ensure the model's predicted 'slope' remains consistent across high and low volatility environments.\n4.  **Reduced Feature Complexity**: By using 30 high-signal, regime-invariant features instead of 60+ raw ones, we reduce the hypothesis space and force the model to find more robust, repeatable patterns.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:46:06.635288",
+  "llm_cost": 0.009091499999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

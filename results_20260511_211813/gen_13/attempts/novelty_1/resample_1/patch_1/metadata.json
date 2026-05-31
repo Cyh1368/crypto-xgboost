@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "broader_signal_unclamp",
+  "patch_description": "The current model is still predicting too close to the mean, which is consistent with overly conservative tree growth and a feature set that is useful but not diverse enough to separate bullish vs bearish 15-minute regimes.\n\nThis edit makes two coordinated changes:\n\n1. Loosens the XGBoost regularization and increases model capacity slightly:\n   - more trees, slightly deeper trees\n   - lower `min_child_weight`, `reg_alpha`, `reg_lambda`\n   - lower learning rate to stabilize the extra capacity\n   - slightly more aggressive clipping (`CLIP_PERCENTILE=99`) so the model can see a wider target range\n\n2. Expands `build_features()` with short-horizon regime-sensitive signals that are still causal:\n   - fast/medium return momentum\n   - return spread and acceleration\n   - rolling z-score of returns\n   - volume z-score and volume change\n   - range expansion and candle body/wick structure\n   - price position inside recent high/low range\n   - trend vs mean-reversion interaction using short-vs-long momentum\n   - a volatility-adjusted momentum feature\n\nThese additions are designed to improve directional separation without blowing up feature count or introducing lookahead. The feature total remains comfortably below 80.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:20:30.793504",
+  "llm_cost": 0.0137955,
+  "llm_model": "gpt-5.4-mini"
+}

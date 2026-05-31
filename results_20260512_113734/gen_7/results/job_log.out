@@ -1,0 +1,11 @@
+val_DA=0.5175  test_DA=0.5247  train_DA=0.5522
+val_r=0.0399  test_r=0.1203  train_r=0.3165
+val_slope=0.0017  train_slope=0.0190  slope_ratio=9.0%
+pred_std_ratio=0.0430  generalization_ratio=33.2%  overfit_gap=0.0347
+penalties → collapse=1.256  slope=1.257  gen=0.341  overfit=0.000  invert=0.000
+SCORE=-2.6578
+WARNING: predictions collapsed toward mean — increase model expressivity or remove regularization.
+WARNING: val slope (0.0017) is only 9.0% of train slope (0.0190). Features are regime-specific. Try shorter lookbacks, z-score normalization within rolling windows, or regime-conditional feature scaling.
+WARNING: val_r is only 33.2% of test_r. The model generalizes across the train→test boundary but breaks at the test→val boundary. This is a second-order regime shift. Add features that measure the CHANGE in market character, not just the current state.
+
+Final score: -2.6578

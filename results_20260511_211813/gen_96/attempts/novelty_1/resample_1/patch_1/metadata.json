@@ -1,0 +1,14 @@
+{
+  "generation": 96,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "btc_15m_regimeboost",
+  "patch_description": "The current program is dominated by a fairly regularized XGBoost model with a broad but still mostly linear feature set, which is why prediction dispersion stays low and the model keeps collapsing toward the mean. The key tunable parameters are `learning_rate`, `n_estimators`, `max_depth`, `min_child_weight`, `reg_alpha`, `reg_lambda`, `subsample`, `colsample_bytree`, `gamma`, `CLIP_PERCENTILE`, and `MIN_PRED_STD_RATIO`.\n\nMy rewrite increases useful expressivity while keeping overfit controlled:\n\n- **More responsive boosting**: slightly lower `learning_rate`, more trees, and a bit deeper depth to let the model form stronger directional partitions.\n- **Less shrinkage on signal**: reduced `reg_lambda` and `gamma`, with modest `reg_alpha`, to avoid mean-collapse.\n- **Regime-aware feature set**: adds short/medium momentum, volatility compression/expansion, trend strength, candle anatomy, volume shocks, funding dynamics, and interaction terms that are all computed strictly from past data.\n- **More robust normalization**: uses rolling z-scores and robust ratios to make BTC/ETH/SOL perps more comparable across volatility regimes.\n- **Better clipping balance**: slightly relaxes target clipping so large directional bars still contribute to gradients.\n- **Dispersion floor**: raises the effective dispersion target a bit so the model is nudged away from flat predictions.\n\nThe result should increase `pred_std_ratio` while preserving or improving validation DA by making the trees split on regime-conditioned directional structure instead of averaging it away.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:46:13.381714",
+  "llm_cost": 0.0346215,
+  "llm_model": "gpt-5.4-mini"
+}

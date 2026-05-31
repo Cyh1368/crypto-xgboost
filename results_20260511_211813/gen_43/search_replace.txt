@@ -1,0 +1,165 @@
+Looking at the performance history, I can see a clear pattern:
+
+1. **pred_std_ratio consistently ~0.06** – predictions are collapsing toward the mean (still flagged as warning)
+2. **val_DA plateauing around 0.53** – stuck just above random despite many feature additions
+3. **Collapse penalty ~0.46** – the primary drag on the score
+
+The issue is that **we're adding too many features without sufficient model capacity to use them**. The regularization (reg_lambda=0.02, reg_alpha=0.001) is still too strong relative to the signal we're trying to extract. Meanwhile, we have ~80 features competing for attention, but the tree depth (6) and sample requirements (min_child_weight=1) don't allow trees to learn complex interactions.
+
+**Key insight from prior runs:**
+- Run with max_depth=7, reg_lambda=0.05, pred_std_ratio=0.03 → score=-0.41
+- Run with max_depth=7, reg_lambda=0.01, pred_std_ratio=0.03 → score=-0.37 ✓ better
+- Current: max_depth=6, reg_lambda=0.02, pred_std_ratio=0.06 → score=-0.16 ✓ best so far!
+
+The current run is the best, but it's still suffering from collapse. The path forward:
+1. **Increase tree depth to 7** – allow deeper interactions to capture non-linear signal
+2. **Lower reg_lambda further to 0.005** – reduce L2 penalty so trees can express variance
+3. **Raise min_child_weight slightly to 2** – prevent overfitting on noise while allowing signal
+4. **Increase learning_rate to 0.1** – accelerate convergence with more expressive trees
+5. **Add sparse, high-signal features** – remove noise-prone derived features and keep only core predictors
+6. **Tighten CLIP_PERCENTILE to 95** – focus gradient on more typical moves, less on rare tail events
+
+<NAME>
+increase_expressivity_reduce_collapse
+</NAME>
+
+<DESCRIPTION>
+The model is still collapsing (pred_std_ratio=0.058) despite best-in-class val_DA. The primary bottleneck is insufficient model capacity to express the signal in 80+ features under conservative regularization.
+
+Strategy:
+1. **Increase max_depth to 7** – allow trees to capture deeper non-linear interactions between regime, momentum, and volatility features
+2. **Lower reg_lambda to 0.005** – reduce L2 penalty significantly so the model isn't forced to shrink all coefficients toward zero
+3. **Raise min_child_weight to 2** – prevent spurious splits on noise while still allowing genuine interaction nodes
+4. **Increase learning_rate to 0.1** – with stronger regularization philosophy (depth + child weight), higher LR accelerates learning of valid splits
+5. **Tighten CLIP_PERCENTILE to 95** – focus training gradient on typical moves (not rare 1% tail events) to improve signal-to-noise in loss
+6. **Prune weak features** – remove redundant/noisy derived features (e.g., momentum_slowing, rsi_6_extreme, vol_shock thresholds) that compete for splits without clear predictive value; keep core regime signals and interactions that prior runs showed as useful
+
+This targets the collapse problem while respecting prior success: prior max_depth=7 runs achieved val_DA=0.52-0.54.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.02,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.08,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 96          # preserve more signal variance for stronger gradients
+MIN_PRED_STD_RATIO = 0.08     # lower threshold to reduce collapse penalty
+=======
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 7,
+    "min_child_weight": 2,
+    "reg_alpha": 0.0005,
+    "reg_lambda": 0.005,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.1,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 95          # tighter clipping focuses gradient on typical moves, not tail outliers
+MIN_PRED_STD_RATIO = 0.10     # slightly higher floor to maintain collapse penalty incentive
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- Momentum divergence and acceleration signals ---
+    # Momentum acceleration (2nd derivative)
+    feat['ret_accel_12_6'] = ret_12 - ret_6
+    feat['ret_accel_6_3'] = ret_6 - ret3
+
+    # Momentum reversal signal (momentum slowing down)
+    feat['momentum_slowing'] = (ret_6.abs() < ret_12.abs()).astype(float)
+    feat['momentum_accelerating'] = (ret_6.abs() > ret_12.abs()).astype(float)
+
+    # Momentum divergence from trend
+    feat['momentum_vs_trend'] = np.sign(ret_6) * feat['trend_regime']
+
+    # --- Volatility-scaled momentum with discrete thresholds ---
+    vol_20_std = log_ret.rolling(20).std()
+    vol_20_mean = vol_20_std.rolling(60).mean()
+    vol_normalized = vol_20_std / (vol_20_mean + 1e-9)
+
+    # High momentum in low vol (strong signal)
+    feat['strong_momentum_low_vol'] = (ret_6.abs() > ret_6.rolling(20).std()) & (vol_normalized < 1.0)
+    feat['strong_momentum_low_vol'] = feat['strong_momentum_low_vol'].astype(float)
+
+    # Weak momentum in high vol (noise)
+    feat['weak_momentum_high_vol'] = (ret_6.abs() < ret_6.rolling(20).std()) & (vol_normalized > 1.2)
+    feat['weak_momentum_high_vol'] = feat['weak_momentum_high_vol'].astype(float)
+
+    # --- Cross-regime interaction signals ---
+    # Momentum aligned with trend (strong signal)
+    feat['momentum_trend_aligned'] = np.sign(ret_6) * feat['trend_regime']
+
+    # Momentum against trend (reversal signal)
+    feat['momentum_trend_divergence'] = -np.sign(ret_6) * feat['trend_regime']
+=======
+    # --- Momentum divergence and acceleration signals ---
+    # Momentum acceleration (2nd derivative) - core signal
+    feat['ret_accel_12_6'] = ret_12 - ret_6
+
+    # Momentum divergence from trend
+    feat['momentum_vs_trend'] = np.sign(ret_6) * feat['trend_regime']
+
+    # --- Cross-regime interaction signals ---
+    # Momentum aligned with trend (strong signal)
+    feat['momentum_trend_aligned'] = np.sign(ret_6) * feat['trend_regime']
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # RSI extremes (overbought/oversold)
+    feat['rsi_6_extreme'] = ((feat['rsi_6'] > 70) | (feat['rsi_6'] < 30)).astype(float)
+    feat['rsi_14_extreme'] = ((feat['rsi_14'] > 70) | (feat['rsi_14'] < 30)).astype(float)
+    feat['rsi_overbought'] = (feat['rsi_14'] > 70).astype(float)
+    feat['rsi_oversold'] = (feat['rsi_14'] < 30).astype(float)
+=======
+    # RSI overbought/oversold signals
+    feat['rsi_overbought'] = (feat['rsi_14'] > 70).astype(float)
+    feat['rsi_oversold'] = (feat['rsi_14'] < 30).astype(float)
+>>>>>>> REPLACE
+
+</DIFF>
+
+<DIFF>
+<<<<<<< SEARCH
+    # --- High-contrast binary regime signals (create natural tree splits) ---
+    # Momentum regime: strong positive vs negative momentum
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+    feat['momentum_positive'] = (ret_6 > 0).astype(float)
+    feat['momentum_strong'] = (ret_6.abs() > ret_6.rolling(20).std()).astype(float)
+    feat['momentum_regime'] = np.sign(ret_6) * feat['momentum_strong']
+=======
+    # --- High-contrast binary regime signals (create natural tree splits) ---
+    # Momentum regime: strong positive vs negative momentum
+    ret_6 = close.pct_change(6)
+    ret_12 = close.pct_change(12)
+    feat['momentum_regime'] = np.sign(ret_6)  # simplified: just sign, let depth=7 capture interaction with strength
+>>>>>>> REPLACE
+
+</DIFF>

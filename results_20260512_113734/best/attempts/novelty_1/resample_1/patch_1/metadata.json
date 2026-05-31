@@ -1,0 +1,14 @@
+{
+  "generation": 18,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shift_xgb",
+  "patch_description": "This crossover version combines the stronger parts of the prior scripts while focusing on the main failure mode: slope collapse on the validation regime. I kept the feature set compact and more regime-invariant by emphasizing shorter lookbacks, rolling z-scores, volatility and autocorrelation trends, and momentum \u00d7 volatility interactions. The XGBoost configuration is made slightly less brittle than the current program by reducing extreme learning rate / depth while restoring enough model capacity to avoid mean-collapse. Feature count is kept well under the limit, and all features use only past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:42:43.330953",
+  "llm_cost": 0.025611000000000002,
+  "llm_model": "gpt-5.4-mini"
+}

@@ -1,0 +1,214 @@
+<NAME>
+short_window_regime_features
+</NAME>
+
+<DESCRIPTION>
+This edit targets the current collapse toward the mean by making the feature set more regime-invariant and more reactive to short-lived market structure changes, while also giving XGBoost a bit more capacity to use those signals.
+
+Main ideas:
+- Replace the current longer-horizon volatility regime logic with shorter rolling comparisons and rolling z-scores.
+- Add autocorrelation and efficiency-trend features, which capture whether the market is becoming more or less trend-like.
+- Keep feature count comfortably below 80.
+- Increase model capacity modestly with more trees and slightly less restrictive splitting so the model can express a stronger slope on validation without exploding overfit.
+
+Why this should help:
+- The validation regime appears to differ from train/test, so shorter lookbacks and normalized signals should survive regime change better.
+- The model is currently too flat on validation (`pred_std_ratio` is very low), so a little more tree capacity and weaker child-weight constraint should help restore prediction dispersion.
+- The added trend-of-market-character features are designed to capture second-order regime shifts rather than just absolute levels.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 300,
+    "max_depth": 6,
+    "min_child_weight": 0.5,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 700,
+    "max_depth": 5,
+    "min_child_weight": 0.25,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.5,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 10, 20]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+
+    # --- Z-score normalized returns (regime-invariant) ---
+    ret_1 = close.pct_change(1)
+    for w in [5, 10, 20]:
+        ret_mean = ret_1.rolling(w).mean()
+        ret_std = ret_1.rolling(w).std()
+        feat[f'ret_zscore_{w}'] = (ret_1 - ret_mean) / (ret_std + 1e-9)
+
+    # --- Volatility trend (how vol is changing) ---
+    vol_20 = log_ret.rolling(20).std()
+    vol_5 = log_ret.rolling(5).std()
+    feat['vol_trend_ratio'] = vol_5 / (vol_20 + 1e-9)  # vol acceleration
+    feat['vol_accel'] = vol_20.diff(5)  # rate of change of volatility
+=======
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1))
+    for w in [5, 8, 13, 21]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+
+    # --- Z-score normalized returns (regime-invariant) ---
+    ret_1 = close.pct_change(1)
+    ret_3 = close.pct_change(3)
+    for w in [5, 8, 13, 21]:
+        ret_mean = ret_1.rolling(w).mean()
+        ret_std = ret_1.rolling(w).std()
+        feat[f'ret_zscore_{w}'] = (ret_1 - ret_mean) / (ret_std + 1e-9)
+        ret3_mean = ret_3.rolling(w).mean()
+        ret3_std = ret_3.rolling(w).std()
+        feat[f'ret3_zscore_{w}'] = (ret_3 - ret3_mean) / (ret3_std + 1e-9)
+
+    # --- Volatility trend (how vol is changing) ---
+    vol_8 = log_ret.rolling(8).std()
+    vol_21 = log_ret.rolling(21).std()
+    feat['vol_trend_ratio'] = vol_8 / (vol_21 + 1e-9)  # vol acceleration
+    feat['vol_accel'] = vol_8.diff(3)  # rate of change of volatility
+    feat['vol_trend_z'] = (feat['vol_trend_ratio'] - feat['vol_trend_ratio'].rolling(20).mean()) / (feat['vol_trend_ratio'].rolling(20).std() + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Regime features ---
+    feat['trend_strength_20'] = (close / close.shift(20) - 1).abs() * 10000
+    trend_20 = (close / close.shift(20) - 1) * 10000
+    feat['trend_dir_20'] = np.sign(trend_20)
+    realized_vol_20 = log_ret.rolling(20).std()
+    feat['vol_regime'] = realized_vol_20 / (realized_vol_20.rolling(100).mean() + 1e-9)
+    feat['vol_regime_fast'] = vol_5 / (vol_20 + 1e-9)
+    feat['vol_rank_100'] = realized_vol_20.rolling(100).rank(pct=True)
+=======
+    # --- Regime features ---
+    feat['trend_strength_12'] = (close / close.shift(12) - 1).abs() * 10000
+    trend_12 = (close / close.shift(12) - 1) * 10000
+    feat['trend_dir_12'] = np.sign(trend_12)
+    realized_vol_13 = log_ret.rolling(13).std()
+    feat['vol_regime'] = realized_vol_13 / (realized_vol_13.rolling(50).mean() + 1e-9)
+    feat['vol_regime_fast'] = vol_8 / (vol_21 + 1e-9)
+    feat['vol_rank_50'] = realized_vol_13.rolling(50).rank(pct=True)
+    feat['efficiency_trend'] = feat['efficiency_20'] - feat['efficiency_20'].rolling(10).mean()
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Mean reversion features (shorter lookback) ---
+    sma_10 = close.rolling(10).mean()
+    sma_20 = close.rolling(20).mean()
+    feat['price_sma10_dev'] = (close - sma_10) / (sma_10 + 1e-9)
+    feat['price_sma20_dev'] = (close - sma_20) / (sma_20 + 1e-9)
+    feat['sma_cross'] = (sma_10 - sma_20) / (sma_20 + 1e-9)
+=======
+    # --- Mean reversion features (shorter lookback) ---
+    sma_8 = close.rolling(8).mean()
+    sma_16 = close.rolling(16).mean()
+    feat['price_sma8_dev'] = (close - sma_8) / (sma_8 + 1e-9)
+    feat['price_sma16_dev'] = (close - sma_16) / (sma_16 + 1e-9)
+    feat['sma_cross'] = (sma_8 - sma_16) / (sma_16 + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Momentum × Volatility interactions (adaptive) ---
+    ret_3 = close.pct_change(3)
+    vol_20 = log_ret.rolling(20).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_20
+    feat['momentum_regime'] = ret_3 / (vol_20 + 1e-9)
+    feat['momentum_regime_20'] = ret_3 * feat['vol_regime']
+    feat['momentum_regime_fast'] = ret_3 * feat['vol_regime_fast']
+    # Adaptive momentum: scale momentum by vol trend (capture regime-specific behavior)
+    feat['momentum_vol_trend'] = ret_3 * feat['vol_trend_ratio']
+=======
+    # --- Momentum × Volatility interactions (adaptive) ---
+    vol_13 = log_ret.rolling(13).std()
+    feat['momentum_vol_interaction'] = ret_3 * vol_13
+    feat['momentum_regime'] = ret_3 / (vol_13 + 1e-9)
+    feat['momentum_regime_20'] = ret_3 * feat['vol_regime']
+    feat['momentum_regime_fast'] = ret_3 * feat['vol_regime_fast']
+    # Adaptive momentum: scale momentum by vol trend (capture regime-specific behavior)
+    feat['momentum_vol_trend'] = ret_3 * feat['vol_trend_ratio']
+    feat['momentum_efficiency'] = ret_3 * feat['efficiency_trend']
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Volume × Price position interactions ---
+    vol_ratio = volume / (volume.rolling(20).mean() + 1e-9)
+    bb_pct = (close - close.rolling(20).mean()) / (2 * close.rolling(20).std() + 1e-9)
+    feat['volume_bb_interaction'] = vol_ratio * bb_pct
+    feat['volume_price_pressure'] = vol_ratio * feat['price_sma10_dev']
+=======
+    # --- Volume × Price position interactions ---
+    vol_ratio = volume / (volume.rolling(13).mean() + 1e-9)
+    bb_pct = (close - close.rolling(16).mean()) / (2 * close.rolling(16).std() + 1e-9)
+    feat['volume_bb_interaction'] = vol_ratio * bb_pct
+    feat['volume_price_pressure'] = vol_ratio * feat['price_sma8_dev']
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Close position in range (shorter window) ---
+    low_20 = low.rolling(20).min()
+    high_20 = high.rolling(20).max()
+    feat['close_position_20'] = (close - low_20) / (high_20 - low_20 + 1e-9)
+    feat['ret_z_20'] = (close.pct_change(1) - close.pct_change(1).rolling(20).mean()) / (close.pct_change(1).rolling(20).std() + 1e-9)
+    feat['ret_accel_6'] = close.pct_change(1).diff(6)
+    feat['vol_ret_corr_20'] = log_ret.rolling(20).corr(volume.pct_change(1))
+=======
+    # --- Close position in range (shorter window) ---
+    low_13 = low.rolling(13).min()
+    high_13 = high.rolling(13).max()
+    feat['close_position_13'] = (close - low_13) / (high_13 - low_13 + 1e-9)
+    feat['ret_z_20'] = (close.pct_change(1) - close.pct_change(1).rolling(20).mean()) / (close.pct_change(1).rolling(20).std() + 1e-9)
+    feat['ret_accel_4'] = close.pct_change(1).diff(4)
+    feat['vol_ret_corr_13'] = log_ret.rolling(13).corr(volume.pct_change(1))
+    feat['autocorr_1_13'] = ret_1.rolling(13).corr(ret_1.shift(1))
+    feat['autocorr_3_21'] = ret_3.rolling(21).corr(ret_3.shift(3))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+=======
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['efficiency_10'] = (close - close.shift(10)).abs() / (close.diff().abs().rolling(10).sum() + 1e-9)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Z-score normalized price deviation (regime-invariant mean reversion) ---
+    price_dev_20 = (close - sma_20) / (sma_20 + 1e-9)
+    price_dev_mean = price_dev_20.rolling(20).mean()
+    price_dev_std = price_dev_20.rolling(20).std()
+    feat['price_dev_zscore_20'] = (price_dev_20 - price_dev_mean) / (price_dev_std + 1e-9)
+=======
+    # --- Z-score normalized price deviation (regime-invariant mean reversion) ---
+    price_dev_16 = (close - sma_16) / (sma_16 + 1e-9)
+    price_dev_mean = price_dev_16.rolling(16).mean()
+    price_dev_std = price_dev_16.rolling(16).std()
+    feat['price_dev_zscore_16'] = (price_dev_16 - price_dev_mean) / (price_dev_std + 1e-9)
+    feat['efficiency_z'] = (feat['efficiency_20'] - feat['efficiency_20'].rolling(20).mean()) / (feat['efficiency_20'].rolling(20).std() + 1e-9)
+>>>>>>> REPLACE
+</DIFF>

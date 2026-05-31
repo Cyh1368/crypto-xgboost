@@ -1,0 +1,14 @@
+{
+  "generation": 69,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "increase_expressivity_and_rank_features",
+  "patch_description": "The current model suffers from a significant 'collapse' penalty (0.56), indicating that predictions are too clustered around the mean (pred_std_ratio = 0.038, while the target is 0.15). To address this, I am increasing the model's expressivity and adding scale-invariant features that help the model distinguish between different market regimes.\n\nKey changes:\n1. **Hyperparameters**: Increased `max_depth` to 7 and `learning_rate` to 0.1, while significantly reducing `reg_lambda` to 0.05 and `min_child_weight` to 1. This allows the model to fit more complex, 'spikier' patterns in the data, which is necessary to increase the prediction standard deviation.\n2. **Feature Engineering**:\n    - Added **Rolling Ranks** (`ret_qpos_60`, `vol_qpos_60`): These provide scale-invariant relative positioning, which is often more robust than raw values across different volatility regimes.\n    - Added **Directional Persistence** (`dir_persist_12`): Captures the 'trendiness' or 'choppiness' of recent price action.\n    - Added **Amihud Illiquidity Proxy** (`amihud_20`): Captures the relationship between price moves and volume, a key indicator of market stress or conviction.\n    - Added **Wick Imbalance**: Refines the candle microstructure signal.\n    - Added **Volatility Acceleration**: Helps identify the start of volatility breakouts.\n3. **Target Clipping**: Adjusted `CLIP_PERCENTILE` to 97 to allow slightly more signal from extreme moves to reach the model gradients.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:33:47.391336",
+  "llm_cost": 0.0197365,
+  "llm_model": "gemini-3-flash-preview"
+}

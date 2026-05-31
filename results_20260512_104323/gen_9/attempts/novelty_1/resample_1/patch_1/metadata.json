@@ -1,0 +1,14 @@
+{
+  "generation": 9,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_zscoring",
+  "patch_description": "The primary issue is a severe slope collapse (0.074 train to 0.006 val), indicating the model is learning regime-specific price levels or volatility scales that do not persist. \n\nThis update implements:\n1.  **Rolling Z-Score Normalization**: Almost all features (returns, volatility, RSI, MACD, Volume) are now normalized using a rolling 40-bar window. This ensures features have a consistent mean and variance across different market regimes (e.g., a 1% move is scaled by recent volatility).\n2.  **Shorter Lookbacks**: Reduced lookback windows (max 40) to allow the model to adapt faster to the \"second-order regime shift\" noted in the feedback.\n3.  **Market Character Features**: Added Efficiency Ratio (fractal efficiency) and Autocorrelation (trend persistence) to capture the *nature* of price action rather than just its direction.\n4.  **Aggressive Regularization**: Reduced `max_depth` to 3 and increased `min_child_weight` to 15 to force the model to find broader, more robust patterns that survive the test-to-val transition.\n5.  **Increased Expressivity**: Set `MIN_PRED_STD_RATIO` to 0.18 to prevent the model from collapsing its predictions toward the mean.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:45:45.150619",
+  "llm_cost": 0.0175445,
+  "llm_model": "gemini-3-flash-preview"
+}

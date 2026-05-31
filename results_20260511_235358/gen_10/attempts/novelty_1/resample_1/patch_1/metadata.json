@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_zscore_xgboost",
+  "patch_description": "The model's primary failure is a collapse in predictive slope (0.074 train \u2192 0.006 val), indicating that features lose their predictive magnitude across market regimes. To combat this, I am:\n1.  **Replacing raw features with rolling Z-scores**: All core momentum and volatility features are normalized relative to their 16-48 bar local context, ensuring the model sees a stationary input distribution regardless of the absolute volatility level.\n2.  **Adding Second-Order Regime Indicators**: Features like return autocorrelation (trending vs. mean-reverting), rolling efficiency ratios (signal vs. noise), and volatility acceleration directly measure the \"character\" of the market.\n3.  **Refining XGBoost Structure**: Reducing `max_depth` to 4 and increasing `min_child_weight` to 10 prevents the model from mapping regime-specific noise.\n4.  **Optimizing Learning Dynamics**: Increasing the `learning_rate` to 0.08 and adjusting regularization (`reg_lambda`, `reg_alpha`) to prevent the \"collapse toward mean\" while maintaining generalizability.\n5.  **Lookback Trimming**: Restricting lookback windows to 8-48 bars to ensure the model adapts quickly to changes in crypto market dynamics.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:56:04.008855",
+  "llm_cost": 0.012051,
+  "llm_model": "gemini-3-flash-preview"
+}

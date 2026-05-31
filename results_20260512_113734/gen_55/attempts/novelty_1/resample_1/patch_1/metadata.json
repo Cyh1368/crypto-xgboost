@@ -1,0 +1,14 @@
+{
+  "generation": 55,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "regime_normalized_short_features",
+  "patch_description": "This edit targets the main failure mode: the model\u2019s slope collapses on the validation regime because the current feature set still encodes too many absolute levels and too little normalized, regime-relative structure.\n\nI propose two coordinated changes:\n\n1. **Hyperparameter adjustment for stronger but still controlled expressivity**\n   - Slightly raise `learning_rate` and reduce `n_estimators` / `early_stopping_rounds` proportionally.\n   - Lower `min_child_weight` and regularization a bit so the trees can actually use the new normalized features.\n   - Keep depth moderate to avoid overfitting.\n\n2. **Add short-window rolling z-score / trend features and interaction terms**\n   - Normalize momentum, volatility, ATR, volume, and efficiency by recent rolling statistics.\n   - Add trend-of-character features such as `vol_trend_5_10`, `eff_trend_5_10`, `autocorr_trend_5_10`.\n   - Add `momentum \u00d7 volatility regime` interaction using the shorter horizon vol estimate.\n   - These are designed to be more regime-invariant and to preserve slope in the validation period.\n\nThis should help increase `val_slope` and `pred_std_ratio` without materially increasing feature count or runtime, while keeping the model from relying too heavily on absolute price-regime levels that vanish after the train/test split.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:23:00.372569",
+  "llm_cost": 0.032607750000000005,
+  "llm_model": "gpt-5.4-mini"
+}

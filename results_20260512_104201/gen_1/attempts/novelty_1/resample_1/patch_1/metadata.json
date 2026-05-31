@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_robust_xgb",
+  "patch_description": "This version switches from long-horizon indicator stacking to a regime-robust, short-memory feature design. Instead of relying on absolute levels from 20\u201360 bar windows, it emphasizes rolling z-scores, short lookbacks, and rate-of-change features that are more stable across market regimes. It also adds a few compact interaction terms such as momentum \u00d7 volatility regime, and uses a more conservative XGBoost configuration to reduce overfitting while preserving enough expressivity to avoid prediction collapse. The goal is to improve validation slope and predicted dispersion by making features more stationary and less dependent on the training regime.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:42:30.916856",
+  "llm_cost": 0.01617375,
+  "llm_model": "gpt-5.4-mini"
+}

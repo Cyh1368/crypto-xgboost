@@ -1,0 +1,14 @@
+{
+  "generation": 24,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortxgb",
+  "patch_description": "This crossover version combines the stronger parts of the prior scripts while pushing harder on regime robustness.  \nThe feature set is intentionally biased toward shorter lookbacks, rolling z-scores, and \u201cchange in market character\u201d signals such as volatility trend, autocorrelation trend, efficiency trends, and normalized momentum/volume interactions.  \n\nCompared with the current program, it:\n- shortens the effective memory of most features,\n- adds more regime-invariant z-scored transforms,\n- keeps the feature count compact and under the limit,\n- uses a slightly less constrained XGBoost setup to reduce prediction collapse,\n- preserves the existing interface and output format exactly.\n\nThe goal is to improve validation slope and prediction dispersion without overfitting the older regime.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:20:27.962865",
+  "llm_cost": 0.0280995,
+  "llm_model": "gpt-5.4-mini"
+}

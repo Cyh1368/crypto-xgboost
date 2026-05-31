@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "aggressive_signal_boost_with_regime_splits",
+  "patch_description": "The current model suffers from prediction collapse despite loosened regularization. The root cause is weak feature signals, not over-regularization. This edit:\n\n1. **Dramatically reduces regularization** (reg_lambda: 0.1\u21920.02, gamma: 0.5\u21920.1) to allow the model to express stronger patterns\n2. **Increases learning rate and estimators** (lr: 0.05\u21920.08, n_est: 600\u2192800) for faster convergence\n3. **Adds high-contrast binary regime signals** (momentum_regime, volatility_regime_binary, trend_regime) that create natural tree splits\n4. **Adds mean-reversion divergence signals** (price deviation from SMA, RSI extremes) that are more directly predictive\n5. **Adds lagged momentum divergence** (momentum acceleration, momentum reversal signals) that capture turning points\n6. **Adds volatility-scaled momentum** with discrete thresholds to create actionable signals\n\nThese changes target the core issue: the model needs stronger, more discrete signals that XGBoost can partition on, not just smoother regularization.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:21:23.905723",
+  "llm_cost": 0.027616,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

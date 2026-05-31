@@ -1,0 +1,14 @@
+{
+  "generation": 19,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "stationary_microregime_xgb",
+  "patch_description": "This version switches to a regime-invariant, micro-regime feature bank rather than long-horizon technical indicators.  \nThe core idea is to convert price, volatility, volume, and funding into short-window standardized signals, then add rate-of-change and interaction terms so the trees can learn when a pattern is strengthening or weakening across regimes.\n\nWhy this should work better:\n- It avoids relying on absolute levels that tend to break under regime shifts.\n- It emphasizes short lookbacks (5\u201320 bars) and rolling z-scores/ranks, which are more stable across changing volatility.\n- It adds trend-of-regime features like volatility momentum, efficiency momentum, and spread between fast/slow normalized signals.\n- It keeps the model compact but expressive, with enough trees to learn nonlinear interactions without over-regularizing into mean predictions.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:47:47.976037",
+  "llm_cost": 0.020962500000000002,
+  "llm_model": "gpt-5.4-mini"
+}

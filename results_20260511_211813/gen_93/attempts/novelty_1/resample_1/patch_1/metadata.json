@@ -1,0 +1,14 @@
+{
+  "generation": 93,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "expressivity_boost",
+  "patch_description": "The model currently suffers from prediction collapse toward the mean (pred_std_ratio < 0.15), hindering its ability to capture directional momentum.\n\nThis proposal:\n1. Increases model expressivity by increasing 'max_depth' to 6 and 'n_estimators' to 800, while lowering the 'learning_rate' to 0.08 to ensure more stable convergence.\n2. Introduces 'reg_lambda' of 0.05 to gently manage the increased complexity.\n3. Adds 'rolling_sharpe_14', 'vol_shock_5_40', and 'vol_zscore_20' to the feature set. These provide the model with a clear sense of risk-adjusted returns and volume surges, which are critical for avoiding mean-collapse during directional moves. \n4. Adds 'momentum_consistency' to help the model distinguish between noisy range-bound motion and trending regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:45:48.817009",
+  "llm_cost": 0.015097,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 34,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_rank_xgb",
+  "patch_description": "I\u2019m switching from \u201craw indicator stacking\u201d to a more regime-invariant feature pipeline built around short-horizon, rolling-normalized, and percentile-ranked signals. The idea is to reduce dependence on absolute price/volatility levels that broke in the later regime, and instead feed XGBoost compact, stable representations of market state and market-state change.\n\nCompared with the prior programs, this version:\n- emphasizes 5\u201320 bar lookbacks instead of longer decay-prone windows,\n- converts several core signals into rolling z-scores / ranks,\n- adds explicit change-of-regime features like volatility trend, efficiency trend, and autocorrelation trend,\n- includes multiplicative interactions only where they are likely to help generalization,\n- loosens model regularization a bit so predictions do not collapse toward the mean.\n\nThe output interface is unchanged: `build_features(df)` returns an aligned feature frame, and `run_experiment(...)` returns the same dictionary with train/test/val predictions and the fitted model.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:57:03.244261",
+  "llm_cost": 0.0362175,
+  "llm_model": "gpt-5.4-mini"
+}

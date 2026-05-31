@@ -1,0 +1,14 @@
+{
+  "generation": 14,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_adaptive_zscore_features",
+  "patch_description": "This edit implements regime-invariant feature engineering by:\n\n1. **Replacing long lookback windows with shorter, adaptive ones**: Use 5-15 bar windows instead of 20-60 bars. Shorter windows decay faster and adapt to regime shifts.\n\n2. **Z-score normalization within rolling windows**: Transform features like returns, volatility, and momentum using rolling mean/std. This makes a 1% move comparable across different volatility regimes.\n\n3. **Adding regime-change indicators**: Compute vol_trend (change in volatility regime) and efficiency_trend (change in price efficiency) to explicitly signal when market character is shifting.\n\n4. **Removing redundant long-lookback features**: Drop features based on 50, 60, 200-bar windows that don't generalize.\n\n5. **Adjusting hyperparameters for expressivity**: Increase max_depth to 6 and learning_rate to 0.2 to allow the model to capture learned patterns without over-regularizing.\n\nThe key insight is that regime-invariant features (Z-scored within rolling windows) generalize better across market regimes than absolute-level features. Combined with explicit regime-change signals, this should improve val_slope and pred_std_ratio while maintaining or improving val_DA.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:50:08.788684",
+  "llm_cost": 0.036083000000000004,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

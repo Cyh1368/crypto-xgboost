@@ -1,0 +1,14 @@
+{
+  "generation": 62,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_crossover_xgb",
+  "patch_description": "This version crosses the stronger parts of the two best feature families: short-horizon normalized returns, volatility/trend regime change, autocorrelation change, and robust momentum\u00d7regime interactions. It keeps the feature count below 80 while emphasizing regime-invariant signals and faster-decaying lookbacks to reduce train\u2192val collapse. The XGBoost setup is slightly more expressive than the current baseline but still regularized to avoid overfitting. I also keep the original interface and output format unchanged.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:29:06.193269",
+  "llm_cost": 0.037233,
+  "llm_model": "gpt-5.4-mini"
+}

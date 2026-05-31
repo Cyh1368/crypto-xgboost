@@ -1,0 +1,14 @@
+{
+  "generation": 78,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "ensemble_regime_classifier",
+  "patch_description": "Instead of using a single XGBoost regressor that predicts continuous BPS and collapses toward the mean, this approach uses a fundamentally different algorithmic strategy:\n\n1. **Regime Classification First**: Build a multi-scale regime classifier that identifies market microstructure states (trending, mean-reverting, volatile, quiet) using unsupervised clustering on feature space.\n\n2. **Regime-Conditional Predictions**: Train separate lightweight XGBoost models for each regime, allowing each to specialize in regime-specific patterns rather than averaging across incompatible market conditions.\n\n3. **Ensemble Voting with Confidence**: Combine predictions from regime-specific models using weighted voting based on regime probability, avoiding the collapse-to-mean problem by forcing diversity through regime separation.\n\n4. **Signal Amplification via Regime Gates**: Apply regime-specific feature transformations that amplify high-signal features when the regime is favorable and suppress noise otherwise.\n\n5. **Adaptive Regularization**: Use lighter regularization in regime-specific models (since each trains on a subset) while maintaining strong regularization at the ensemble level.\n\nThis approach avoids the fundamental issue of the current XGBoost regressor: it doesn't try to predict a single continuous value that works across all market regimes. Instead, it recognizes that directional accuracy is regime-dependent and builds specialized predictors for each regime, then combines them intelligently. This should dramatically reduce prediction collapse and improve out-of-sample DA.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:35:24.235395",
+  "llm_cost": 0.050216,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

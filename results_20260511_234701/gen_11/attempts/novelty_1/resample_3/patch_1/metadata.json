@@ -1,0 +1,14 @@
+{
+  "generation": 11,
+  "novelty_attempt": 1,
+  "resample_attempt": 3,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 6,
+  "patch_name": "shorter_lookbacks_zscore_norm_vol_adaptive",
+  "patch_description": "This edit addresses the core regime-shift problem by:\n\n1. **Reducing lookback windows**: Replace 50/60/200 windows with 10/15/20 equivalents. 15-min candles move fast; long windows are stale.\n\n2. **Z-score normalization within rolling windows**: For returns and deviations, compute (value - rolling_mean) / rolling_std to make features regime-invariant. A 1% return means different things in vol=0.5% vs vol=2% regimes.\n\n3. **Volatility-adaptive scaling**: Multiply momentum features by vol_trend (fast/slow vol ratio) to capture regime-conditional behavior. In low-vol regimes, momentum is weaker; in high-vol, it's stronger.\n\n4. **Remove slow regime features**: Drop 200-bar rolling windows and instead use faster 20-bar rolling ranks. This reduces stale information.\n\n5. **Increase model expressivity**: Reduce min_child_weight from 1 to 0.5, increase learning_rate from 0.15 to 0.18, increase n_estimators to 500. This allows trees to pick up regime-conditional splits better.\n\n6. **Simpler SMA cross**: Use SMA-10/20 instead of 10/50 for faster mean reversion detection.\n\nThe result should be:\n- Higher val_slope (more of train pattern generalizes)\n- Higher pred_std_ratio (model is less conservative)\n- Better generalization ratio",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:49:49.884496",
+  "llm_cost": 0.024426,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

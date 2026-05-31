@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_zscoring",
+  "patch_description": "The primary issue is a severe slope collapse (0.074 -> 0.006) and R-squared degradation, indicating the model is fitting absolute price/volatility levels that do not persist across market regimes. \n\nI am implementing three key changes:\n1. **Regime-Invariant Features**: Applying rolling Z-score normalization (typically over a 40-60 bar window) to returns, volatility, RSI, volume ratios, and price deviations. This forces the model to learn from relative moves (e.g., \"RSI is 2 standard deviations above its recent mean\") rather than absolute levels (e.g., \"RSI is 80\"), which are highly regime-dependent.\n2. **Robust Hyperparameters**: Significantly increasing `min_child_weight` (from 1 to 20) and adding L2 regularization (`reg_lambda=10`). This prevents the model from creating leaves for small, noisy samples that appear in the training set but don't generalize. I also reduced the `learning_rate` and `max_depth` to favor simpler, more robust trees.\n3. **Shorter Lookbacks & Rate of Change**: Shifting focus to shorter lookback windows (10-40 bars) and adding \"rate of change\" features (Volatility ROC, Efficiency Ratio) which capture the evolving character of the market faster than long-term averages.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:47:50.411627",
+  "llm_cost": 0.0186345,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 36,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "fix_lag_and_increase_expressivity",
+  "patch_description": "The current model's performance drop (from -0.15 to -0.57) is primarily due to an extra `shift(1)` applied to the base OHLCV series, which makes the features 1-bar stale relative to the target. I am reverting this shift to align with the successful prior programs. \n\nAdditionally, the model is suffering from \"prediction collapse\" (pred_std_ratio = 0.01), meaning it is underfitting and predicting the mean. I am increasing model expressivity by:\n1. Increasing `max_depth` and `learning_rate`.\n2. Reducing `reg_lambda` to allow the model to capture more signal.\n3. Adding high-signal features like `vol_cv_20`, `dist_h_100`, and `force_index_7`.\n4. Removing redundant feature definitions and the arbitrary `iloc[:, :80]` cap to ensure all signal-carrying features (like funding and orderbook) are preserved.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:25:43.458571",
+  "llm_cost": 0.015094999999999999,
+  "llm_model": "gemini-3-flash-preview"
+}

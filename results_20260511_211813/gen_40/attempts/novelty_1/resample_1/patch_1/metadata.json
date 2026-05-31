@@ -1,0 +1,14 @@
+{
+  "generation": 40,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "increase_expressivity_and_signal_density",
+  "patch_description": "The current model suffers from a significant 'prediction collapse' (pred_std_ratio = 0.04), meaning it is underfitting the variance of the target returns. To address this, I am increasing the model's expressivity by:\n1. Increasing `max_depth` from 5 to 7 and decreasing `min_child_weight` from 3 to 1 to allow the trees to capture more granular patterns.\n2. Reducing `reg_lambda` from 0.6 to 0.1 to loosen the L2 penalty on leaf weights.\n3. Increasing `learning_rate` to 0.05 to allow the model to learn faster and produce more distinct predictions.\n4. Adding high-signal features: Rolling Autocorrelation (to capture momentum/mean-reversion persistence), Efficiency Ratio (to distinguish between trending and range-bound markets), and Volatility Shocks.\n5. Pruning redundant lags to stay within the 80-feature limit and avoid the curse of dimensionality.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:26:44.639129",
+  "llm_cost": 0.0106085,
+  "llm_model": "gemini-3-flash-preview"
+}

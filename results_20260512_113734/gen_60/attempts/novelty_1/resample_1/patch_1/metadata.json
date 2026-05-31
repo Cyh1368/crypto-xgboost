@@ -1,0 +1,14 @@
+{
+  "generation": 60,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": false,
+  "num_applied": 0,
+  "patch_name": "regime_short_xgb",
+  "patch_description": "This crossover version blends the strongest ideas from the prior programs while directly targeting the main failure mode: train-to-validation slope collapse caused by regime-specific features. The feature set is shifted toward shorter lookbacks, rolling z-score normalization, volatility/efficiency trend features, and a small number of robust multiplicative interactions. I also keep the model compact and regularized enough to generalize across regime shifts, while avoiding excessive collapse toward the mean by not over-regularizing too aggressively. The resulting feature matrix stays comfortably below the 80-feature limit and uses only past information.",
+  "error_msg": "Could not extract code from patch string",
+  "timestamp": "2026-05-12T12:27:24.727515",
+  "llm_cost": 0.04190025,
+  "llm_model": "gpt-5.4-mini"
+}

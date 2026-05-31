@@ -1,0 +1,14 @@
+{
+  "generation": 41,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "expressive_regime_features",
+  "patch_description": "The model is currently suffering from \"prediction collapse,\" meaning it's predicting values too close to the mean (low pred_std_ratio). This typically happens when the model lacks the expressivity to distinguish signal from noise or when regularization is too high relative to the feature strength.\n\nTo fix this, I am:\n1.  **Increasing Model Expressivity**: Raising `max_depth` to 6 and lowering `learning_rate` to 0.02 with more estimators (1000) to allow the model to capture more complex, non-linear relationships.\n2.  **Refining Regularization**: Adjusting `min_child_weight` and `reg_lambda` to balance the increased depth while preventing overfitting.\n3.  **Enhancing Feature Engineering**:\n    *   Adding `trend_stack`: A robust directional indicator summing the signs of multi-scale returns.\n    *   Adding `vol_state`: Using a `tanh` transformation of volatility ratios to help the model distinguish between quiet and expanding volatility regimes.\n    *   Adding `rolling_quantile` (rank-based) features: These are robust to outliers and capture the relative state of price and volume.\n    *   Improving **Candle Microstructure**: Adding `close_loc` and `wick_imbalance` to capture intra-bar pressure.\n    *   Refining **Mean Reversion**: Adding normalized EMA gaps (`ema_gap_fast`, `ema_gap_slow`) to capture overextension.\n4.  **Target Clipping**: Lowering `CLIP_PERCENTILE` to 95 to reduce the influence of extreme tail events on the RMSE loss, allowing the model to focus on more frequent directional signals.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:27:06.802424",
+  "llm_cost": 0.0276475,
+  "llm_model": "gemini-3-flash-preview"
+}

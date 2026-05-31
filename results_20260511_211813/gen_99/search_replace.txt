@@ -1,0 +1,241 @@
+<NAME>
+model_expressivity_and_vol_scaled_features
+</NAME>
+
+<DESCRIPTION>
+To address the 'predictions collapsed toward mean' warning (low pred_std_ratio), I am increasing model expressivity by raising max_depth to 7 and decreasing the learning rate while increasing the number of estimators. This allows the gradient boosting process to fit more complex patterns across a larger number of smaller steps.
+
+On the feature engineering side, I am introducing:
+1. Volatility-adjusted momentum (Sharpe-like ratios) to better capture movement quality relative to noise.
+2. Efficiency Ratio (Fractal efficiency) to distinguish between trending and range-bound regimes.
+3. Volatility Acceleration to capture explosive regime shifts.
+4. Range standardization (Z-score of candle range) to detect abnormal price behavior.
+5. Improved time features (adding week periodicity).
+
+These changes aim to provide the model with higher variance, high-signal inputs, improving the prediction spread and directional accuracy.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.05,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98.0
+=======
+XGB_PARAMS = {
+    "n_estimators": 1200,
+    "max_depth": 7,
+    "min_child_weight": 2,
+    "reg_alpha": 0.02,
+    "reg_lambda": 0.3,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.02,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 98.5
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV + orderbook + funding data.
+    All features use only past data (shifted by 1).
+    """
+    feat = pd.DataFrame(index=df.index)
+    eps = 1e-9
+
+    close = df['close'].astype(float)
+    high = df['high'].astype(float)
+    low = df['low'].astype(float)
+    volume = df['volume'].astype(float)
+
+    # --- Returns & Momentum ---
+    log_close = np.log(close.clip(lower=eps))
+    log_ret1 = log_close.diff()
+
+    for w in [1, 3, 6, 12, 24, 48]:
+        feat[f'ret_{w}'] = close.pct_change(w).shift(1)
+        feat[f'lret_{w}'] = log_close.diff(w).shift(1)
+
+    # --- Volatility & Z-Scores ---
+    for w in [10, 30, 60]:
+        feat[f'rv_{w}'] = log_ret1.rolling(w).std().shift(1)
+        mu = log_ret1.rolling(w).mean().shift(1)
+        sd = log_ret1.rolling(w).std().shift(1)
+        feat[f'ret_z_{w}'] = (log_ret1.shift(1) - mu) / (sd + eps)
+
+    # --- RSI ---
+    for w in [14, 24]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(w).mean().shift(1)
+        loss = (-delta.clip(upper=0)).rolling(w).mean().shift(1)
+        feat[f'rsi_{w}'] = 100 - 100 / (1 + (gain / (loss + eps)))
+
+    # --- Candle Anatomy ---
+    candle_range = (high - low).clip(lower=eps)
+    feat['body_to_range'] = ((close - close.shift(1)).abs() / candle_range).shift(1)
+    feat['upper_wick_pct'] = ((high - np.maximum(close, close.shift(1))) / candle_range).shift(1)
+    feat['lower_wick_pct'] = ((np.minimum(close, close.shift(1)) - low) / candle_range).shift(1)
+    feat['close_pos_range'] = ((close - low) / candle_range).shift(1)
+
+    # --- Volume & VWAP ---
+    for w in [12, 24]:
+        v_mu = volume.rolling(w).mean().shift(1)
+        v_sd = volume.rolling(w).std().shift(1)
+        feat[f'vol_z_{w}'] = (volume.shift(1) - v_mu) / (v_sd + eps)
+        feat[f'vol_ratio_{w}'] = volume.shift(1) / (v_mu + eps)
+
+    vwap20 = (close * volume).rolling(20).sum().shift(1) / (volume.rolling(20).sum().shift(1) + eps)
+    feat['vwap_dev'] = (close.shift(1) - vwap20) / (close.shift(1) + eps)
+
+    # --- Trend & Regime ---
+    ma_fast = close.rolling(12).mean().shift(1)
+    ma_slow = close.rolling(48).mean().shift(1)
+    feat['trend_rel'] = (ma_fast / (ma_slow + eps)) - 1.0
+    feat['vol_regime'] = feat['rv_10'] / (feat['rv_60'] + eps)
+
+    # --- Session / Time (No shift needed for time) ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # --- Orderbook Imbalance ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def get_obi(row, tau=1.0):
+            try:
+                b = np.array(row['bids'], dtype=float)
+                a = np.array(row['asks'], dtype=float)
+                bv = np.sum(b[:, 1] * np.exp(-tau * np.arange(len(b))))
+                av = np.sum(a[:, 1] * np.exp(-tau * np.arange(len(a))))
+                return (bv - av) / (bv + av + eps)
+            except: return 0.0
+        feat['obi_t1'] = df.apply(lambda r: get_obi(r, 1.0), axis=1).shift(1)
+        feat['obi_t3'] = df.apply(lambda r: get_obi(r, 3.0), axis=1).shift(1)
+
+    # --- Funding Rate ---
+    if 'funding_rate' in df.columns:
+        fr = pd.to_numeric(df['funding_rate'], errors='coerce')
+        feat['funding_rate'] = fr.shift(1)
+        feat['funding_z'] = ((fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + eps)).shift(1)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan).dropna()
+    if feat.shape[1] > 80: feat = feat.iloc[:, :80]
+    return feat
+=======
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix with enhanced quality-of-movement and regime features.
+    Strict past-only data usage.
+    """
+    feat = pd.DataFrame(index=df.index)
+    eps = 1e-9
+
+    close = df['close'].astype(float)
+    high = df['high'].astype(float)
+    low = df['low'].astype(float)
+    volume = df['volume'].astype(float)
+
+    log_close = np.log(close.clip(lower=eps))
+    log_ret = log_close.diff()
+
+    # --- Shifted Base Data for Features ---
+    s_close = close.shift(1)
+    s_high = high.shift(1)
+    s_low = low.shift(1)
+    s_vol = volume.shift(1)
+    s_lret = log_ret.shift(1)
+
+    # --- Returns & Quality Momentum ---
+    for w in [3, 6, 12, 24, 48]:
+        feat[f'ret_{w}'] = s_close.pct_change(w)
+        # Efficiency Ratio (Fractal)
+        path = log_ret.abs().rolling(w).sum().shift(1)
+        disp = (log_close.shift(1) - log_close.shift(w+1)).abs()
+        feat[f'eff_{w}'] = disp / (path + eps)
+        # Volatility-scaled Momentum (Sharpe-like)
+        feat[f'mom_v_{w}'] = feat[f'ret_{w}'] / (log_ret.rolling(w).std().shift(1) + eps)
+
+    # --- Volatility & Acceleration ---
+    for w in [10, 30, 60]:
+        feat[f'rv_{w}'] = log_ret.rolling(w).std().shift(1)
+
+    feat['vol_accel'] = feat['rv_10'] / (feat['rv_30'] + eps)
+    feat['vol_regime'] = feat['rv_30'] / (feat['rv_60'] + eps)
+
+    # --- Range & Candle Dynamics ---
+    tr = pd.concat([
+        (s_high - s_low),
+        (s_high - s_close.shift(1)).abs(),
+        (s_low - s_close.shift(1)).abs()
+    ], axis=1).max(axis=1)
+
+    feat['atr_norm'] = tr.rolling(20).mean() / (s_close + eps)
+    feat['range_z'] = (tr - tr.rolling(40).mean()) / (tr.rolling(40).std() + eps)
+    feat['close_pos'] = (s_close - s_low) / ((s_high - s_low).clip(lower=eps))
+    feat['upper_wick'] = (s_high - np.maximum(s_close, s_close.shift(1))) / (tr + eps)
+
+    # --- Volume ---
+    v_ma = s_vol.rolling(24).mean()
+    feat['vol_z'] = (s_vol - v_ma) / (s_vol.rolling(24).std() + eps)
+    feat['vol_surge'] = s_vol / (v_ma + eps)
+    vwap20 = (close * volume).rolling(20).sum().shift(1) / (volume.rolling(20).sum().shift(1) + eps)
+    feat['vwap_dev'] = (s_close - vwap20) / (s_close + eps)
+
+    # --- Trend Status ---
+    ma_s = s_close.rolling(12).mean()
+    ma_l = s_close.rolling(96).mean()
+    feat['trend_rel'] = (ma_s / (ma_l + eps)) - 1.0
+    feat['dist_ma_48'] = (s_close / (s_close.rolling(48).mean() + eps)) - 1.0
+
+    # --- Time Features ---
+    hour = df.index.hour
+    feat['hour_sin'] = np.sin(2 * np.pi * hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * hour / 24)
+    feat['dow_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # --- Orderbook Imbalance ---
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def get_obi(row, tau=1.0):
+            try:
+                b, a = np.array(row['bids'], dtype=float), np.array(row['asks'], dtype=float)
+                bv = np.sum(b[:, 1] * np.exp(-tau * np.arange(len(b))))
+                av = np.sum(a[:, 1] * np.exp(-tau * np.arange(len(a))))
+                return (bv - av) / (bv + av + eps)
+            except: return 0.0
+        feat['obi_t1'] = df.apply(lambda r: get_obi(r, 1.0), axis=1).shift(1)
+        feat['obi_t3'] = df.apply(lambda r: get_obi(r, 3.0), axis=1).shift(1)
+
+    # --- Funding Profile ---
+    if 'funding_rate' in df.columns:
+        fr = pd.to_numeric(df['funding_rate'], errors='coerce')
+        feat['funding_val'] = fr.shift(1)
+        feat['funding_z'] = ((fr - fr.rolling(32).mean()) / (fr.rolling(32).std() + eps)).shift(1)
+        feat['funding_delta'] = fr.diff().shift(1)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan).dropna()
+    if feat.shape[1] > 80: feat = feat.iloc[:, :80]
+    return feat
+>>>>>>> REPLACE
+</DIFF>

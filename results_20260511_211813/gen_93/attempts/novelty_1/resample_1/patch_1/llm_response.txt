@@ -1,0 +1,69 @@
+<NAME>
+expressivity_boost
+</NAME>
+
+<DESCRIPTION>
+The model currently suffers from prediction collapse toward the mean (pred_std_ratio < 0.15), hindering its ability to capture directional momentum.
+
+This proposal:
+1. Increases model expressivity by increasing 'max_depth' to 6 and 'n_estimators' to 800, while lowering the 'learning_rate' to 0.08 to ensure more stable convergence.
+2. Introduces 'reg_lambda' of 0.05 to gently manage the increased complexity.
+3. Adds 'rolling_sharpe_14', 'vol_shock_5_40', and 'vol_zscore_20' to the feature set. These provide the model with a clear sense of risk-adjusted returns and volume surges, which are critical for avoiding mean-collapse during directional moves. 
+4. Adds 'momentum_consistency' to help the model distinguish between noisy range-bound motion and trending regimes.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.15,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+=======
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.08,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+=======
+    # --- Trend Consistency and Efficiency ---
+    feat['efficiency_20'] = (close - close.shift(20)).abs() / (close.diff().abs().rolling(20).sum() + 1e-9)
+    feat['rolling_sharpe_14'] = log_ret.rolling(14).mean() / (log_ret.rolling(14).std() + 1e-9)
+    feat['vol_shock_5_40'] = log_ret.rolling(5).std() / (log_ret.rolling(40).std() + 1e-9)
+    feat['momentum_consistency_12'] = np.sign(log_ret).rolling(12).sum()
+    
+    # --- Volume Dynamics ---
+    feat['vol_zscore_20'] = (volume - volume.rolling(20).mean()) / (volume.rolling(20).std() + 1e-9)
+    feat['vol_z_ret_interaction'] = feat['vol_zscore_20'] * log_ret.shift(1)
+    feat['macd_hist_slope'] = feat['macd_signal'].diff(1)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan)
+>>>>>>> REPLACE
+</DIFF>

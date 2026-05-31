@@ -1,0 +1,44 @@
+{
+  "active_proposals_at_start": 4,
+  "api_costs": 0.0,
+  "archive_inspiration_ids": [
+    "8ffe393b-c84c-40df-af91-a937019abec2",
+    "672d564b-9d09-4bf2-9ca6-6625b58b2c96"
+  ],
+  "artifacts": {
+    "generated_code_path": "results_20260512_105719/gen_19/main.py",
+    "generation_dir": "results_20260512_105719/gen_19",
+    "results_dir": "results_20260512_105719/gen_19/results"
+  },
+  "attempts": {
+    "novelty_attempt": null,
+    "patch_attempt": null,
+    "resample_attempt": null
+  },
+  "code_embedding_available": false,
+  "downstream_eval_submitted": false,
+  "embed_cost": 0.0,
+  "error_attempt": "'a' and 'p' must have same size",
+  "failure_class": "proposal_generation_failed",
+  "failure_json_path": "results_20260512_105719/gen_19/failure.json",
+  "failure_reason": "'a' and 'p' must have same size",
+  "failure_stage": "proposal",
+  "generated_code_available": false,
+  "generation": 19,
+  "language": "python",
+  "last_error_msg": null,
+  "max_similarity": null,
+  "node_kind": "failed_proposal",
+  "novelty_checks_performed": 0,
+  "novelty_cost": 0.0,
+  "novelty_explanation": "",
+  "parent_id": "faac25c4-0609-4089-a95e-857ce817bcfb",
+  "patch_description": null,
+  "patch_name": null,
+  "patch_type": null,
+  "proposal_started_at": 1778597975.2122579,
+  "sampling_worker_id": null,
+  "system_prompt_id": null,
+  "timestamp": "2026-05-12T10:59:36.148277",
+  "top_k_inspiration_ids": []
+}

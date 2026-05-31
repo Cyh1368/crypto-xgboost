@@ -1,0 +1,81 @@
+<NAME>
+increase_expressivity_and_add_microstructure
+</NAME>
+
+<DESCRIPTION>
+The previous model showed good directional accuracy (0.53+) but suffered from a significant "collapse" penalty, meaning the predictions were too clustered around the mean. To address this, I am:
+1. Increasing model expressivity by increasing `max_depth` to 7 and `n_estimators` to 1000, while reducing `reg_lambda` and `reg_alpha` to allow the model to capture more granular signals.
+2. Adjusting `CLIP_PERCENTILE` to 98 to preserve more target variance, which provides stronger gradients for the model to learn from and encourages higher prediction dispersion.
+3. Adding several high-value features:
+   - `dist_ema_200`: Long-term trend deviation.
+   - `vpt_20`: Volume-Price Trend to capture liquidity-driven moves.
+   - `vol_skew_30`: Rolling skewness of returns to identify asymmetric risk regimes.
+   - `vol_shock_5_20`: Short-term volatility spikes relative to the medium-term.
+   - `ny_session`: A binary indicator for the high-volatility US trading window.
+   - `volume_z_60`: Z-scored volume over a longer lookback to identify significant flow.
+These changes aim to push the `pred_std_ratio` closer to the 0.15 target while maintaining or improving DA.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.001,
+    "reg_lambda": 0.02,
+    "subsample": 0.85,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.08,
+    "gamma": 0.1,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 96          # preserve more signal variance for stronger gradients
+MIN_PRED_STD_RATIO = 0.08     # lower threshold to reduce collapse penalty
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.1,
+    "gamma": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          # keep more target variance to encourage prediction dispersion
+MIN_PRED_STD_RATIO = 0.12     # target a healthier prediction standard deviation
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # Momentum against trend (reversal signal)
+    feat['momentum_trend_divergence'] = -np.sign(ret_6) * feat['trend_regime']
+
+    # --- Orderbook (if real data available) ---
+=======
+    # Momentum against trend (reversal signal)
+    feat['momentum_trend_divergence'] = -np.sign(ret_6) * feat['trend_regime']
+
+    # --- Additional Microstructure & Session Features ---
+    feat['dist_ema_200'] = (close - close.ewm(span=200, adjust=False).mean()) / (close + 1e-9)
+    feat['vpt_20'] = (ret1 * volume).rolling(20).sum()
+    feat['vol_skew_30'] = log_ret.rolling(30).skew()
+    feat['vol_shock_5_20'] = feat['vol_5'] / (feat['vol_20'] + 1e-9)
+    feat['volume_z_60'] = (volume - volume.rolling(60).mean()) / (volume.rolling(60).std() + 1e-9)
+    feat['ny_session'] = df.index.hour.isin([12, 13, 14, 15, 16, 17, 18, 19, 20, 21]).astype(float)
+
+    # --- Orderbook (if real data available) ---
+>>>>>>> REPLACE
+</DIFF>

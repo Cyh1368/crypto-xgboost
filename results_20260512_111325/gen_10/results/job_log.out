@@ -1,0 +1,28 @@
+RUN ERROR: index -1 is out of bounds for axis 0 with size 0
+Traceback (most recent call last):
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 217, in main
+    result = run_fn(df)
+             ^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/evolve/evaluate.py", line 199, in run_fn
+    return mod.run_experiment(X_tr, y_tr, X_te, y_te, X_va, y_va)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/results_20260512_111325/gen_10/main.py", line 227, in run_experiment
+    clip_val = np.percentile(np.abs(y_train), CLIP_PERCENTILE)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 4246, in percentile
+    return _quantile_unchecked(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 4510, in _quantile_unchecked
+    return _ureduce(a,
+           ^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 3880, in _ureduce
+    r = func(a, **kwargs)
+        ^^^^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 4669, in _quantile_ureduce_func
+    result = _quantile(arr,
+             ^^^^^^^^^^^^^^
+  File "/home/chengyou1368/crypto-xgboost/crypto-venv/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 4793, in _quantile
+    slices_having_nans = np.isnan(arr[-1, ...])
+                                  ~~~^^^^^^^^^
+IndexError: index -1 is out of bounds for axis 0 with size 0
+

@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "robust_short_regime_features",
+  "patch_description": "This edit focuses on the main failure mode: the model\u2019s slope collapses on the validation regime because it is relying on absolute-level signals that do not survive a second regime shift. I keep the model compact enough to generalize, but add more regime-invariant, short-horizon features:\n\n- rolling z-scores for returns, momentum, price displacement, and volume\n- short-window volatility with explicit volatility trend / acceleration\n- efficiency-ratio trend to detect changing market character\n- short autocorrelation features and their trend\n- interaction terms that combine normalized momentum with volatility regime\n- shorter lookbacks overall to reduce regime decay\n\nI also slightly soften the model so it can use these new features without overfitting to long-lived training quirks. The goal is to lift validation slope and prediction dispersion while preserving directional accuracy.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:16:42.555592",
+  "llm_cost": 0.028224000000000003,
+  "llm_model": "gpt-5.4-mini"
+}

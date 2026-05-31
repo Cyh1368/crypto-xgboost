@@ -1,0 +1,132 @@
+<NAME>
+increase_expressivity_and_signal_density
+</NAME>
+
+<DESCRIPTION>
+The current model suffers from a significant 'prediction collapse' (pred_std_ratio = 0.04), meaning it is underfitting the variance of the target returns. To address this, I am increasing the model's expressivity by:
+1. Increasing `max_depth` from 5 to 7 and decreasing `min_child_weight` from 3 to 1 to allow the trees to capture more granular patterns.
+2. Reducing `reg_lambda` from 0.6 to 0.1 to loosen the L2 penalty on leaf weights.
+3. Increasing `learning_rate` to 0.05 to allow the model to learn faster and produce more distinct predictions.
+4. Adding high-signal features: Rolling Autocorrelation (to capture momentum/mean-reversion persistence), Efficiency Ratio (to distinguish between trending and range-bound markets), and Volatility Shocks.
+5. Pruning redundant lags to stay within the 80-feature limit and avoid the curse of dimensionality.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 900,
+    "max_depth": 5,
+    "min_child_weight": 3,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.6,
+    "gamma": 0.0,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 98.5
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 7,
+    "min_child_weight": 1,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.1,
+    "gamma": 0.01,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "colsample_bynode": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 99.0
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    for lag in [1, 2, 3, 6, 12, 24, 48]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+        feat[f"logret_{lag}"] = log_close.diff(lag)
+
+    # Multi-horizon momentum stack
+    for w in [4, 8, 16, 32, 64]:
+        feat[f"mom_{w}"] = close.pct_change(w)
+        feat[f"mom_slope_{w}"] = close.pct_change(w).diff()
+        feat[f"ret_mean_{w}"] = log_ret1.rolling(w).mean().shift(1)
+        feat[f"ret_std_{w}"] = log_ret1.rolling(w).std().shift(1)
+
+    # --- Volatility / compression regime ---
+    tr = pd.concat(
+        [
+            (high - low),
+            (high - close.shift(1)).abs(),
+            (low - close.shift(1)).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
+
+    for w in [5, 10, 20, 60]:
+        feat[f"atr_{w}"] = tr.rolling(w).mean().shift(1)
+        feat[f"rv_{w}"] = log_ret1.rolling(w).std().shift(1)
+
+    feat["atr_norm_20"] = feat["atr_20"] / (close.shift(1) + eps)
+    feat["vol_regime"] = feat["rv_20"] / (feat["rv_60"].rolling(20).mean() + eps)
+    feat["vol_compress"] = feat["rv_10"] / (feat["rv_60"] + eps)
+=======
+    for lag in [1, 2, 4, 8, 16, 32]:
+        feat[f"ret_{lag}"] = close.pct_change(lag)
+
+    # Multi-horizon momentum stack
+    for w in [8, 24, 48]:
+        feat[f"mom_slope_{w}"] = close.pct_change(w).diff()
+        feat[f"ret_mean_{w}"] = log_ret1.rolling(w).mean().shift(1)
+        feat[f"ret_std_{w}"] = log_ret1.rolling(w).std().shift(1)
+
+    # --- Volatility / compression regime ---
+    tr = pd.concat(
+        [
+            (high - low),
+            (high - close.shift(1)).abs(),
+            (low - close.shift(1)).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
+
+    for w in [10, 30, 60]:
+        feat[f"atr_{w}"] = tr.rolling(w).mean().shift(1)
+        feat[f"rv_{w}"] = log_ret1.rolling(w).std().shift(1)
+
+    feat["atr_norm_20"] = feat["atr_10"] / (close.shift(1) + eps)
+    feat["vol_regime"] = feat["rv_10"] / (feat["rv_60"].rolling(20).mean() + eps)
+    feat["vol_shock"] = feat["rv_10"] / (feat["rv_60"] + eps)
+    feat["autocorr_10"] = log_ret1.rolling(10).corr(log_ret1.shift(1)).shift(1)
+    feat["efficiency_ratio_10"] = (close.diff(10).abs() / (tr.rolling(10).sum() + eps)).shift(1)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Trend / mean reversion position ---
+    for w in [12, 24, 48, 96]:
+        ma = close.rolling(w).mean().shift(1)
+        sd = close.rolling(w).std().shift(1)
+        feat[f"z_close_{w}"] = (close - ma) / (sd + eps)
+        feat[f"dist_ma_{w}"] = (close / (ma + eps)) - 1.0
+=======
+    # --- Trend / mean reversion position ---
+    for w in [24, 48]:
+        ma = close.rolling(w).mean().shift(1)
+        sd = close.rolling(w).std().shift(1)
+        feat[f"z_close_{w}"] = (close - ma) / (sd + eps)
+        feat[f"dist_ma_{w}"] = (close / (ma + eps)) - 1.0
+>>>>>>> REPLACE
+</DIFF>

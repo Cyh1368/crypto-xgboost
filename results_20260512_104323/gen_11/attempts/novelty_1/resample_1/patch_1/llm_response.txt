@@ -1,0 +1,178 @@
+<NAME>
+rolling_z_regime_invariant
+</NAME>
+
+<DESCRIPTION>
+This approach addresses the slope collapse and regime-shift problem by transforming all raw market data into rolling Z-scores and relative ratios. Instead of the model seeing absolute price changes or indicators (which vary wildly in scale between bull/bear/sideways regimes), it sees how current behavior deviates from the recent 20-60 bar statistical norm.
+
+Key algorithmic changes:
+1.  **Statistical Stationarity**: Every feature (returns, volume, volatility, RSI) is normalized using a rolling Z-score or a rolling ratio. This forces the XGBoost model to learn "patterns of behavior" (e.g., "volume is 2 standard deviations above normal while price is overextended") rather than absolute levels.
+2.  **Efficiency and Fractal Dimension**: Added Kaufman's Efficiency Ratio and rolling skewness to capture the 'character' of the trend—distinguishing between a clean trending move and a noisy mean-reverting one.
+3.  **Volatility-Adjusted Momentum**: Momentum features are scaled by rolling volatility to ensure the model's predicted 'slope' remains consistent across high and low volatility environments.
+4.  **Reduced Feature Complexity**: By using 30 high-signal, regime-invariant features instead of 60+ raw ones, we reduce the hypothesis space and force the model to find more robust, repeatable patterns.
+</DESCRIPTION>
+
+<CODE>
+```python
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 4,
+    "min_child_weight": 10,
+    "reg_alpha": 0.5,
+    "reg_lambda": 1.5,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.06,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 50,
+}
+
+CLIP_PERCENTILE = 98          
+MIN_PRED_STD_RATIO = 0.18     
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Builds a regime-invariant feature set using rolling statistical normalization.
+    """
+    feat = pd.DataFrame(index=df.index)
+    
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+    
+    def rolling_z(series, window):
+        return (series - series.rolling(window).mean()) / (series.rolling(window).std() + 1e-9)
+
+    # 1. Returns & Momentum (Z-scored)
+    # Using shorter windows to capture faster-decaying but more robust alpha
+    log_ret = np.log(close / close.shift(1))
+    feat['zret_1'] = rolling_z(log_ret, 20)
+    feat['zret_5'] = rolling_z(log_ret.rolling(5).sum(), 40)
+    feat['zret_12'] = rolling_z(log_ret.rolling(12).sum(), 60)
+    
+    # 2. Volatility Dynamics
+    vol_short = log_ret.rolling(10).std()
+    vol_long = log_ret.rolling(50).std()
+    feat['vol_ratio'] = vol_short / (vol_long + 1e-9)
+    feat['vol_z'] = rolling_z(vol_short, 100)
+    
+    # 3. Efficiency Ratio (Kaufman) - Measures trend noise
+    def efficiency_ratio(w):
+        net_chg = (close - close.shift(w)).abs()
+        path_len = (close.diff().abs()).rolling(w).sum()
+        return net_chg / (path_len + 1e-9)
+    
+    feat['er_10'] = efficiency_ratio(10)
+    feat['er_30'] = efficiency_ratio(30)
+
+    # 4. Relative Price Position
+    # Position within the recent high-low range (0 to 1)
+    roll_low_20 = low.rolling(20).min()
+    roll_high_20 = high.rolling(20).max()
+    feat['range_pos_20'] = (close - roll_low_20) / (roll_high_20 - roll_low_20 + 1e-9)
+    
+    # Distance from VWAP (normalized)
+    vwap_20 = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_z'] = rolling_z(close - vwap_20, 20)
+
+    # 5. Volume Force
+    # Volume weighted by direction of move, then Z-scored
+    vol_force = volume * log_ret
+    feat['vol_force_z'] = rolling_z(vol_force.rolling(5).sum(), 40)
+    feat['rel_volume'] = volume / (volume.rolling(50).mean() + 1e-9)
+
+    # 6. Intraday Seasonality
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    
+    # 7. Distributional Shape
+    feat['skew_20'] = log_ret.rolling(20).skew()
+    
+    # 8. RSI (Z-scored to remove absolute level bias)
+    delta = close.diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    rsi = 100 - 100 / (1 + gain / (loss + 1e-9))
+    feat['rsi_z'] = rolling_z(rsi, 40)
+
+    # 9. Regime Interactions
+    # Momentum scaled by whether we are in a high-vol or low-vol regime
+    feat['mom_vol_inter'] = feat['zret_5'] * feat['vol_ratio']
+    feat['trend_efficiency'] = feat['zret_12'] * feat['er_30']
+
+    # 10. Funding Rate (if available)
+    if 'funding_rate' in df.columns:
+        feat['funding_z'] = rolling_z(df['funding_rate'], 100)
+        feat['funding_ret_inter'] = feat['funding_z'] * feat['zret_5']
+
+    # 11. Orderbook Imbalance (if available)
+    if 'bids' in df.columns and 'asks' in df.columns:
+        def get_obi(row):
+            try:
+                b = np.sum([x[1] for x in row['bids'][:5]])
+                a = np.sum([x[1] for x in row['asks'][:5]])
+                return (b - a) / (b + a + 1e-9)
+            except: return 0.0
+        feat['obi_z'] = rolling_z(df.apply(get_obi, axis=1), 20)
+
+    feat = feat.replace([np.inf, -np.inf], np.nan).fillna(method='ffill').dropna()
+    return feat
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# DO NOT MODIFY BELOW THIS LINE
+
+def run_experiment(
+    X_train, y_train,
+    X_test,  y_test,
+    X_val,   y_val,
+):
+    """
+    Train an XGBoost model and return raw predictions for all three splits.
+    """
+    # Clip targets
+    clip_val = np.percentile(np.abs(y_train), CLIP_PERCENTILE)
+    y_train_c = y_train.clip(-clip_val, clip_val)
+
+    # Scale
+    scaler = StandardScaler()
+    X_tr = scaler.fit_transform(X_train)
+    X_te = scaler.transform(X_test)
+    X_va = scaler.transform(X_val)
+
+    params = {k: v for k, v in XGB_PARAMS.items()
+              if k != 'early_stopping_rounds'}
+    early = XGB_PARAMS.get('early_stopping_rounds', 30)
+
+    model = xgb.XGBRegressor(**params, early_stopping_rounds=early)
+    model.fit(
+        X_tr, y_train_c,
+        eval_set=[(X_te, y_test)],
+        verbose=False,
+    )
+
+    return {
+        'train': {'pred': model.predict(X_tr), 'actual': y_train.values},
+        'test':  {'pred': model.predict(X_te), 'actual': y_test.values},
+        'val':   {'pred': model.predict(X_va), 'actual': y_val.values},
+        'model': model,
+    }
+```
+</CODE>

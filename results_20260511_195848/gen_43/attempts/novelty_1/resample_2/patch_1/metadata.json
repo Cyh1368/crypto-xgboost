@@ -1,0 +1,14 @@
+{
+  "generation": 43,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "fix_prediction_collapse_with_feature_and_param_adjustments",
+  "patch_description": "The model predictions are collapsing toward the mean, indicated by a very low pred_std_ratio (~0.006), despite increased model complexity and added polynomial features. This suggests the model is under-expressive or overly regularized, or the features do not provide enough signal variance. The root cause is likely that the features are overly smoothed or shifted too aggressively, reducing signal variance, and the model parameters (especially reg_lambda=1.0) still impose too much regularization. Also, the target clipping at 95th percentile may reduce target variance too much.\n\nFixes applied:\n- Reduced feature shifting to only 1 bar lag where necessary, avoiding double shifts that overly smooth features.\n- Removed StandardScaler inside build_features to avoid leaking info and double scaling (scaling is done in run_experiment).\n- Reduced reg_lambda from 1.0 to 0.0 to remove L2 regularization and increase model expressivity.\n- Increased learning_rate to 0.1 for faster fitting.\n- Increased max_depth to 8 to allow more complex trees.\n- Increased subsample and colsample_bytree to 0.9 to use more data/features per tree.\n- Increased CLIP_PERCENTILE to 99 to keep more target variance.\n- Added a small epsilon in divisions to avoid NaNs.\n- Ensured all features are shifted by exactly 1 bar to prevent lookahead but preserve variance.\n- Removed polynomial feature scaling inside build_features to avoid double scaling and potential leakage.\n- Added a few additional momentum and volatility features with minimal lag to increase signal.\nThese changes increase model expressivity and feature signal variance, addressing the collapse warning and improving pred_std_ratio.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T20:05:32.963922",
+  "llm_cost": 0.006857200000000001,
+  "llm_model": "gpt-4.1-mini"
+}

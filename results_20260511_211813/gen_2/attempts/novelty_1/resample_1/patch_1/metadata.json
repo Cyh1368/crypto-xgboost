@@ -1,0 +1,14 @@
+{
+  "generation": 2,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "dynamic_regime_expansion",
+  "patch_description": "The current model suffered from a 'collapse' failure mode (pred_std_ratio &lt; 0.01), meaning it was too conservative and produced predictions extremely close to the mean. \n\nTo address this, I have:\n1.  **Increased Model Expressivity**: Increased `max_depth` to 6 and decreased `min_child_weight` to 1 to allow the model to capture more granular, high-variance signals.\n2.  **Increased Learning Rate**: Raised `learning_rate` to 0.04 to prevent the gradient descent from stalling in a low-variance state.\n3.  **Expanded Feature Set**: Added momentum persistence, Z-scores for volatility, distance from 24-hour highs/lows, and candle body/wick dynamics to provide more directional signal.\n4.  **Strict Compliance with Lookahead Constraints**: Applied a comprehensive `.shift(1)` to the input data within `build_features` to ensure no lookahead, adhering strictly to the \"shift by at least 1\" instruction.\n5.  **Refined Target Clipping**: Set `CLIP_PERCENTILE` to 98 to retain signal from significant moves while still filtering extreme outliers.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:19:21.074823",
+  "llm_cost": 0.0087565,
+  "llm_model": "gemini-3-flash-preview"
+}

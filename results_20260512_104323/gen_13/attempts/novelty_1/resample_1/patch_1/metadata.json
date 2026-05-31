@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 4,
+  "patch_name": "robust_short_regime_features",
+  "patch_description": "This edit aims to solve the slope collapse by making the feature set more regime-invariant and more responsive to recent market structure. It does three things:\n\n1. **Shortens the effective lookback horizon** for core momentum/volatility signals so they decay faster and are less tied to stale training regimes.\n2. **Adds rolling z-score normalization and trend-of-regime features** for volatility, autocorrelation, and efficiency ratio, which helps the model compare \u201crecent\u201d behavior relative to the local past instead of using absolute levels.\n3. **Relaxes model regularization slightly** and increases tree count a bit so XGBoost can recover predictive slope without collapsing predictions toward the mean.\n\nThe feature count remains well under the 80-feature limit, and all features use only past data.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T10:46:18.510905",
+  "llm_cost": 0.024004499999999998,
+  "llm_model": "gpt-5.4-mini"
+}

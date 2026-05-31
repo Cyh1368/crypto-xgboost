@@ -1,0 +1,14 @@
+{
+  "generation": 1,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "regime_invariant_short_lookback",
+  "patch_description": "Replace long lookback windows (60+ bars) with shorter ones (5-20 bars) that adapt faster to regime changes. Add z-score normalization of features within rolling windows to make them regime-invariant. Add rate-of-change features that measure how market character is evolving. Reduce model complexity to prevent overfitting to training regime. This directly addresses the 8.2% slope ratio by making features generalize across the train\u2192val regime shift.\n\nThe core hypothesis: the model learns absolute levels of volatility, momentum, and price position that are specific to the training period's market regime. By normalizing features relative to recent rolling statistics and using shorter windows, we force the model to learn relative changes that persist across regimes.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:54:45.340528",
+  "llm_cost": 0.038701000000000006,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

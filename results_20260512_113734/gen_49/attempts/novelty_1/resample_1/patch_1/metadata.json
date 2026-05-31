@@ -1,0 +1,14 @@
+{
+  "generation": 49,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "reduce_regularization_and_add_multiscale_zscores",
+  "patch_description": "The current program is severely over-regularized, causing predictions to collapse toward the mean (slope_ratio=20.7%, pred_std_ratio=3.5%). I'm reducing regularization parameters and increasing model capacity to allow learning transferable patterns. Additionally, I'm extending the multi-scale z-score normalization approach from the best prior program (which achieved 96% generalization) by adding ret_z features at windows [10, 20, 40, 60] and creating explicit regime shift indicators (ret_z_20 - ret_z_60, ret_z_40 - ret_z_60) that signal when recent behavior diverges from longer-term patterns. These regime shift indicators are key for handling the train\u2192test\u2192val regime transitions. I'm removing the less predictive time-of-day features (hour_sin, hour_cos, dow_sin, dow_cos) to stay under 80 features.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T12:15:43.169560",
+  "llm_cost": 0.11710200000000001,
+  "llm_model": "claude-sonnet-4-5-20250929"
+}

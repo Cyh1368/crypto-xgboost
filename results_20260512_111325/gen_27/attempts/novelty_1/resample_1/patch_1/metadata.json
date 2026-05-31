@@ -1,0 +1,14 @@
+{
+  "generation": 27,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This crossover keeps the strongest ideas from both prior scripts while targeting the main failure mode: regime-specific features that collapse on validation. The feature set is shifted toward short lookbacks, rolling z-scores, and rate-of-change regime descriptors so the model relies more on fast-adapting patterns. I also keep a few stable interaction terms, but reduce long-horizon, regime-fragile signals. On the model side, the XGBoost configuration is made slightly more expressive than the current baseline while still using enough regularization and sampling to avoid overfitting. The goal is to recover validation slope and prediction dispersion without regressing train/test DA too much.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:20:37.978464",
+  "llm_cost": 0.0280095,
+  "llm_model": "gpt-5.4-mini"
+}

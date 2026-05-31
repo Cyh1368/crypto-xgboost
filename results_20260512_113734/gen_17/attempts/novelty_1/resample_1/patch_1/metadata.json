@@ -1,0 +1,14 @@
+{
+  "generation": 17,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_shortlook_xgb",
+  "patch_description": "This version crosses the broader feature set from the earlier implementations with the stronger normalization and regime-shift focus from the current program.\n\nMain changes:\n- Shorter lookbacks dominate the feature set, which should help the model adapt faster to the second regime shift.\n- Rolling z-scores are used more aggressively to make features regime-invariant.\n- Added \u201cchange in market character\u201d features: volatility trend, autocorrelation trend, efficiency trend, and dispersion trend.\n- Kept a few robust longer-window anchors, but reduced their dominance.\n- Added momentum \u00d7 volatility-regime interactions in a more compact and normalized form.\n- Relaxed the current heavy regularization to reduce prediction collapse while still keeping overfit controlled.\n- Feature count stays safely below 80.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:42:14.915085",
+  "llm_cost": 0.0289965,
+  "llm_model": "gpt-5.4-mini"
+}

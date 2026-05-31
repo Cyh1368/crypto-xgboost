@@ -1,0 +1,14 @@
+{
+  "generation": 80,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "robust_regime_shaper",
+  "patch_description": "The previous model suffered from significant overfitting (overfit_gap = 0.12) and prediction collapse (pred_std_ratio = 0.09). To address this, I have implemented the following changes:\n\n1.  **Reduced Model Complexity**: Lowered `max_depth` from 7 to 4 and increased `min_child_weight` to 10. Shallow trees are significantly more robust to noise in high-frequency financial data.\n2.  **Enhanced Regularization**: Increased `reg_lambda` and `reg_alpha` to penalize complex leaf weights, further combating the overfitting detected in the previous iteration.\n3.  **Signal Amplification**: To fix the \"prediction collapse,\" I introduced several \"Z-scored\" and \"Volatility-Adjusted\" features (e.g., `vol_adj_ret_1`, `ret_1_z_20`, `vwap_dev_20`). These features normalize the signal relative to local variance, making it easier for the XGBoost objective function to identify and weight directional signals without defaulting to the mean.\n4.  **Feature Refinement**: Added features capturing price-volume correlation, return skewness, and multi-scale volatility ratios to better define market regimes.\n5.  **Stochasticity**: Reduced `subsample` and `colsample_bytree` slightly to 0.8 to ensure each tree is trained on a different subset of data and features, improving ensemble generalization.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:36:40.015327",
+  "llm_cost": 0.024121999999999998,
+  "llm_model": "gemini-3-flash-preview"
+}

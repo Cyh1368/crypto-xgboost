@@ -1,0 +1,14 @@
+{
+  "generation": 13,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 8,
+  "patch_name": "increase_expressivity_add_rate_features",
+  "patch_description": "This edit increases XGBoost model expressivity and adds explicit rate-of-change features to detect regime shifts:\n\n1. **Hyperparameter adjustments**:\n   - Increase max_depth from 3 to 4 (allow slightly deeper trees to capture non-linear regime patterns)\n   - Reduce reg_lambda from 4.0 to 2.0 (less L2 penalization allows model to fit stronger signals)\n   - Reduce reg_alpha from 0.6 to 0.3 (less L1 penalization)\n   - Increase learning_rate from 0.035 to 0.055 (faster learning while maintaining stability)\n   - Reduce n_estimators from 520 to 400 (avoid over-training with lower regularization)\n   - Increase early_stopping_rounds from 45 to 60 (patience for lower-regularization model)\n\n2. **Feature engineering improvements**:\n   - Add \"rate of change\" features: vol_trend_rate, eff_trend_rate, bb_momentum that measure acceleration/deceleration of market character\n   - Replace longer look-back z-score windows (40\u219220) to make features more responsive to recent regime shifts\n   - Add short-window efficiency metrics that detect quick market changes\n   - Remove some redundant longer-window features (vol_rank_60, multiple z-scores on same feature) to reduce noise\n   - Add price-momentum ratio features that normalize momentum by recent volatility in a tighter window\n\nThese changes target the root cause: the model needs both expressivity to learn patterns AND features that explicitly track when market conditions are changing, not just snapshots of current state.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:49:36.886161",
+  "llm_cost": 0.042936,
+  "llm_model": "claude-haiku-4-5-20251001"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 6,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 5,
+  "patch_name": "robust_regime_normalization",
+  "patch_description": "The primary issue is the collapse of the predictive slope in the validation set (0.006), which indicates the model is overfitting to specific volatility and price scales in the training regime.\n\nI am implementing three key changes:\n1. **XGBoost Hyperparameters**: Increased `min_child_weight` (1 -> 30) and `reg_lambda` (0 -> 10) to force the model to learn only robust, high-sample patterns. Reduced `max_depth` to 4 to prevent over-specialization.\n2. **Feature Normalization**: Converted raw returns into Z-scored returns relative to a rolling window (20 bars). This makes \"a 1% move\" mean the same thing in high and low volatility regimes. \n3. **Volatility Ratios**: Replaced absolute volatility levels with volatility ratios (e.g., vol_5 / vol_40) to capture the rate of change of market character.\n4. **VWAP Z-Score**: Normalized the VWAP deviation by rolling standard deviation rather than the raw price level.\n\nThese changes prioritize generalization over training fit, aiming to pull the val_slope toward the 0.020 target and improve the validation DA.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T23:55:16.774276",
+  "llm_cost": 0.0089645,
+  "llm_model": "gemini-3-flash-preview"
+}

@@ -1,0 +1,14 @@
+{
+  "generation": 97,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 3,
+  "patch_name": "reduce_collapse_add_regime",
+  "patch_description": "The current model is still showing a strong mean-collapse signal (`pred_std_ratio` well below the desired level), which usually means the trees are too constrained and the feature set is not giving enough short-horizon regime contrast.\n\nThis edit aims to improve expressivity in two complementary ways:\n\n1. Loosen model regularization slightly and allow a bit more tree complexity:\n   - increase depth from 5 to 6\n   - reduce `min_child_weight`\n   - reduce `reg_lambda`\n   - reduce `learning_rate` a bit and compensate with more trees\n   - keep early stopping, but give the model more room to learn structure\n\n2. Add a compact set of high-signal features that are still strictly past-only:\n   - short-horizon return acceleration\n   - volatility-of-volatility\n   - candle \u201clocation in range\u201d over a short window\n   - volume impulse / acceleration\n   - ATR-normalized momentum and range expansion\n   - a small regime interaction that should help in trend vs chop conditions\n\nThese additions are targeted to increase prediction spread without materially increasing feature count or risking leakage. The existing `keep_cols` stays under 80, and the new features are selected to be information-dense rather than redundant.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:46:08.077258",
+  "llm_cost": 0.02103975,
+  "llm_model": "gpt-5.4-mini"
+}

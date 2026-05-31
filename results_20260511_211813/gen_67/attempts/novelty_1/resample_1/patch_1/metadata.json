@@ -1,0 +1,14 @@
+{
+  "generation": 67,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "expressive_regime_stack",
+  "patch_description": "The current model is still collapsing toward the mean, which usually means the tree ensemble is too constrained relative to the signal in 15-minute perp returns. I\u2019m proposing two coordinated changes:\n\n1. Loosen XGBoost regularization and increase tree budget slightly so the model can express sharper directional edges without over-smoothing.\n   - Reduce `min_child_weight`, `reg_alpha`, and `reg_lambda`\n   - Use a slightly higher learning rate with more trees\n   - Add `gamma=0` explicitly to avoid unnecessary split suppression\n\n2. Expand the feature set with a compact regime-aware stack:\n   - Short/medium EMA gaps and slope features\n   - ATR-normalized impulse / trend efficiency\n   - A simple ADX-like directional strength proxy\n   - Longer range-position context\n   - A few cross-regime interactions that help the model behave differently in trend vs chop\n\nThis should help increase `pred_std_ratio` while keeping feature count comfortably below the limit and avoiding any lookahead.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:32:58.609845",
+  "llm_cost": 0.03483975,
+  "llm_model": "gpt-5.4-mini"
+}

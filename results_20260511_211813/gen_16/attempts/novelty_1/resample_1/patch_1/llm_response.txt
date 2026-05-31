@@ -1,0 +1,90 @@
+To improve directional accuracy (DA) and address the "collapsed predictions" issue (low `pred_std_ratio`), we need to increase the model's expressivity while strictly controlling overfitting through regularization and better feature normalization. 
+
+The primary changes are:
+1.  **Hyperparameter Tuning**: Increase `max_depth` to 6 and `n_estimators` to 1000 to allow the model to capture more complex non-linear relationships. Lower the `learning_rate` to 0.01 while increasing `min_child_weight`, `reg_alpha`, and `reg_lambda` to force the trees to find more robust, generalizesable signals (fighting the noise typical of 15m crypto returns).
+2.  **Target Clipping**: Shift `CLIP_PERCENTILE` to 95 to mitigate the impact of outliers on the RMSE objective, allowing the model to focus on the directional signal of the majority of bars.
+3.  **Mean-Reversion Features**: Add distance-from-EMA features (EMA20 and EMA100), normalized by ATR, to capture mean-reversion tendencies which are prevalent in 15m crypto markets.
+4.  **Stationarity and Momentum**: Add a rolling Z-score for RSI and a rolling 10-period autocorrelation of returns to identify momentum persistence vs. exhaustion.
+5.  **Funding Dynamics**: Capture the first-order change (momentum) of the funding rate, as rapid shifts in funding often lead price moves in perp futures.
+
+<NAME>
+expressive_regularization_and_reversion
+</NAME>
+
+<DESCRIPTION>
+Increases model depth and tree count while tightening L1/L2 regularization to improve expressivity without overfitting. Adds EMA-based mean reversion, RSI stationarity, return autocorrelation, and funding momentum features.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+XGB_PARAMS = {
+    "n_estimators": 450,
+    "max_depth": 4,
+    "min_child_weight": 1,
+    "reg_alpha": 0.0,
+    "reg_lambda": 0.02,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "learning_rate": 0.03,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 60,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+=======
+XGB_PARAMS = {
+    "n_estimators": 1000,
+    "max_depth": 6,
+    "min_child_weight": 15,
+    "reg_alpha": 0.5,
+    "reg_lambda": 2.0,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "learning_rate": 0.015,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 80,
+}
+
+CLIP_PERCENTILE = 95          # clip targets at this percentile (both tails)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    feat['momentum_decay_6'] = (ret_1 * 0.5 + ret_3 * 0.3 + ret_6 * 0.2)
+    feat['momentum_fast'] = (ret_1 * 0.7 + ret_3 * 0.3)
+=======
+    feat['momentum_decay_6'] = (ret_1 * 0.5 + ret_3 * 0.3 + ret_6 * 0.2)
+    
+    # Mean-reversion and stationarity structure
+    ema_20 = close.ewm(span=20, adjust=False).mean()
+    feat['dist_ema_20'] = (close - ema_20) / (feat['atr_14'] + 1e-9)
+    feat['dist_ema_long'] = (close - close.ewm(span=100, adjust=False).mean()) / (feat['atr_14'] + 1e-9)
+    feat['roll_autocorr_10'] = ret_1.rolling(10).corr(ret_1.shift(1))
+    feat['rsi_z_30'] = (feat['rsi_14'] - feat['rsi_14'].rolling(30).mean()) / (feat['rsi_14'].rolling(30).std() + 1e-9)
+    feat['vol_trend_5_20'] = feat['vol_5'] / (feat['vol_20'] + 1e-9)
+    feat['rel_vol_10_60'] = volume.rolling(10).mean() / (volume.rolling(60).mean() + 1e-9)
+
+    feat['momentum_fast'] = (ret_1 * 0.7 + ret_3 * 0.3)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+=======
+    # --- Funding rate ---
+    if 'funding_rate' in df.columns:
+        fr = df['funding_rate']
+        feat['funding_rate'] = fr
+        feat['funding_8h_ma'] = fr.rolling(32).mean()   # 32 × 15min = 8h
+        feat['funding_chg_1'] = fr.diff(1)
+        feat['funding_chg_4'] = fr.diff(4)
+>>>>>>> REPLACE
+</DIFF>

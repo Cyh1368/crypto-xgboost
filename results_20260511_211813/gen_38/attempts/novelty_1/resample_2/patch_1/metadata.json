@@ -1,0 +1,14 @@
+{
+  "generation": 38,
+  "novelty_attempt": 1,
+  "resample_attempt": 2,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 2,
+  "patch_name": "robust_regime_features_and_tuned_xgb",
+  "patch_description": "This update aims to improve directional accuracy and combat prediction collapse by incorporating more robust, scale-invariant features and tuning the XGBoost hyperparameters. \n\nKey changes:\n1.  **Hyperparameter Tuning**: Increased `learning_rate` to 0.03 and adjusted `max_depth` to 5 to improve expressivity while controlling overfitting. Increased `min_child_weight` and `reg_lambda` to provide better regularization against noise.\n2.  **Scale-Invariant Features**: Introduced rolling quantile positions (`rank(pct=True)`) for returns, volume, and price. These are robust to the non-stationary nature of crypto markets.\n3.  **Trend & Momentum Stack**: Added a 'trend_stack' (sum of signs of returns) and EMA gaps to capture multi-scale trend alignment.\n4.  **Microstructure & Geometry**: Refined candle features (wick imbalance, close location) and volatility-normalized deviations (VWAP and EMA distances) to better capture mean-reversion and breakout pressures.\n5.  **Volatility Regimes**: Added volatility ratios (short-term vs long-term) to help the model distinguish between trending and sideways markets.",
+  "error_msg": null,
+  "timestamp": "2026-05-11T21:27:01.465808",
+  "llm_cost": 0.0248495,
+  "llm_model": "gemini-3-flash-preview"
+}

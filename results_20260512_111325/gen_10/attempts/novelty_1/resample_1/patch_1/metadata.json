@@ -1,0 +1,14 @@
+{
+  "generation": 10,
+  "novelty_attempt": 1,
+  "resample_attempt": 1,
+  "patch_attempt": 1,
+  "success": true,
+  "num_applied": 1,
+  "patch_name": "regime_adaptive_shortlook",
+  "patch_description": "This version is inspired by the prior program\u2019s broad technical-indicator style, but it takes a different route: instead of stacking many long-horizon absolute indicators, it builds a compact set of short-lookback, regime-normalized, and trend-of-regime features designed to survive market shifts.\n\nThe key novelty is a two-layer feature design:\n1. Local normalization: returns, momentum, range, and volume are converted into rolling z-scores or percentile-like ranks using only past data, making features more regime-invariant across volatility changes.\n2. Regime dynamics: rather than relying on static level features, it emphasizes the rate of change of volatility, efficiency, autocorrelation, and trend persistence. This targets the failure mode where the model learned train-specific regime patterns that collapsed in validation.\n\nIt also adds a small number of multiplicative interactions such as momentum \u00d7 volatility regime and trend \u00d7 efficiency, which often generalize better than raw levels alone. On the model side, the XGBoost configuration is made more conservative and robust: shallower trees, stronger regularization, and higher min_child_weight to reduce reliance on brittle training-only structure while preserving useful signal. The overall feature count stays well below the limit and all transformations use only past information.",
+  "error_msg": null,
+  "timestamp": "2026-05-12T11:15:46.382875",
+  "llm_cost": 0.01819275,
+  "llm_model": "gpt-5.4-mini"
+}

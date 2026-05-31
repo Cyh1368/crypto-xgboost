@@ -1,0 +1,127 @@
+<NAME>
+increase_expressivity_and_features
+</NAME>
+
+<DESCRIPTION>
+The previous model failed due to a "collapsed" prediction spread (`pred_std_ratio=0.0091`), which triggered a severe penalty. This happens when the model is underfitting or too heavily regularized in a noisy environment, leading it to predict values close to the mean (0).
+
+To fix this, I have:
+1.  **Increased Model Expressivity:** Boosted `max_depth` (4 → 6) and `learning_rate` (0.01 → 0.05).
+2.  **Reduced Regularization:** Lowered `min_child_weight` (10 → 1) to allow the model to capture smaller, more granular signals, and reduced `reg_alpha` and `reg_lambda`.
+3.  **Enhanced Feature Engineering:**
+    *   Added scale-invariant momentum features (EMA distances, log-returns of multiple lags).
+    *   Added standard indicators like Bollinger Band % and VWAP deviation.
+    *   Modified volume features to use log-transforms for better distribution.
+    *   Improved the OBI (Orderbook Imbalance) calculation with a more efficient and robust vectorized-style implementation.
+    *   Added regime-specific indicators like volatility-normalized returns and MA-trend crossovers.
+4.  **Ensured Feature Robustness:** Used `ffill()` and `dropna()` to handle rolling window warm-ups without yielding NaNs to the XGBoost model.
+</DESCRIPTION>
+
+<CODE>
+```python
+# evolve/initial.py
+
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (hyperparameters)
+XGB_PARAMS = {
+    "n_estimators": 800,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "reg_alpha": 0.01,
+    "reg_lambda": 0.5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "learning_rate": 0.05,
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "tree_method": "hist",
+    "early_stopping_rounds": 40,
+}
+
+CLIP_PERCENTILE = 99          # clip targets at this percentile (both tails)
+MIN_PRED_STD_RATIO = 0.15     # minimum acceptable pred_std / actual_std
+# EVOLVE-BLOCK-END
+
+
+# ─────────────────────────────────────────────
+# EVOLVE-BLOCK-START  (feature engineering)
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build feature matrix from raw OHLCV + orderbook + funding data.
+    All features must use only past data (no lookahead).
+    Returns a DataFrame aligned to df.index.
+    """
+    feat = pd.DataFrame(index=df.index)
+
+    close = df['close']
+    volume = df['volume']
+    high = df['high']
+    low = df['low']
+
+    # --- Momentum (Log Returns) ---
+    for lag in [1, 2, 4, 8, 16, 32]:
+        feat[f'lret_{lag}'] = np.log(close / close.shift(lag).replace(0, np.nan))
+    
+    # --- Price Action Indicators ---
+    feat['ret_sign_1'] = np.sign(close.diff())
+    feat['hi_lo_ratio'] = (high - low) / (close + 1e-9)
+    feat['cl_hl_osc'] = (2 * close - high - low) / (high - low + 1e-9)
+
+    # --- Volatility ---
+    log_ret = np.log(close / close.shift(1).replace(0, np.nan))
+    for w in [15, 60]:
+        feat[f'vol_{w}'] = log_ret.rolling(w).std()
+    
+    # --- Moving Average & VWAP Distances ---
+    for w in [20, 50, 100]:
+        sma = close.rolling(w).mean()
+        feat[f'sma_dist_{w}'] = (close / (sma + 1e-9)) - 1
+    
+    vwap_20 = (close * volume).rolling(20).sum() / (volume.rolling(20).sum() + 1e-9)
+    feat['vwap_dist_20'] = (close / (vwap_20 + 1e-9)) - 1
+
+    # --- Momentum Oscillators ---
+    for period in [14]:
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(period).mean()
+        loss = (-delta.clip(upper=0)).rolling(period).mean()
+        rs = gain / (loss + 1e-9)
+        feat[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+    
+    # Bollinger Bands
+    bb_mid = close.rolling(20).mean()
+    bb_std = close.rolling(20).std()
+    feat['bb_pct'] = (close - bb_mid) / (2 * bb_std + 1e-9)
+
+    # MACD
+    ema12 = close.ewm(span=12, adjust=False).mean()
+    ema26 = close.ewm(span=26, adjust=False).mean()
+    macd = ema12 - ema26
+    feat['macd_signal'] = macd - macd.ewm(span=9, adjust=False).mean()
+
+    # --- Volume Features ---
+    feat['v_log'] = np.log1p(volume)
+    feat['v_ma_ratio_20'] = volume / (volume.rolling(20).mean() + 1e-9)
+    feat['v_ma_ratio_5'] = volume / (volume.rolling(5).mean() + 1e-9)
+
+    # --- Time / Seasonality ---
+    feat['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
+    feat['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    feat['day_sin'] = np.sin(2 * np.pi * df.index.dayofweek / 7)
+    feat['is_weekend'] = (df.index.dayofweek >= 5).astype(float)
+
+    # --- Regimes ---
+    feat['vol_regime'] = feat['vol_15'] / (feat['vol_15'].rolling(200).mean() + 1e-9)
+    feat['ma_trend'] = (close.rolling(20).mean() > close.rolling(50).mean()).astype(float)
+
+    # --- Orderbook Imbalance (OBI) ---
+    if 'bids
